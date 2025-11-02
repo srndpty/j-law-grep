@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.9.0
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend/Dockerfile
+    command: ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+    env_file:
+      - ../.env
+    environment:
+      OPENSEARCH_HOST: http://opensearch:9200
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend/Dockerfile
+    environment:
+      VITE_BACKEND_URL: http://localhost:8000
+    depends_on:
+      - backend
+    ports:
+      - "5173:4173"
+
+volumes:
+  opensearch-data:
