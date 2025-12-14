@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional
 
-from backend.search.citation import Citation, citation_key
+from search.citation import Citation, citation_key
 
 
 @dataclass

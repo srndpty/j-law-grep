@@ -44,7 +44,7 @@ services:
       context: ..
       dockerfile: deploy/frontend/Dockerfile
     environment:
-      VITE_BACKEND_URL: http://localhost:8000
+      VITE_BACKEND_URL: http://backend:8000
     depends_on:
       - backend
     ports:

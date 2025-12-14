@@ -5,3 +5,8 @@
 body {
   font-family: "Inter", system-ui, sans-serif;
 }
+
+mark {
+  background-color: #fef08a;
+  color: #1f2937;
+}

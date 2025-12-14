@@ -6,3 +6,5 @@ node_modules/
 dist/
 frontend/.vite/
 .DS_Store
+.venv/
+.codex/

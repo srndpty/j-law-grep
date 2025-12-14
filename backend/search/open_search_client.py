@@ -31,6 +31,7 @@ class OpenSearchBackend:
                 "index": {
                     "number_of_shards": 1,
                     "number_of_replicas": 0,
+                    "max_ngram_diff": 20,
                 },
                 "analysis": {
                     "analyzer": {
@@ -126,8 +127,10 @@ def highlight_config() -> Dict[str, Any]:
     return {
         "fields": {
             "content": {
-                "type": "fvh",
-                "number_of_fragments": 0,
+                "type": "unified",
+                "number_of_fragments": 3,
+                "fragment_size": 120,
+                "no_match_size": 120,
                 "pre_tags": ["<mark>"],
                 "post_tags": ["</mark>"],
             }

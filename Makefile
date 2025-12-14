@@ -6,21 +6,22 @@ export MSYS2_ARG_CONV_EXCL = *
 .PHONY: up down ps restart-backend reindex api-smoke
 
 up:
-$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build
 
 reindex:
-$(COMPOSE) run --rm backend python -m indexer.main --input /app/indexer/sample_corpus --provider opensearch
+	$(COMPOSE) run --rm backend python -m indexer.main --input /app/indexer/sample_corpus --provider opensearch
 
 down:
-$(COMPOSE) down -v
+	$(COMPOSE) down -v
 
 ps:
-$(COMPOSE) ps
+	$(COMPOSE) ps
 
 restart-backend:
-$(COMPOSE) restart backend
+	$(COMPOSE) restart backend
 
 api-smoke:
-curl -sS http://localhost:8000/api/search -X POST \
-  -H 'Content-Type: application/json' \
-  -d '{"q": "民法 709条", "mode": "literal", "filters": {"law": "民法"}, "size": 5, "page": 1}' | jq '.hits[0]'
+	curl -sS http://localhost:8000/api/search -X POST \
+	  -H 'Content-Type: application/json' \
+	  -d '{"q": "民法 709条", "mode": "literal", "filters": {"law": "民法"}, "size": 5, "page": 1}' | \
+	  python -c "import json,sys; d=json.load(sys.stdin); h=d.get('hits', []); print(json.dumps(h[0], ensure_ascii=False, indent=2) if h else 'no hits')"

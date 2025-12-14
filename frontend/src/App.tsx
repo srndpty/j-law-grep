@@ -70,9 +70,12 @@ export default function App() {
   }
 
   useEffect(() => {
-    void performSearch(requestBody);
+    const handle = setTimeout(() => {
+      void performSearch(requestBody);
+    }, 250);
+    return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [requestBody]);
 
   return (
     <div className="min-h-screen bg-muted text-foreground">

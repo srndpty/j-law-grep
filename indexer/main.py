@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
+import django
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BACKEND_PATH = PROJECT_ROOT / "backend"
-if str(BACKEND_PATH) not in sys.path:
-    sys.path.insert(0, str(BACKEND_PATH))
+if str(PROJECT_ROOT) not in sys.path:
+    # Put project root on sys.path so `backend` package can be imported
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
+django.setup()
 
 from search.open_search_client import OpenSearchBackend  # noqa: E402
 

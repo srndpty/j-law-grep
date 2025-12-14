@@ -85,21 +85,22 @@ class SearchService:
         page = max(params.page, 1)
         from_ = (page - 1) * size
         response = self.backend.search(body=body, size=size, from_=from_)
-        hits = [self._convert_hit(hit) for hit in response["hits"]["hits"]]
+        hits = [self._convert_hit(hit, params.q) for hit in response["hits"]["hits"]]
         return {
             "hits": hits,
             "total": response["hits"].get("total", {}).get("value", 0),
             "took_ms": response.get("took", 0),
         }
 
-    def _convert_hit(self, hit: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_hit(self, hit: Dict[str, Any], query: str) -> Dict[str, Any]:
         source = hit.get("_source", {})
         highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
+        snippet = self._ensure_highlight(highlight_snippet or source.get("content", ""), query)
         data = SearchHit(
             file_id=str(hit.get("_id", "")),
             path=source.get("path", ""),
             line=source.get("line", 0),
-            snippet=highlight_snippet or source.get("content", ""),
+            snippet=snippet,
             url=source.get("url", ""),
             blocks=source.get("blocks", []),
         )
@@ -111,3 +112,18 @@ class SearchService:
             "url": data.url,
             "blocks": data.blocks,
         }
+
+    def _ensure_highlight(self, snippet: str, query: str) -> str:
+        if not query:
+            return snippet
+        if "<mark>" in snippet:
+            # If the entire sentence is wrapped once, unwrap and re-apply to the term only
+            if snippet.count("<mark>") == 1 and snippet.startswith("<mark>") and snippet.endswith("</mark>"):
+                snippet = snippet.replace("<mark>", "", 1).rsplit("</mark>", 1)[0]
+            else:
+                return snippet
+        try:
+            pattern = re.escape(query)
+            return re.sub(pattern, lambda m: f"<mark>{m.group(0)}</mark>", snippet)
+        except re.error:
+            return snippet
