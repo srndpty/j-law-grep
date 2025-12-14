@@ -1,0 +1,38 @@
+{
+  "law_id": "minpou",
+  "law_name": "民法",
+  "law_aliases": ["民法典"],
+  "year_enforced": "2022",
+  "articles": [
+    {
+      "article_no": "709",
+      "heading": "第709条（不法行為による損害賠償）",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "故意又は過失によって他人の権利又は法律上保護される利益を侵害した者は、これによって生じた損害を賠償する責任を負う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "710",
+      "heading": "第710条（財産以外の損害の賠償）",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "他人の身体、自由又は名誉を侵害した場合その他財産以外の損害が生じた場合には、その賠償は財産以外の損害に対してもこれをしなければならない。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
