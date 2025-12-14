@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Iterable, List, Optional
 import xml.etree.ElementTree as ET
+
+try:
+    from tqdm import tqdm  # type: ignore
+except ImportError:  # pragma: no cover - optional
+    tqdm = None
 
 from indexer.utils import normalize_text
 
@@ -52,9 +58,9 @@ def find_first_text(element: ET.Element, *names: str) -> Optional[str]:
 def extract_sentence_texts(elements: Iterable[ET.Element]) -> str:
     sentences: List[str] = []
     for elem in elements:
-        for sentence_text in elem.findall('.//{*}SentenceText'):
-            if sentence_text.text:
-                sentences.append(sentence_text.text)
+        for node in elem.iter():
+            if local_name(node.tag) in {"SentenceText", "Sentence"} and node.text:
+                sentences.append(node.text)
     joined = "".join(sentences)
     return normalize_text(joined)
 
@@ -138,6 +144,25 @@ def parse_law(xml_path: Path) -> dict:
         if article:
             articles.append(article)
 
+    # Fallback: some early-era or appendix-only laws have no Article nodes.
+    # Convert top-level paragraphs into pseudo articles so the corpus is not empty.
+    if not articles:
+        for idx, paragraph_elem in enumerate(root.findall('.//{*}LawBody//{*}Paragraph'), start=1):
+            paragraph = parse_paragraph(paragraph_elem)
+            if not paragraph:
+                continue
+            article_no = (
+                normalize_text(paragraph_elem.attrib.get("Num") or find_first_text(paragraph_elem, "ParagraphNum") or "")
+                or str(idx)
+            )
+            articles.append(
+                {
+                    "article_no": article_no,
+                    "heading": "",
+                    "paragraphs": [paragraph],
+                }
+            )
+
     return {
         "law_id": normalize_text(law_id),
         "law_name": normalize_text(law_name),
@@ -148,11 +173,23 @@ def parse_law(xml_path: Path) -> dict:
 
 def import_directory(xml_dir: Path, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
-    for xml_path in sorted(xml_dir.glob("*.xml")):
+    xml_paths = sorted(xml_dir.rglob("*.xml"))
+    if not xml_paths:
+        print(f"No XML files found under {xml_dir}", file=sys.stderr)
+        return
+
+    iterator = tqdm(xml_paths, desc="Converting", unit="file") if tqdm else xml_paths
+    count = 0
+    for xml_path in iterator:
         law = parse_law(xml_path)
         output_path = output_dir / f"{law['law_id']}.json"
         with output_path.open("w", encoding="utf-8") as fh:
             json.dump(law, fh, ensure_ascii=False, indent=2)
+        count += 1
+        if not tqdm and count % 100 == 0:
+            print(f"Converted {count} / {len(xml_paths)}", file=sys.stderr)
+
+    print(f"Converted {count} XML files under {xml_dir} -> {output_dir}")
 
 
 def main() -> None:
