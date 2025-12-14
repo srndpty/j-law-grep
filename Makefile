@@ -3,13 +3,15 @@ COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 
 export MSYS2_ARG_CONV_EXCL = *
 
+INDEX_INPUT ?= indexer/sample_corpus
+
 .PHONY: up down ps restart-backend reindex api-smoke
 
 up:
 	$(COMPOSE) up -d --build
 
 reindex:
-	$(COMPOSE) run --rm backend python -m indexer.main --input /app/indexer/sample_corpus --provider opensearch
+$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch
 
 down:
 	$(COMPOSE) down -v

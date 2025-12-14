@@ -27,6 +27,12 @@ make reindex
 
 `make up` は OpenSearch / Redis / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入します。
 
+### e-Gov XML からの取り込みと再インデックス
+
+1. e-Gov から法令 XML をダウンロードし、任意のディレクトリ (例: `data/egov-xml`) に展開する。
+2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。
+3. `make reindex INDEX_INPUT=indexer/data` で変換済み JSON を OpenSearch に投入する。
+
 ## API スモークテスト
 
 ```

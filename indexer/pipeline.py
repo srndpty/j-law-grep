@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional
 
 from search.citation import Citation, citation_key
+from indexer.utils import normalize_text
 
 
 @dataclass
@@ -25,15 +25,6 @@ class IndexRecord:
     path: str
     url: str
     blocks: List[dict]
-
-
-WHITESPACE_PATTERN = re.compile(r"\s+")
-
-
-def normalize_text(value: str) -> str:
-    value = value.replace("\u3000", " ")
-    value = WHITESPACE_PATTERN.sub(" ", value)
-    return value.strip()
 
 
 def load_documents(input_dir: Path) -> Iterable[dict]:
