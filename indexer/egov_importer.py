@@ -27,11 +27,25 @@ def parse_number(value: Optional[str]) -> Optional[int | str]:
     return value
 
 
+def _joined_text(elem: ET.Element) -> str:
+    # ネストした要素が混じっても拾えるようにする
+    return "".join(elem.itertext())
+
+
 def find_first_text(element: ET.Element, *names: str) -> Optional[str]:
+    # 1) 直下優先（従来互換）
     for child in element:
         if local_name(child.tag) in names:
-            if child.text:
-                return child.text
+            text = _joined_text(child)
+            if text and text.strip():
+                return text
+
+    # 2) 子孫まで探索（取りこぼし対策）
+    for node in element.iter():
+        if local_name(node.tag) in names:
+            text = _joined_text(node)
+            if text and text.strip():
+                return text
     return None
 
 
@@ -108,8 +122,13 @@ def parse_law(xml_path: Path) -> dict:
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
-    law_id = find_first_text(root, "LawID") or xml_path.stem
-    law_name = find_first_text(root, "LawTitle") or law_id
+    law_id = (
+        find_first_text(root, "LawId", "LawID", "LawNum")
+        or root.attrib.get("LawID")
+        or root.attrib.get("Id")
+        or xml_path.stem
+    )
+    law_name = find_first_text(root, "LawTitle", "LawName") or law_id
     enforce_date = find_first_text(root, "EnactDate", "AmendmentDate", "PromulgationDate")
     year_enforced = enforce_date[:4] if enforce_date and len(enforce_date) >= 4 else None
 
@@ -122,6 +141,7 @@ def parse_law(xml_path: Path) -> dict:
     return {
         "law_id": normalize_text(law_id),
         "law_name": normalize_text(law_name),
+        "law_aliases": [],
         "articles": articles,
     } | ({"year_enforced": year_enforced} if year_enforced else {})
 

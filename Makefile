@@ -11,7 +11,7 @@ up:
 	$(COMPOSE) up -d --build
 
 reindex:
-$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch
+  $(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch
 
 down:
 	$(COMPOSE) down -v

@@ -8,3 +8,4 @@ frontend/.vite/
 .DS_Store
 .venv/
 .codex/
+data/egov-xml/
