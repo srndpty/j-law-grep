@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Iterable, List, Optional
 
 from search.citation import Citation, citation_key
+try:
+    from tqdm import tqdm  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    tqdm = None
 from indexer.utils import normalize_text
 
 
@@ -33,9 +37,20 @@ def load_documents(input_dir: Path) -> Iterable[dict]:
             yield json.load(fh)
 
 
-def collect_records(input_dir: Path) -> List[IndexRecord]:
+def collect_records(input_dir: Path, show_progress: bool = False) -> List[IndexRecord]:
+    # If tqdm is available and requested, iterate with progress over file paths.
+    if show_progress and tqdm:
+        paths = sorted(input_dir.glob("*.json"))
+        iterator = tqdm(paths, desc="Loading corpus", unit="file")
+        docs = []
+        for path in iterator:
+            with path.open("r", encoding="utf-8") as fh:
+                docs.append(json.load(fh))
+    else:
+        docs = load_documents(input_dir)
+
     records: List[IndexRecord] = []
-    for doc in load_documents(input_dir):
+    for doc in docs:
         law_id = doc["law_id"]
         law_name = doc["law_name"]
         law_aliases = doc.get("law_aliases", [])

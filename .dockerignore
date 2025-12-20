@@ -1,0 +1,4 @@
+indexer/data
+data
+**/__pycache__
+**/*.pyc

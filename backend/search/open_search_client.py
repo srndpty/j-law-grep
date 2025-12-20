@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from django.conf import settings
 from opensearchpy import OpenSearch
@@ -113,14 +113,42 @@ class OpenSearchBackend:
     def search(self, body: Dict[str, Any], size: int, from_: int) -> Dict[str, Any]:
         return self.client.search(index=self.index, body=body, size=size, from_=from_)
 
-    def bulk(self, actions: List[Dict[str, Any]]) -> None:
+    def _chunked(self, actions: Iterable[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
+        batch: List[Dict[str, Any]] = []
+        for action in actions:
+            batch.append(action)
+            if len(batch) >= size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
+
+    def bulk(
+        self,
+        actions: List[Dict[str, Any]],
+        chunk_size: int = 200,
+        progress: bool = False,
+        refresh_at_end: bool = True,
+    ) -> None:
         if not actions:
             return
-        body: List[Dict[str, Any]] = []
-        for action in actions:
-            meta = {"index": {"_index": self.index, "_id": action["_id"]}}
-            body.extend([meta, action["_source"]])
-        self.client.bulk(body=body, refresh=True)
+
+        total = len(actions)
+        processed = 0
+        for chunk in self._chunked(actions, size=chunk_size):
+            body: List[Dict[str, Any]] = []
+            for action in chunk:
+                meta = {"index": {"_index": self.index, "_id": action["_id"]}}
+                body.extend([meta, action["_source"]])
+            # Keep requests small and defer refresh to the end for better throughput
+            self.client.bulk(body=body, refresh=False)
+            processed += len(chunk)
+            if progress and processed % 5000 == 0:
+                print(f"Indexed {processed}/{total} docs...", flush=True)
+        if progress:
+            print(f"Indexed {total}/{total} docs.", flush=True)
+        if refresh_at_end:
+            self.client.indices.refresh(index=self.index)
 
 
 def highlight_config() -> Dict[str, Any]:

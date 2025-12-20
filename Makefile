@@ -4,6 +4,8 @@ COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 export MSYS2_ARG_CONV_EXCL = *
 
 INDEX_INPUT ?= indexer/sample_corpus
+PROGRESS ?= 1
+BULK_CHUNK ?= 200
 
 .PHONY: up down ps restart-backend reindex api-smoke
 
@@ -11,7 +13,11 @@ up:
 	$(COMPOSE) up -d --build
 
 reindex:
-  $(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch
+	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK); \
+	else \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK); \
+	fi
 
 down:
 	$(COMPOSE) down -v
