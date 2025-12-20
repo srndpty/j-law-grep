@@ -1,0 +1,187 @@
+{
+  "law_id": "昭和三十七年政令第四百十二号",
+  "law_name": "防衛施設地方審議会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "防衛施設地方審議会（以下「審議会」という。）は、委員二十人以内で組織する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、学識経験のある者のうちから、任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の任期は、二年とし、その欠員が生じた場合の補欠委員の任期は、前任者の残任期間とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に、委員の互選により、会長一人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、会務を総理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長に事故があるときは、会長があらかじめ指名する委員が、その職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に、幹事五人以内を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、関係行政機関の職員のうちから、任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、審議会の所掌事務について委員を補佐する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会は、会長が招集する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会は、委員の過半数が出席しなければ、議事を開き、議決することができない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会の議事は、出席した委員の過半数をもつて決し、可否同数のときは、会長の決するところによる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会の庶務は、地方防衛局において処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、審議会の議事の手続その他その運営に関し必要な事項は、審議会が定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

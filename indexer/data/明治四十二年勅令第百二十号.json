@@ -1,0 +1,52 @@
+{
+  "law_id": "明治四十二年勅令第百二十号",
+  "law_name": "明治四十二年勅令第百二十号（刑法施行後施行ノ命令ニ掲ケタル刑法ノ刑名ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "刑法施行後施行ノ命令ニ於テ人ノ資格其ノ他ノ事項ニ関シ掲ケタル刑法ノ刑名ハ特別ノ規定アル場合ヲ除クノ外左ノ例ニ従ヒ対照シタル旧刑法、旧陸軍刑法及旧海軍刑法ノ刑名ヲ包含ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "勲章褫奪令附則第三項ハ之ヲ廃止ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

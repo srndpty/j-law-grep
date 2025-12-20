@@ -1,0 +1,45 @@
+{
+  "law_id": "昭和三十四年政令第百五十八号",
+  "law_name": "図書館法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "図書館法第二十条第一項に規定する図書館の施設、設備に要する経費の範囲は、次に掲げるものとする。"
+            },
+            {
+              "item_no": 1,
+              "text": "施設費施設の建築に要する本工事費、附帯工事費及び事務費"
+            },
+            {
+              "item_no": 2,
+              "text": "設備費図書館に備え付ける図書館資料及びその利用のための器材器具の購入に要する経費"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

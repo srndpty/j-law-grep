@@ -1,0 +1,83 @@
+{
+  "law_id": "大正十二年勅令第二百九十九号",
+  "law_name": "大正十二年勅令第二百九十九号（政府ニ於テ物品ノ販売ヲ問屋業者ニ委託スルコトヲ得ル場合ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "政府ニ於テ物品ヲ販売又ハ買入スルトキハ左ノ場合ニ限リ問屋業者ニ其ノ販売又ハ買入ヲ委託スルコトヲ得"
+            },
+            {
+              "item_no": 1,
+              "text": "輸出ノ目的ヲ以テ物品ヲ販売スルトキ"
+            },
+            {
+              "item_no": 2,
+              "text": "専売品又ハ其ノ副産物ヲ販売スルトキ"
+            },
+            {
+              "item_no": 3,
+              "text": "林産物又ハ鉱産物ヲ販売スルトキ"
+            },
+            {
+              "item_no": 4,
+              "text": "米穀ヲ販売又ハ買入スルトキ但シ買入ニ付テハ米穀需給調節特別会計ニ属セシムル為特ニ必要アル場合ニ限ル"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大正二年勅令第二百八十号ハ之ヲ廃止ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

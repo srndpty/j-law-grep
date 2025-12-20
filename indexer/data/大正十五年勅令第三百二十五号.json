@@ -1,0 +1,256 @@
+{
+  "law_id": "大正十五年勅令第三百二十五号",
+  "law_name": "位階令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "位ハ左ノ十六階トス"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "一位ハ親授二位以下四位以上ハ勅授五位以下ハ奏授トス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "位ハ左ニ掲クル者ヲ叙ス"
+            },
+            {
+              "item_no": 1,
+              "text": "国家ニ勲功アリ又ハ表彰スヘキ効績アル者"
+            },
+            {
+              "item_no": 2,
+              "text": "削除"
+            },
+            {
+              "item_no": 3,
+              "text": "在官者及在職者"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前条ニ掲クル者死亡シタル場合ニ於テハ特旨ヲ以テ其ノ死亡ノ日ニ遡リ位ヲ追賜スルコトアルヘシ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "故人ニシテ勲績顕著ナル者ニハ特旨ヲ以テ位ヲ贈ルコトアルヘシ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者ハ其ノ位ニ相当スル礼遇ヲ享ク"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者左ノ各号ノ一ニ該当スルトキハ其ノ礼遇ヲ享クルコトヲ得ス"
+            },
+            {
+              "item_no": 1,
+              "text": "禁治産者及準禁治産者"
+            },
+            {
+              "item_no": 2,
+              "text": "破産者ニシテ復権ヲ得サルモノ"
+            },
+            {
+              "item_no": 3,
+              "text": "刑事ノ訴ヲ受ケ勾留又ハ保釈若ハ責付中ニ在ル者"
+            },
+            {
+              "item_no": 4,
+              "text": "禁錮以上ノ刑ノ宣告ヲ受ケタル時ヨリ其ノ裁判確定スルニ至ル迄ノ者"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者其ノ品位ヲ保ツコト能ハス又ハ其ノ体面ヲ汚辱スル失行アリタルトキハ情状ニ依リ其ノ礼遇ヲ停止若ハ禁止シ又ハ位ヲ失ハシム"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第八条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者死刑又ハ拘禁刑ニ処セラレタルトキハ其ノ位ヲ失フ"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者左ノ各号ノ一ニ該当スルトキハ情状ニ依リ其ノ位ヲ失ハシム"
+            },
+            {
+              "item_no": 1,
+              "text": "刑ノ全部ノ執行ヲ猶予セラレタルトキ"
+            },
+            {
+              "item_no": 2,
+              "text": "懲戒ノ裁判又ハ処分ニ依リ免官又ハ免職セラレタルトキ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第九条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者国籍ヲ喪失シタルトキハ其ノ位ヲ失フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "削除"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "削除"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "有位者其ノ品位ヲ保ツコト能ハサルトキハ位ノ返上ヲ請願スルコトヲ得"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ皇族、王族及公族ニ之ヲ適用セス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

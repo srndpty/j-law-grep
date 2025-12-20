@@ -1,0 +1,37 @@
+{
+  "law_id": "平成十八年政令第二百十三号",
+  "law_name": "住生活基本法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "住宅建設計画法第五条第一項の地方を定める政令（昭和四十一年政令第二百三十一号）は、廃止する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

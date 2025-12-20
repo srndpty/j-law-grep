@@ -1,0 +1,45 @@
+{
+  "law_id": "平成二十九年厚生労働省令第百十七号",
+  "law_name": "厚生労働省関係住宅宿泊事業法施行規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "住宅宿泊事業法（平成二十九年法律第六十五号）第五条に規定する厚生労働省令で定める措置は、次のとおりとする。"
+            },
+            {
+              "item_no": 1,
+              "text": "居室の床面積は、宿泊者一人当たり三・三平方メートル以上を確保すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "定期的な清掃及び換気を行うこと。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、平成三十年六月十五日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

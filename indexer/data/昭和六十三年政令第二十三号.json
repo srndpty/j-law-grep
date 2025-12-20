@@ -1,0 +1,64 @@
+{
+  "law_id": "昭和六十三年政令第二十三号",
+  "law_name": "義肢装具士法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "義肢装具士法（以下「法」という。）第十二条第一項の義肢装具士試験委員（以下「委員」という。）は、義肢装具士国家試験を行うについて必要な学識経験のある者のうちから、厚生労働大臣が任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の数は、五十人以内とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の任期は、二年とする。ただし、補欠の委員の任期は、前任者の残任期間とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第十六条第一項の政令で定める受験手数料の額は、五万九千八百円とする。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

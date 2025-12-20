@@ -1,0 +1,67 @@
+{
+  "law_id": "平成二十四年政令第二十三号",
+  "law_name": "復興推進会議令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "議長は、会務を総理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "副議長は、議長を助け、議長に事故があるときは、その職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "復興推進会議の庶務は、復興庁に置かれる統括官が処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前三条に定めるもののほか、議事の手続その他復興推進会議の運営に関し必要な事項は、議長が復興推進会議に諮って定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

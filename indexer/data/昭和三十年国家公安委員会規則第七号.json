@@ -1,0 +1,112 @@
+{
+  "law_id": "昭和三十年国家公安委員会規則第七号",
+  "law_name": "警察通信規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この規則は、警察通信の正常かつ能率的な運営を図るため、警察通信施設の維持管理その他警察通信に関する基本を定めることを目的とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警察庁、管区警察局、東京都警察情報通信部、北海道警察情報通信部及び都道府県警察は、警察通信に関し、相互に緊密な連絡協調を保たなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警察通信施設の維持、新増設、改修等の工務及び警察通信の運用に従事する警察職員は、常に、迅速、確実その他警察の責務の遂行に即応するように通信の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警察職員は、通信の内容、警察通信の使用の際の状況等に応じ適当な通信方法を選ぶ等、常に、総合的かつ能率的に警察通信を使用するよう努めなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警察職員は、警察通信を使用するときは、警察の責務を遂行するため必要な事項以外の事項を通信内容としてはならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警察通信は、警察職員、法令により使用することができる者又は警察庁長官が特に承認した者以外の者に使用させてはならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前六条に定めるもののほか、警察通信に関し必要な事項は、警察庁長官の定めるところによる。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

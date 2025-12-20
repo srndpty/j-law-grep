@@ -1,0 +1,140 @@
+{
+  "law_id": "昭和四十七年政令第二百七号",
+  "law_name": "悪臭防止法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "悪臭防止法（以下「法」という。）第二条第一項の政令で定める物質は、次に掲げる物質とする。"
+            },
+            {
+              "item_no": 1,
+              "text": "アンモニア"
+            },
+            {
+              "item_no": 2,
+              "text": "メチルメルカプタン"
+            },
+            {
+              "item_no": 3,
+              "text": "硫化水素"
+            },
+            {
+              "item_no": 4,
+              "text": "硫化メチル"
+            },
+            {
+              "item_no": 5,
+              "text": "二硫化メチル"
+            },
+            {
+              "item_no": 6,
+              "text": "トリメチルアミン"
+            },
+            {
+              "item_no": 7,
+              "text": "アセトアルデヒド"
+            },
+            {
+              "item_no": 8,
+              "text": "プロピオンアルデヒド"
+            },
+            {
+              "item_no": 9,
+              "text": "ノルマルブチルアルデヒド"
+            },
+            {
+              "item_no": 10,
+              "text": "イソブチルアルデヒド"
+            },
+            {
+              "item_no": 11,
+              "text": "ノルマルバレルアルデヒド"
+            },
+            {
+              "item_no": 12,
+              "text": "イソバレルアルデヒド"
+            },
+            {
+              "item_no": 13,
+              "text": "イソブタノール"
+            },
+            {
+              "item_no": 14,
+              "text": "酢酸エチル"
+            },
+            {
+              "item_no": 15,
+              "text": "メチルイソブチルケトン"
+            },
+            {
+              "item_no": 16,
+              "text": "トルエン"
+            },
+            {
+              "item_no": 17,
+              "text": "スチレン"
+            },
+            {
+              "item_no": 18,
+              "text": "キシレン"
+            },
+            {
+              "item_no": 19,
+              "text": "プロピオン酸"
+            },
+            {
+              "item_no": 20,
+              "text": "ノルマル酪酸"
+            },
+            {
+              "item_no": 21,
+              "text": "ノルマル吉草酸"
+            },
+            {
+              "item_no": 22,
+              "text": "イソ吉草酸"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第十三条第五項の手数料の額は、同条第一項の試験を受けようとする者については一万八千円、同項の適性検査を受けようとする者については九千円とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、平成十二年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

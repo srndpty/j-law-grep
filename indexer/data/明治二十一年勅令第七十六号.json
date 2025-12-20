@@ -1,0 +1,137 @@
+{
+  "law_id": "明治二十一年勅令第七十六号",
+  "law_name": "勲章佩用式",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大勲位菊花章ハ頸飾ヲ以テ喉下ニ佩ヒ其副章ヲ左肋ニ佩フ大綬ヲ以テ佩フル時ハ右肩ヨリ左脇ヘ垂レ其副章ハ左肋ニ佩フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "宝冠章ノ佩用ハ次ニ定ムル所ニ依ル"
+            },
+            {
+              "item_no": 1,
+              "text": "宝冠大綬章ハ大綬ヲ以テ右肩ヨリ左脇ヘ垂レ其副章ヲ左肋ニ佩フ"
+            },
+            {
+              "item_no": 2,
+              "text": "宝冠牡丹章宝冠白蝶章宝冠藤花章宝冠杏葉章及宝冠波光章ハ結蝶状ノ綬ヲ以テ左肋ニ佩フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "桐花大綬章ハ大綬ヲ以テ右肩ヨリ左脇ヘ垂レ其副章ヲ左肋ニ佩ブ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "旭日章ノ佩用ハ次ニ定ムル所ニ依ル"
+            },
+            {
+              "item_no": 1,
+              "text": "旭日大綬章ハ大綬ヲ以テ右肩ヨリ左脇ヘ垂レ其副章ヲ左肋ニ佩フ"
+            },
+            {
+              "item_no": 2,
+              "text": "旭日重光章ハ右肋ニ佩ヒ其副章ヲ中綬ヲ以テ喉下ニ佩フ"
+            },
+            {
+              "item_no": 3,
+              "text": "旭日中綬章ハ中綬ヲ以テ喉下ニ佩フ"
+            },
+            {
+              "item_no": 4,
+              "text": "旭日小綬章旭日双光章及旭日単光章ハ小綬ヲ以テ左肋ニ佩フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "瑞宝章ノ佩用ハ次ニ定ムル所ニ依ル"
+            },
+            {
+              "item_no": 1,
+              "text": "瑞宝大綬章ハ大綬ヲ以テ右肩ヨリ左脇ヘ垂レ其副章ヲ左肋ニ佩フ"
+            },
+            {
+              "item_no": 2,
+              "text": "瑞宝重光章ハ右肋ニ佩ビ其副章ヲ中綬ヲ以テ喉下ニ佩ブ"
+            },
+            {
+              "item_no": 3,
+              "text": "瑞宝中綬章ハ中綬ヲ以テ喉下ニ佩フ"
+            },
+            {
+              "item_no": 4,
+              "text": "瑞宝小綬章瑞宝双光章及瑞宝単光章ハ小綬ヲ以テ左肋ニ佩フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "別種ノ勲章ハ之ヲ併佩スルコトヲ得其大綬章ハ之ヲ併佩セス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

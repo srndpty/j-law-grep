@@ -1,0 +1,67 @@
+{
+  "law_id": "大正四年法律第十三号",
+  "law_name": "大正四年法律第十三号（日本学士院学術研究奨励金委任経理ニ関スル法律）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "帝国学士院ニ於テ学術研究奨励ノ為ニ要スル金額ハ之ヲ帝国学士院長ニ交付シ経理ヲ委任スルコトヲ得"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委任経理ニ係ル会計ノ検査ハ会計検査院法第十六条ノ規定ニ依ル"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本法ハ大正五年四月一日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "帝国学士院学術奨励金特別会計法ニ依リ帝国学士院長ニ経理ヲ委任セラレタル金額ノ支出残額ハ本法ニ依リ経理ヲ委任セラレタルモノト看做ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "law_id": "昭和二十四年法律第二百七十一号",
+  "law_name": "人事官弾劾の訴追に関する法律",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事官弾劾の訴追をするには、国会の議決を必要とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事官弾劾の訴追については、衆議院議長が国会を代表する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事官弾劾の訴追があつたときは、衆議院議長は、参議院議長と協議して衆議院又は参議院の議員を指定しその訴訟を行わせることができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項の指定を受けた議員は、当該訴訟について裁判上の一切の行為をする権限を有する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "第一項の指定を受けた議員は、訴訟代理人の選任その他重要な事項については、衆議院議長と協議するものとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "衆議院議長は、必要があると認めるときは、参議院議長と協議して前条第一項の指定を取り消すことができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前条第一項の指定を受けた議員は、衆議院議長の許可を得てその指定を辞することができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "衆議院議員の任期が満了し又は衆議院が解散されたときは、あらたに衆議院議長が選挙されるまで参議院議長がこの法律に定める衆議院議長の権限を行うものとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事官弾劾の訴追の手続に関する特別の規程は、両議院一致の議決により定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

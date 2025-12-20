@@ -1,0 +1,79 @@
+{
+  "law_id": "明治二十一年勅令第一号",
+  "law_name": "明治二十一年勅令第一号（宝冠章及大勲位菊花章頸飾ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "明治八年太政官布告第五十四号ニ定ムルノ外特別ノ場合婦人ノ勲労アル者ニ対シ同布告第一条ニ掲グル勲章ニ代ヘテ次ノ勲章ヲ賜フ"
+            },
+            {
+              "item_no": 1,
+              "text": "宝冠大綬章"
+            },
+            {
+              "item_no": 2,
+              "text": "宝冠牡丹章"
+            },
+            {
+              "item_no": 3,
+              "text": "宝冠白蝶章"
+            },
+            {
+              "item_no": 4,
+              "text": "宝冠藤花章"
+            },
+            {
+              "item_no": 5,
+              "text": "宝冠杏葉章"
+            },
+            {
+              "item_no": 6,
+              "text": "宝冠波光章"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "宝冠大綬章、宝冠牡丹章、宝冠白蝶章、宝冠藤花章、宝冠杏葉章及宝冠波光章ノ章ハ宝冠ト竹桜ノ形ヲ以テ飾リ綬ハ地黄色双線紅色トス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大勲位菊花章頸飾ハ大勲位ニ叙セシ者ニ特別之ヲ賜フ"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "菊花菊葉ノ形ト明治二字古篆文ヲ以テ飾ル"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

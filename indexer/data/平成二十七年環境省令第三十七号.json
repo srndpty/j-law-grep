@@ -1,0 +1,37 @@
+{
+  "law_id": "平成二十七年環境省令第三十七号",
+  "law_name": "水銀による環境の汚染の防止に関する法律第十四条第四項の期間を定める省令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "水銀による環境の汚染の防止に関する法律（以下「法」という。）第十四条第四項の環境省令で定める期間は、三十日とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、法の施行の日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

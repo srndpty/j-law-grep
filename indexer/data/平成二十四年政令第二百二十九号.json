@@ -1,0 +1,37 @@
+{
+  "law_id": "平成二十四年政令第二百二十九号",
+  "law_name": "原子力規制委員会設置法第二十二条第一項の員数を定める政令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "原子力規制委員会設置法第二十二条第一項の政令で定める員数は、四十人とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、原子力規制委員会設置法の施行の日（平成二十四年九月十九日）から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

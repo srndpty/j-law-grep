@@ -1,0 +1,102 @@
+{
+  "law_id": "平成十年政令第二百九十九号",
+  "law_name": "言語聴覚士法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "言語聴覚士法（以下「法」という。）第十一条の政令で定める手数料の額は、四千八百円とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第十六条第二項の政令で定める手数料の額は、次の各号に掲げる者の区分に応じ、それぞれ当該各号に定める額とする。"
+            },
+            {
+              "item_no": 1,
+              "text": "言語聴覚士名簿に免許に関する事項の登録を受けようとする者八千円"
+            },
+            {
+              "item_no": 2,
+              "text": "言語聴覚士免許証明書の書換え交付を受けようとする者四千六百円"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第三十一条第一項の言語聴覚士試験委員（以下「委員」という。）は、言語聴覚士国家試験を行うについて必要な学識経験のある者のうちから、厚生労働大臣が任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の数は、五十人以内とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の任期は、二年とする。ただし、補欠の委員の任期は、前任者の残任期間とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第三十五条第一項の政令で定める受験手数料の額は、三万八千四百円とする。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

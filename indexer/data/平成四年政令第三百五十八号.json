@@ -1,0 +1,82 @@
+{
+  "law_id": "平成四年政令第三百五十八号",
+  "law_name": "計量法附則第三条の計量単位等を定める政令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "計量法（以下「法」という。）附則別表第一の下欄に掲げる計量単位の定義は、別表第一のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法附則別表第二の下欄に掲げる計量単位の定義は、別表第二のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "3",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法附則別表第三の下欄に掲げる計量単位の定義は、別表第三のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "4",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法附則第三条第一項から第三項までの政令で定める計量単位は、別表第四の第三欄に掲げる計量単位とし、その定義は同表の第四欄に掲げる計量単位に同表の第五欄に掲げる乗数を乗じたものとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、法の施行の日（平成五年十一月一日）から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

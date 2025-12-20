@@ -1,0 +1,215 @@
+{
+  "law_id": "昭和二十三年政令第二百九十二号",
+  "law_name": "検察官適格審査会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "検察官適格審査会（以下「審査会」という。）の委員のうち、衆議院議員又は参議院議員たる委員以外の者は、次に掲げる者につき、法務大臣がこれを任命する。"
+            },
+            {
+              "item_no": 1,
+              "text": "最高裁判所判事一人"
+            },
+            {
+              "item_no": 2,
+              "text": "日本弁護士連合会の会長"
+            },
+            {
+              "item_no": 3,
+              "text": "日本学士院会員一人"
+            },
+            {
+              "item_no": 4,
+              "text": "司法制度に関し学識経験を有する者二人"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項第一号及び第三号の委員は、それぞれ最高裁判所判事及び日本学士院会員の互選による。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前条第一項第一号、第三号及び第四号の委員の予備委員は、それぞれその委員と同一の資格のある者につき、法務大臣がこれを任命する。同項第一号及び第三号の委員の予備委員の任命については、同条第二項の規定を準用する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前条第一項第二号の委員の予備委員は、日本弁護士連合会の副会長のうち年長者一名につき、法務大臣がこれを任命する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員及び予備委員の任期は、二年とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、再任されることができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員及び予備委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会に会長を置き、委員の互選により選任する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、会務を総理し、審査会を代表する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長に事故があるときは、あらかじめその指名する委員が、その職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会は、委員の九人以上が出席しなければ、会議を開き、議決することができない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会の議事は、委員で会議に出席したものの過半数で決し、可否同数のときは、会長の決するところによる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会は、審査のため必要があるときは、法務大臣又は検察庁の長に対し書類の提出を求め、又は必要な事項の報告を徴することができる。但し、捜査中の犯罪事件については、この限りでない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会は、審査に付された検察官及びその者の属する検察庁の長をして会議に出席して意見を述べさせることができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会は、審査に付された検察官に不適格の疑があるときは、当該検察官に対し、あらかじめ相当な期間を置いて会議の理由を通告した上、会議に出席して弁解し、且つ、有利な証拠を提出する機会を与えなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第八条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審査会の庶務は、法務省大臣官房人事課において処理する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

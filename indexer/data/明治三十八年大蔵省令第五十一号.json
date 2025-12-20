@@ -1,0 +1,22 @@
+{
+  "law_id": "明治三十八年大蔵省令第五十一号",
+  "law_name": "明治三十八年大蔵省令第五十一号（印紙貼用方ノ件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "収入印紙ヲ以テ手数料ヲ納ムルトキハ其金額ニ相当スル印紙ヲ願書其他ノ書類ニ貼付スヘシ"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

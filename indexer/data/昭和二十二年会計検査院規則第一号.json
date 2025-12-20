@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和二十二年会計検査院規則第一号",
+  "law_name": "会計検査院規則の公布に関する規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会計検査院規則には、会計検査院長が年月日を記入して、これに署名する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会計検査院規則は、官報で、これを公布する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会計検査院規則は、特に施行期日を定めない場合には、公布の日から起算し二十日を経て、これを施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

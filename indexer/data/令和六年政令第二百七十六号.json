@@ -1,0 +1,79 @@
+{
+  "law_id": "令和六年政令第二百七十六号",
+  "law_name": "国土強靱化推進本部令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "国土強"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "議長に事故があるときは、あらかじめその指名する委員が、その職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "推進会議は、委員の過半数が出席しなければ、会議を開き、議決することができない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "推進会議の議事は、出席した委員の過半数で決し、可否同数のときは、議長の決するところによる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前二項に定めるもののほか、議事の手続その他推進会議の運営に関し必要な事項は、議長が推進会議に諮って定める。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、国土強靱化推進本部の運営に関し必要な事項は、国土強靱化推進本部長が国土強靱化推進本部に諮って定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

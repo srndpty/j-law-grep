@@ -1,0 +1,98 @@
+{
+  "law_id": "平成二十四年政令第百七十四号",
+  "law_name": "特定タンカーに係る特定賠償義務履行担保契約等に関する特別措置法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "特定タンカーに係る特定賠償義務履行担保契約等に関する特別措置法（以下「法」という。）第二条第十号イの政令で定める金額は、十五億円とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第二条第十一号ロの政令で定める金額は、一兆三千五百六十九億二千八百三十万七千円とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第五条の政令で定める金額は、二千二百万円とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第十二条第一項第二号の政令で定める期限は、法第三条第一項に規定する特定保険者交付金交付契約の締結の日とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第十二条第一項第五号の政令で定める法律は、次のとおりとする。"
+            },
+            {
+              "item_no": 1,
+              "text": "船舶安全法（昭和八年法律第十一号）"
+            },
+            {
+              "item_no": 2,
+              "text": "船員法（昭和二十二年法律第百号）"
+            },
+            {
+              "item_no": 3,
+              "text": "船舶職員及び小型船舶操縦者法（昭和二十六年法律第百四十九号）"
+            },
+            {
+              "item_no": 4,
+              "text": "海洋汚染等及び海上災害の防止に関する法律（昭和四十五年法律第百三十六号）"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

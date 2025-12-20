@@ -1,0 +1,76 @@
+{
+  "law_id": "平成十六年政令第二百四十一号",
+  "law_name": "金融機能強化審査会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "金融機能強化審査会は、委員の過半数が出席しなければ、会議を開き、議決することができない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "金融機能強化審査会の議事は、委員で会議に出席したものの過半数で決し、可否同数のときは、会長の決するところによる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "金融機能強化審査会の庶務は、金融庁監督局銀行第二課において処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、議事の手続その他金融機能強化審査会の運営に関し必要な事項は、会長が金融機能強化審査会に諮って定める。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、金融機能の強化のための特別措置に関する法律の施行の日（平成十六年八月一日）から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

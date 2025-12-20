@@ -1,0 +1,412 @@
+{
+  "law_id": "平成十三年政令第二百三十号",
+  "law_name": "水産政策審議会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "水産政策審議会（以下「審議会」という。）は、水産基本法第三十六条に規定するもののほか、プラスチックに係る資源循環の促進等に関する法律（令和三年法律第六十号）の規定に基づきその権限に属させられた事項を処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条の二",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に、特別の事項を調査審議させるため必要があるときは、特別委員を置くことができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "特別委員は、学識経験のある者のうちから、農林水産大臣が任命する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の任期は、二年とする。ただし、補欠の委員の任期は、前任者の残任期間とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、再任されることができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "特別委員は、その者の任命に係る当該特別の事項に関する調査審議が終了したときは、解任されるものとする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "特別委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に会長を置き、委員の互選により選任する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、会務を総理し、審議会を代表する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長に事故があるときは、あらかじめその指名する委員が、その職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に、次の表の上欄に掲げる分科会を置き、これらの分科会の所掌事務は、審議会の所掌事務のうち、それぞれ同表の下欄に掲げるとおりとする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項の表の上欄に掲げる分科会に属すべき委員及び特別委員は、会長が指名する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "分科会に分科会長を置き、当該分科会に属する委員の互選により選任する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "分科会長は、当該分科会の事務を掌理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 5,
+          "items": [
+            {
+              "item_no": null,
+              "text": "分科会長に事故があるときは、当該分科会に属する委員のうちから分科会長があらかじめ指名する者が、その職務を代理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 6,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会は、その定めるところにより、分科会の議決（次条第六項の規定により分科会の議決とされるものを含む。）をもって審議会の議決とすることができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会及び分科会は、その定めるところにより、部会を置くことができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "部会に属すべき委員及び特別委員は、会長（分科会に置かれる部会にあっては、分科会長）が指名する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "部会に部会長を置き、当該部会に属する委員の互選により選任する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "部会長は、当該部会の事務を掌理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 5,
+          "items": [
+            {
+              "item_no": null,
+              "text": "部会長に事故があるときは、当該部会に属する委員のうちから部会長があらかじめ指名する者が、その職務を代理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 6,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会（分科会に置かれる部会にあっては、分科会。以下この項において同じ。）は、その定めるところにより、部会の議決をもって審議会の議決とすることができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会に、幹事を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、関係行政機関の職員のうちから、農林水産大臣が任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、審議会の所掌事務について、委員を補佐する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "幹事は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第八条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会は、委員の過半数が出席しなければ、会議を開き、議決することができない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会の議事は、委員で会議に出席したものの過半数で決し、可否同数のときは、会長の決するところによる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前二項の規定は、分科会及び部会の議事に準用する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第九条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会の庶務は、水産庁漁政部漁政課において国土交通省国土政策局地域振興課の協力を得て処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、議事の手続その他審議会の運営に関し必要な事項は、会長が審議会に諮って定める。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、平成十四年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、改正法施行日（令和二年十二月一日）から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、法の施行の日（令和四年四月一日）から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "law_id": "昭和四十一年政令第三百七十六号",
+  "law_name": "建国記念の日となる日を定める政令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "国民の祝日に関する法律第二条に規定する建国記念の日は、二月十一日とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

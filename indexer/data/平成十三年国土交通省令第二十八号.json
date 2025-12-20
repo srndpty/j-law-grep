@@ -1,0 +1,37 @@
+{
+  "law_id": "平成十三年国土交通省令第二十八号",
+  "law_name": "国土交通省定員規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "国土交通省の本省及び各外局別の定員は、次の表のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本省及び各外局の各内部部局、各審議会等、各施設等機関、各特別の機関及び各地方支分部局別の定員は、前条に定める本省又は各外局別の定員の範囲内において、国土交通大臣が別に定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

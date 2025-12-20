@@ -1,0 +1,82 @@
+{
+  "law_id": "昭和二十六年運輸省・建設省令第三号",
+  "law_name": "自動車道標識の様式を定める省令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "自動車道標識の様式は、別表の通りとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、昭和二十六年十一月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、昭和四十年十二月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令の施行の際現に改正前の自動車道標識の様式を定める省令の規定により設置されている自動車道標識の様式のうち、次の表の上欄に掲げる改正前の同省令の規定による事項を表示する自動車道標識の様式は、当分の間、それぞれ同表の下欄に掲げる改正後の同省令の規定による事項を表示する自動車道標識の様式とみなす。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "3",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令の施行の際現に改正前の自動車道標識の様式を定める省令の規定により設置されている自動車道標識に改正前の同省令の規定により取り付けられている補助板は、当分の間、改正後の同省令の規定による補助標識の標示板とみなす。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

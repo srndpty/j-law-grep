@@ -1,0 +1,37 @@
+{
+  "law_id": "昭和十三年勅令第五百十七号",
+  "law_name": "陸上交通事業調整法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第十四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、建設院設置法施行の日から、これを施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和六十二年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

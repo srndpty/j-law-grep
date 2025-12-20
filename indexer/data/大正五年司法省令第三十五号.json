@@ -1,0 +1,37 @@
+{
+  "law_id": "大正五年司法省令第三十五号",
+  "law_name": "大正五年司法省令第三十五号（司法省主管歳入証券納付ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "司法省主管ノ歳入ハ別段ノ規定アルモノヲ除クノ外証券ヲ以テ之ヲ納付スルコトヲ得"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "政府以外ノ者ノ振出シタル小切手又ハ為替手形ハ罰金、科料、過料、刑事追徴金、訴訟費用及非訟事件ノ費用ノ納付ニ之ヲ使用スルコトヲ得ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "law_id": "平成二十四年環境省令第二十八号",
+  "law_name": "環境省定員規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "環境省の本省及び原子力規制委員会の定員は、次の表のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本省及び原子力規制委員会の各内部部局、各施設等機関及び地方支分部局別の定員は、前条に定める本省又は原子力規制委員会の定員の範囲内において、環境大臣が別に定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

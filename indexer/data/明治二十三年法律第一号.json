@@ -1,0 +1,67 @@
+{
+  "law_id": "明治二十三年法律第一号",
+  "law_name": "保管金規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法律勅令又ハ従来ノ規則ニ依リ政府ニ於テ保管スル公有金私有金ハ左ノ計算法ニ従ヒ満五年ヲ過キテ払戻ノ請求ナキトキハ政府ノ所得トス但別ニ法律ヲ以テ失権ノ期限ヲ定メタルモノハ各其定ムル所ニ依ル"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "保管金ハ法律勅令又ハ従来ノ規則若クハ契約ニ依ルノ外利子ヲ付セス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "保管金ノ証書ハ売買譲与又ハ書入質入スルコトヲ得ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この法律は、昭和四十二年六月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

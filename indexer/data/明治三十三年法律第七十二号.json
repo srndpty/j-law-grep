@@ -1,0 +1,46 @@
+{
+  "law_id": "明治三十三年法律第七十二号",
+  "law_name": "明治三十三年法律第七十二号（地上権ニ関スル法律）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本法施行前他人ノ土地ニ於テ工作物又ハ竹木ヲ所有スル為其ノ土地ヲ使用スル者ハ地上権者ト推定ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "第一条ノ地上権者ハ本法施行ノ日ヨリ一箇年内ニ登記ヲ為スニ非サレハ之ヲ以テ第三者ニ対抗スルコトヲ得ス"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項ノ規定ハ本法施行前ニ善意ニテ取得シタル第三者ノ権利ヲ害スルコトナシ"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

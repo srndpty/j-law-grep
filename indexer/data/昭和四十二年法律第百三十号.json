@@ -1,0 +1,67 @@
+{
+  "law_id": "昭和四十二年法律第百三十号",
+  "law_name": "計理士の名称の使用に関する法律",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "昭和四十二年三月三十一日において、大蔵省に備える計理士名簿に登録を受けていた者は、財務書類の調製をし、財務に関する調査若しくは立案をし、又は財務に関する相談に応ずる業務（他の法律においてその業務を行なうことが制限されているものを除く。）を営むについて計理士の名称を使用することができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項に規定する者以外の者は、計理士の名称を使用してはならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "3",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項の規定に違反した者は、二万円以下の過料に処する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この法律は、公布の日から起算して十日を経過した日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

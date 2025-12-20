@@ -1,0 +1,64 @@
+{
+  "law_id": "令和七年政令第二百八十一号",
+  "law_name": "人工知能戦略本部令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人工知能戦略本部（次条において「本部」という。）は、専門の事項を調査させるため必要があるときは、その議決により、専門調査会を置くことができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "専門調査会の委員は、当該専門の事項に関し学識経験を有する者のうちから、内閣総理大臣が任命する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "専門調査会の委員は、非常勤とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "専門調査会は、その設置に係る調査が終了したときは、廃止されるものとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、本部の運営に関し必要な事項は、人工知能戦略本部長が本部に諮って定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

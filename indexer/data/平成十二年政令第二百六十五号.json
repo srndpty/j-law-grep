@@ -1,0 +1,46 @@
+{
+  "law_id": "平成十二年政令第二百六十五号",
+  "law_name": "公認会計士・監査審査会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "公認会計士・監査審査会（以下「審査会」という。）の事務局長は、関係のある他の職を占める者をもって充てられるものとする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項に定めるもののほか、審査会の事務局の内部組織の細目は、内閣府令で定める。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、議事の手続その他審査会の運営に関し必要な事項は、会長が審査会に諮って定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
