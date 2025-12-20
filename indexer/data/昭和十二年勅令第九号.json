@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和十二年勅令第九号",
+  "law_name": "文化勲章令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "文化勲章ハ文化ノ発達ニ関シ勲績卓絶ナル者ニ之ヲ賜フ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "文化勲章ハ綬ヲ以テ胸部中央ニ之ヲ佩ブ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

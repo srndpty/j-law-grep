@@ -1,0 +1,76 @@
+{
+  "law_id": "平成十七年政令第二百九十九号",
+  "law_name": "日本学術会議法施行令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "日本学術会議連携会員（以下「連携会員」という。）の任期は、六年とする。ただし、一定の期間内に限ってその職務を行わせることが必要である場合には、六年未満の任期を定めて任命することを妨げない。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "連携会員は、再任されることができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、連携会員から病気その他やむを得ない事由による辞職の申出があったときは、その辞職を承認することができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、連携会員に連携会員として不適当な行為があるときは、日本学術会議法第二十八条の規定による規則（以下単に「規則」という。）で定めるところにより、当該連携会員を退職させることができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、連携会員に関し必要な事項は、規則で定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "law_id": "明治八年太政官布告第百三号",
+  "law_name": "明治八年太政官布告第百三号（裁判事務心得）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "一民事ノ裁判ニ成文ノ法律ナキモノハ習慣ニ依リ習慣ナキモノハ条理ヲ推考シテ裁判スヘシ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "一裁判官ノ裁判シタル言渡ヲ以テ将来ニ例行スル一般ノ定規トスルコトヲ得ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "一頒布セル布告布達ヲ除クノ外諸官省随時事ニ就テノ指令ハ将来裁判所ノ準拠スヘキ一般ノ定規トスルコトヲ得ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

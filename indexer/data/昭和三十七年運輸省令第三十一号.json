@@ -1,0 +1,85 @@
+{
+  "law_id": "昭和三十七年運輸省令第三十一号",
+  "law_name": "海上保安庁職員服制",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "海上保安庁職員（以下「職員」という。）の制服は、別表第一に定めるとおりとする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "職員の制帽は、別表第二に定めるとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "制服に付けるそで章、胸章又は肩章は、別表第三に定めるとおりとする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "制帽に付けるひさし章又はあごひも章は、別表第四に定めるとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "職員は、海上保安庁長官（以下「長官」という。）が定める場合を除き、執務中、制服及び制帽を着用しなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "服制に関する細目は、長官が定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

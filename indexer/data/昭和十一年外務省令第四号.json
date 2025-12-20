@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和十一年外務省令第四号",
+  "law_name": "昭和十一年外務省令第四号（外務省並ニ在外公館ヘ納ムル収入印紙ノ消印方）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "外務省並ニ在外公館ニ於テ徴収スル手数料、出張費用、罰金、科料、過料、刑事追徴金、訴訟費用、非訟事件ノ費用及登録税トシテ納ムル収入印紙ハ主任官吏ニ於テ消印ヲ為スヘシ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "明治三十年外務省令第七号ハ之ヲ廃止ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

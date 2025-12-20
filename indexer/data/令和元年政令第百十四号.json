@@ -1,0 +1,37 @@
+{
+  "law_id": "令和元年政令第百十四号",
+  "law_name": "食品ロス削減推進会議令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "食品ロス削減推進会議の庶務は、消費者庁消費者教育推進課において処理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前条に定めるもののほか、議事の手続その他食品ロス削減推進会議の運営に関し必要な事項は、会長が食品ロス削減推進会議に諮って定める。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,510 @@
+{
+  "law_id": "昭和五十年自治省令第二十六号",
+  "law_name": "泡消火薬剤の技術上の規格を定める省令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令において、次の各号に掲げる用語の意義は、当該各号に定めるところによる。"
+            },
+            {
+              "item_no": 1,
+              "text": "基剤に"
+            },
+            {
+              "item_no": 2,
+              "text": "たん白たん白質を加水分解したものを基剤とする"
+            },
+            {
+              "item_no": 3,
+              "text": "合成界面活性剤合成界面活性剤を基剤とする"
+            },
+            {
+              "item_no": 4,
+              "text": "水成膜合成界面活性剤を基剤とする"
+            },
+            {
+              "item_no": 5,
+              "text": "大容量石油コンビナート等災害防止法施行令（昭和五十一年政令第百二十九号）第十四条第五項に規定する大容量"
+            },
+            {
+              "item_no": 6,
+              "text": "ただし、大容量"
+            },
+            {
+              "item_no": 7,
+              "text": "変質試験後の"
+            },
+            {
+              "item_no": 8,
+              "text": "変質試験後の変質試験後の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": 1,
+              "text": "均質であること。"
+            },
+            {
+              "item_no": 2,
+              "text": "変質防止のための有効な措置が講じられていること。"
+            },
+            {
+              "item_no": 3,
+              "text": "発生した"
+            },
+            {
+              "item_no": 4,
+              "text": "著しい毒性又は損傷性を有しないものであること。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": null,
+          "items": [
+            {
+              "item_no": null,
+              "text": "比重の範囲たん白一・一〇以上 一・二〇以下合成界面活性剤〇・九〇以上 一・二〇以下水成膜一・〇〇以上 一・一五以下"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第八条",
+      "paragraphs": [
+        {
+          "paragraph_no": null,
+          "items": [
+            {
+              "item_no": null,
+              "text": "水素イオン濃度の範囲たん白六・〇以上 七・五以下合成界面活性剤六・五以上 八・五以下水成膜六・〇以上 八・五以下"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第九条",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前項の測定後の"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "変質試験後の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "鋼、黄銅及びアルミニウム（以下この条において「鋼等」という。）を温度三十八度の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "温度二十度の変質試験後の"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "温度二十度の変質試験後の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "変質試験後の"
+            },
+            {
+              "item_no": 1,
+              "text": "消火に要する時間は五分以内であること。"
+            },
+            {
+              "item_no": 2,
+              "text": "発"
+            },
+            {
+              "item_no": 3,
+              "text": "発"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "合成界面活性剤変質試験後の"
+            },
+            {
+              "item_no": 1,
+              "text": "百二十八リツトルの水及び八十リツトルのガソリンを入れた別図第五に示すＢ火災模型（高発"
+            },
+            {
+              "item_no": 2,
+              "text": "別図第六に示すＡ火災模型（高発"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "変質試験後の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": 1,
+              "text": "ＪＩＳＺ一六〇一に適合する鋼製タイトヘッドドラム"
+            },
+            {
+              "item_no": 2,
+              "text": "ＪＩＳＺ一六二〇に適合する鋼製ペール"
+            },
+            {
+              "item_no": 3,
+              "text": "ＪＩＳＺ一七〇六に適合するポリエチレンかん"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": 1,
+              "text": "種別"
+            },
+            {
+              "item_no": 2,
+              "text": "型式"
+            },
+            {
+              "item_no": 4,
+              "text": "使用温度範囲"
+            },
+            {
+              "item_no": 5,
+              "text": "取扱い上の注意事項"
+            },
+            {
+              "item_no": 6,
+              "text": "製造年月"
+            },
+            {
+              "item_no": 7,
+              "text": "製造番号"
+            },
+            {
+              "item_no": 8,
+              "text": "製造者名又は商標"
+            },
+            {
+              "item_no": 9,
+              "text": "型式番号"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大容量"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十八条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大容量"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第十九条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "温度二十度の大容量変質試験後の"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二十条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大容量変質試験後の"
+            },
+            {
+              "item_no": 1,
+              "text": "消火に要する時間は四分以内であること。"
+            },
+            {
+              "item_no": 2,
+              "text": "発"
+            },
+            {
+              "item_no": 3,
+              "text": "発"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二十一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "大容量"
+            },
+            {
+              "item_no": 1,
+              "text": "種別"
+            },
+            {
+              "item_no": 2,
+              "text": "型式"
+            },
+            {
+              "item_no": 3,
+              "text": "大容量"
+            },
+            {
+              "item_no": 4,
+              "text": "使用温度範囲"
+            },
+            {
+              "item_no": 5,
+              "text": "取扱い上の注意事項"
+            },
+            {
+              "item_no": 6,
+              "text": "製造年月"
+            },
+            {
+              "item_no": 7,
+              "text": "製造番号"
+            },
+            {
+              "item_no": 8,
+              "text": "製造者名又は商標"
+            },
+            {
+              "item_no": 9,
+              "text": "型式番号"
+            },
+            {
+              "item_no": 10,
+              "text": "大容量"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二十二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "第七条から第十一条まで、第十四条及び第十五条の規定は大容量"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二十三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "新たな技術開発に係る"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、平成十一年十月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令の施行の際、現に日本消防検定協会の行う検定対象機械器具等についての試験を申請をしている消火器、消火薬剤、閉鎖型スプリンクラーヘッド、消防用ホース、一斉開放弁、"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 7,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令の施行の際、現に型式承認を受けている"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

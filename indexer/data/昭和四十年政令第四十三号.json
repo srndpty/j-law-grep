@@ -1,0 +1,623 @@
+{
+  "law_id": "昭和四十年政令第四十三号",
+  "law_name": "河川法第四条第一項の水系を指定する政令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "河川法第四条第一項の水系は、次の各号に掲げるものとする。"
+            },
+            {
+              "item_no": 1,
+              "text": "天塩川水系"
+            },
+            {
+              "item_no": 2,
+              "text": "渚滑川水系"
+            },
+            {
+              "item_no": 3,
+              "text": "湧別川水系"
+            },
+            {
+              "item_no": 4,
+              "text": "常呂川水系"
+            },
+            {
+              "item_no": 5,
+              "text": "網走川水系"
+            },
+            {
+              "item_no": 6,
+              "text": "留萌川水系"
+            },
+            {
+              "item_no": 7,
+              "text": "石狩川水系"
+            },
+            {
+              "item_no": 8,
+              "text": "尻別川水系"
+            },
+            {
+              "item_no": 9,
+              "text": "後志利別川水系"
+            },
+            {
+              "item_no": 10,
+              "text": "鵡川水系"
+            },
+            {
+              "item_no": 11,
+              "text": "沙流川水系"
+            },
+            {
+              "item_no": 12,
+              "text": "釧路川水系"
+            },
+            {
+              "item_no": 13,
+              "text": "十勝川水系"
+            },
+            {
+              "item_no": 14,
+              "text": "岩木川水系"
+            },
+            {
+              "item_no": 15,
+              "text": "高瀬川水系"
+            },
+            {
+              "item_no": 16,
+              "text": "馬淵川水系"
+            },
+            {
+              "item_no": 17,
+              "text": "北上川水系"
+            },
+            {
+              "item_no": 18,
+              "text": "鳴瀬川水系"
+            },
+            {
+              "item_no": 19,
+              "text": "名取川水系"
+            },
+            {
+              "item_no": 20,
+              "text": "阿武隈川水系"
+            },
+            {
+              "item_no": 21,
+              "text": "米代川水系"
+            },
+            {
+              "item_no": 22,
+              "text": "雄物川水系"
+            },
+            {
+              "item_no": 23,
+              "text": "子吉川水系"
+            },
+            {
+              "item_no": 24,
+              "text": "最上川水系"
+            },
+            {
+              "item_no": 25,
+              "text": "赤川水系"
+            },
+            {
+              "item_no": 26,
+              "text": "久慈川水系"
+            },
+            {
+              "item_no": 27,
+              "text": "那珂川水系"
+            },
+            {
+              "item_no": 28,
+              "text": "利根川水系"
+            },
+            {
+              "item_no": 29,
+              "text": "荒川水系（東京都・埼玉県）"
+            },
+            {
+              "item_no": 30,
+              "text": "多摩川水系"
+            },
+            {
+              "item_no": 31,
+              "text": "鶴見川水系"
+            },
+            {
+              "item_no": 32,
+              "text": "相模川水系"
+            },
+            {
+              "item_no": 33,
+              "text": "荒川水系（新潟県・山形県）"
+            },
+            {
+              "item_no": 34,
+              "text": "阿賀野川水系"
+            },
+            {
+              "item_no": 35,
+              "text": "信濃川水系"
+            },
+            {
+              "item_no": 36,
+              "text": "関川水系"
+            },
+            {
+              "item_no": 37,
+              "text": "姫川水系"
+            },
+            {
+              "item_no": 38,
+              "text": "黒部川水系"
+            },
+            {
+              "item_no": 39,
+              "text": "常願寺川水系"
+            },
+            {
+              "item_no": 40,
+              "text": "神通川水系"
+            },
+            {
+              "item_no": 41,
+              "text": "庄川水系"
+            },
+            {
+              "item_no": 42,
+              "text": "小矢部川水系"
+            },
+            {
+              "item_no": 43,
+              "text": "手取川水系"
+            },
+            {
+              "item_no": 44,
+              "text": "梯川水系"
+            },
+            {
+              "item_no": 45,
+              "text": "狩野川水系"
+            },
+            {
+              "item_no": 46,
+              "text": "富士川水系"
+            },
+            {
+              "item_no": 47,
+              "text": "安倍川水系"
+            },
+            {
+              "item_no": 48,
+              "text": "大井川水系"
+            },
+            {
+              "item_no": 49,
+              "text": "菊川水系"
+            },
+            {
+              "item_no": 50,
+              "text": "天竜川水系"
+            },
+            {
+              "item_no": 51,
+              "text": "豊川水系"
+            },
+            {
+              "item_no": 52,
+              "text": "矢作川水系"
+            },
+            {
+              "item_no": 53,
+              "text": "庄内川水系"
+            },
+            {
+              "item_no": 54,
+              "text": "木曾川水系"
+            },
+            {
+              "item_no": 55,
+              "text": "鈴鹿川水系"
+            },
+            {
+              "item_no": 56,
+              "text": "雲出川水系"
+            },
+            {
+              "item_no": 57,
+              "text": "櫛田川水系"
+            },
+            {
+              "item_no": 58,
+              "text": "宮川水系"
+            },
+            {
+              "item_no": 59,
+              "text": "由良川水系"
+            },
+            {
+              "item_no": 60,
+              "text": "淀川水系"
+            },
+            {
+              "item_no": 61,
+              "text": "大和川水系"
+            },
+            {
+              "item_no": 62,
+              "text": "円山川水系"
+            },
+            {
+              "item_no": 63,
+              "text": "加古川水系"
+            },
+            {
+              "item_no": 64,
+              "text": "揖保川水系"
+            },
+            {
+              "item_no": 65,
+              "text": "紀の川水系"
+            },
+            {
+              "item_no": 66,
+              "text": "新宮川水系"
+            },
+            {
+              "item_no": 67,
+              "text": "九頭竜川水系"
+            },
+            {
+              "item_no": 68,
+              "text": "北川水系"
+            },
+            {
+              "item_no": 69,
+              "text": "千代川水系"
+            },
+            {
+              "item_no": 70,
+              "text": "天神川水系"
+            },
+            {
+              "item_no": 71,
+              "text": "日野川水系"
+            },
+            {
+              "item_no": 72,
+              "text": "斐伊川水系"
+            },
+            {
+              "item_no": 73,
+              "text": "江の川水系"
+            },
+            {
+              "item_no": 74,
+              "text": "高津川水系"
+            },
+            {
+              "item_no": 75,
+              "text": "吉井川水系"
+            },
+            {
+              "item_no": 76,
+              "text": "旭川水系"
+            },
+            {
+              "item_no": 77,
+              "text": "高梁川水系"
+            },
+            {
+              "item_no": 78,
+              "text": "芦田川水系"
+            },
+            {
+              "item_no": 79,
+              "text": "太田川水系"
+            },
+            {
+              "item_no": 80,
+              "text": "小瀬川水系"
+            },
+            {
+              "item_no": 81,
+              "text": "佐波川水系"
+            },
+            {
+              "item_no": 82,
+              "text": "吉野川水系"
+            },
+            {
+              "item_no": 83,
+              "text": "那賀川水系"
+            },
+            {
+              "item_no": 84,
+              "text": "土器川水系"
+            },
+            {
+              "item_no": 85,
+              "text": "重信川水系"
+            },
+            {
+              "item_no": 86,
+              "text": "肱川水系"
+            },
+            {
+              "item_no": 87,
+              "text": "物部川水系"
+            },
+            {
+              "item_no": 88,
+              "text": "仁淀川水系"
+            },
+            {
+              "item_no": 89,
+              "text": "渡川水系"
+            },
+            {
+              "item_no": 90,
+              "text": "遠賀川水系"
+            },
+            {
+              "item_no": 91,
+              "text": "山国川水系"
+            },
+            {
+              "item_no": 92,
+              "text": "筑後川水系"
+            },
+            {
+              "item_no": 93,
+              "text": "矢部川水系"
+            },
+            {
+              "item_no": 94,
+              "text": "松浦川水系"
+            },
+            {
+              "item_no": 95,
+              "text": "六角川水系"
+            },
+            {
+              "item_no": 96,
+              "text": "嘉瀬川水系"
+            },
+            {
+              "item_no": 97,
+              "text": "本明川水系"
+            },
+            {
+              "item_no": 98,
+              "text": "菊池川水系"
+            },
+            {
+              "item_no": 99,
+              "text": "白川水系"
+            },
+            {
+              "item_no": 100,
+              "text": "緑川水系"
+            },
+            {
+              "item_no": 101,
+              "text": "球磨川水系"
+            },
+            {
+              "item_no": 102,
+              "text": "大分川水系"
+            },
+            {
+              "item_no": 103,
+              "text": "大野川水系"
+            },
+            {
+              "item_no": 104,
+              "text": "番匠川水系"
+            },
+            {
+              "item_no": 105,
+              "text": "五ケ瀬川水系"
+            },
+            {
+              "item_no": 106,
+              "text": "小丸川水系"
+            },
+            {
+              "item_no": 107,
+              "text": "大淀川水系"
+            },
+            {
+              "item_no": 108,
+              "text": "川内川水系"
+            },
+            {
+              "item_no": 109,
+              "text": "肝属川水系"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、河川法の施行の日（昭和四十年四月一日）から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十一年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十二年六月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十三年四月二十日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十四年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十五年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十五年五月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十六年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和四十七年五月四日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、昭和五十年四月十二日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

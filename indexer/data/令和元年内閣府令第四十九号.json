@@ -1,0 +1,206 @@
+{
+  "law_id": "令和元年内閣府令第四十九号",
+  "law_name": "カジノ管理委員会事務局組織規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "総務課に、企画官一人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画官は、命を受けて、総務課の所掌事務のうち特定事項の調査、企画及び立案を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画課に、国際室及び企画官一人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "国際室は、次に掲げる事務をつかさどる。"
+            },
+            {
+              "item_no": 1,
+              "text": "カジノ管理委員会の所掌事務に係る国際協力に関する事務の総括に関すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "カジノ管理委員会の所掌事務に係る国際会議その他の国際的な枠組み並びに外国の行政機関及び団体との連絡調整に関すること。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "国際室に、室長を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画官は、命を受けて、企画課の所掌事務のうち特定事項の調査、企画及び立案を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "監督総括課に、企画官一人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画官は、命を受けて、監督総括課の所掌事務のうち特定事項の調査、企画及び立案を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "規制監督課に、機器技術監督室及び犯罪収益移転防止対策室並びに企画官一人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "機器技術監督室は、次に掲げる事務（総務企画部並びに調査課及び財務監督課の所掌に属するものを除く。）をつかさどる。"
+            },
+            {
+              "item_no": 1,
+              "text": "カジノ事業の監督に関する事務のうち、カジノ関連機器等に関すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "カジノ関連機器等製造業等の監督に関すること。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "機器技術監督室に、室長を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "犯罪収益移転防止対策室は、カジノ事業の監督に関する事務のうち、カジノ事業における犯罪による収益の移転防止に関する事務をつかさどる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 5,
+          "items": [
+            {
+              "item_no": null,
+              "text": "犯罪収益移転防止対策室に、室長を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 6,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画官は、命を受けて、規制監督課の所掌事務のうち特定事項の調査、企画及び立案を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "調査課に、企画官一人及び調査官二人を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "企画官は、命を受けて、調査課の所掌事務のうち特定事項の調査、企画及び立案を行う。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "調査官は、命を受けて、調査課の所掌事務のうち専門的事項の調査及び連絡調整を行う。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和二十二年運輸省・内務省令第二号",
+  "law_name": "昭和二十二年運輸省・内務省令第二号（軌道法第三十一条の一般交通の用に供する軌道に準ずべきものを定める省令）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "軌道法第三十一条第二項の規定により、一般交通の用に供する軌道に準ずべきものを、次のとおりとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、昭和二十三年一月一日から、これを施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令施行前に生じた事項については、この省令施行後でも、なお、従前の例による。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

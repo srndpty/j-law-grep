@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和十一年逓信省令第七十一号",
+  "law_name": "英国船舶ノ検査ニ関スル件",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "英国政府ニ於テ交付シタル旅客及安全証書ハ船舶安全法第十五条第一項ノ規定ニ依リ同法ニ依リ交付シタル船舶検査証書ト同一ノ効力ヲ有スルモノトス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "law_id": "明治二十二年法律第三十四号",
+  "law_name": "明治二十二年法律第三十四号（決闘罪ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "決闘ヲ挑ミタル者又ハ其挑ニ応シタル者ハ六月以上二年以下ノ拘禁刑ニ処ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "決闘ヲ行ヒタル者ハ二年以上五年以下ノ拘禁刑ニ処ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "決闘ニ依テ人ヲ殺傷シタル者ハ刑法ノ各本条ニ照シテ処断ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "決闘ノ立会ヲ為シ又ハ立会ヲ為スコトヲ約シタル者ハ証人介添人等何等ノ名義ヲ以テスルニ拘ラス一年以下ノ拘禁刑ニ処ス"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "情ヲ知テ決闘ノ場所ヲ貸与シ又ハ供用セシメタル者ハ罰前項ニ同シ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "決闘ノ挑ニ応セサルノ故ヲ以テ人ヲ誹毀シタル者ハ刑法ニ照シ誹毀ノ罪ヲ以テ論ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "前数条ニ記載シタル犯罪刑法ニ照シ其重キモノハ重キニ従テ処断ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

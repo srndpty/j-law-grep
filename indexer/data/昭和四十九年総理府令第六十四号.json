@@ -1,0 +1,37 @@
+{
+  "law_id": "昭和四十九年総理府令第六十四号",
+  "law_name": "公害医療機関の診療報酬の請求に関する省令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令の施行の際現に存するこの省令による改正前の様式による用紙については、当分の間、これを取り繕って使用することができる。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

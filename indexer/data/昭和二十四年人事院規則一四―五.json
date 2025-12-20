@@ -1,0 +1,68 @@
+{
+  "law_id": "昭和二十四年人事院規則一四―五",
+  "law_name": "人事院規則一四―五（公選による公職）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法及び規則中公選による公職とは、次に掲げるものの職とする。"
+            },
+            {
+              "item_no": 1,
+              "text": "衆議院議員"
+            },
+            {
+              "item_no": 2,
+              "text": "参議院議員"
+            },
+            {
+              "item_no": 3,
+              "text": "地方公共団体の長"
+            },
+            {
+              "item_no": 4,
+              "text": "地方公共団体の議会の議員"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この規則は、平成二十八年四月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この規則は、令和二年十二月一日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

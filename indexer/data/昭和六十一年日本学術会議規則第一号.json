@@ -1,0 +1,158 @@
+{
+  "law_id": "昭和六十一年日本学術会議規則第一号",
+  "law_name": "日本学術会議傍聴規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "日本学術会議の総会の傍聴に関しては、この規則の定めるところによる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴しようとする者（以下「傍聴人」という。）は、その氏名、所属及び連絡先を登録しなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "凶器その他危険な物を持つている者、酒気を帯びている者その他議事の運営に支障を及ぼすと認められる者は、傍聴することができない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴人は、議場に入ることができない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第五条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴人が傍聴席にあるときは、次の事項を守らなければならない。"
+            },
+            {
+              "item_no": 1,
+              "text": "飲食又は喫煙をしないこと。"
+            },
+            {
+              "item_no": 2,
+              "text": "みだりに傍聴席を離れないこと。"
+            },
+            {
+              "item_no": 3,
+              "text": "議場における言論に対して賛否を表明し、又は拍手をしないこと。"
+            },
+            {
+              "item_no": 4,
+              "text": "静粛を旨とし、議事の妨害になるような行為をしないこと。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第六条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴人は、公開しないこととする議決があつたときは、速やかに退席しなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第七条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴人は、事務局係員の指示に従わなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第八条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "傍聴人がこの規則に違反したときは、退席させられることがある。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第九条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "議長は、議事の運営上必要があると認めるときは、傍聴、撮影又は録音を制限することができる。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

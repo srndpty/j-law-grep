@@ -1,0 +1,37 @@
+{
+  "law_id": "大正六年外務省令第二号",
+  "law_name": "大正六年外務省令第二号（外務省主管歳入証券納付ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "外務省主管ノ歳入ハ別段ノ規定アルモノヲ除クノ外証券ヲ以テ之ヲ納付スルコトヲ得"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本令ハ公布ノ日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

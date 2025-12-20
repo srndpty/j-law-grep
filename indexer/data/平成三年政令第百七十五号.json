@@ -1,0 +1,127 @@
+{
+  "law_id": "平成三年政令第百七十五号",
+  "law_name": "土地評価審議会令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "土地評価審議会（以下「審議会」という。）に会長を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、委員の互選により定める。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長は、会務を総理する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "会長に事故があるときは、あらかじめその指名する委員がその職務を代理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員の任期は、二年とする。ただし、委員が欠けた場合における補欠の委員の任期は、前任者の残任期間とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、再任されることができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "委員は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第三条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "審議会は、土地の評価に関する基本的事項で財務省令で定めるものを調査審議するため必要があると認めるときは、学識経験がある者の出席を求め、その意見を聴くことができる。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第四条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令に定めるもののほか、議事の手続その他審議会の運営に関し必要な事項は、会長が審議会に諮って定める。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この政令は、平成十三年一月六日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

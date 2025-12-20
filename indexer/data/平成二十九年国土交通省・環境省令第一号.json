@@ -1,0 +1,37 @@
+{
+  "law_id": "平成二十九年国土交通省・環境省令第一号",
+  "law_name": "特定現存船を定める省令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "海洋汚染等及び海上災害の防止に関する法律施行令の一部を改正する政令附則第五条第一項の特定現存船は、同令附則第二条各号に掲げる水域以外の水域のみを航行する船舶とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この省令は、平成二十九年九月八日から施行する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

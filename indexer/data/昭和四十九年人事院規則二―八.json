@@ -1,0 +1,109 @@
+{
+  "law_id": "昭和四十九年人事院規則二―八",
+  "law_name": "人事院規則二―八（人事院の顧問及び参与）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事院に、顧問若干人を置くことができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "顧問は、人事院の所掌する事務のうち、人事行政上の重要事項について、人事院の諮問に答える。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "顧問は、人事行政に関し学識経験のある者のうちから、総裁が委嘱する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "顧問の任期は、二年とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 5,
+          "items": [
+            {
+              "item_no": null,
+              "text": "顧問は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事院に、参与十二人以内を置くことができる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "参与は、人事院の所掌する事務のうち、重要な事項について、人事院に意見を述べる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "参与は、学識経験のある者のうちから、総裁が委嘱する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "参与の任期は、二年とする。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 5,
+          "items": [
+            {
+              "item_no": null,
+              "text": "参与は、非常勤とする。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

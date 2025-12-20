@@ -1,0 +1,52 @@
+{
+  "law_id": "明治三十五年法律第五十号",
+  "law_name": "明治三十五年法律第五十号（年齢計算ニ関スル法律）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "年齢ハ出生ノ日ヨリ之ヲ起算ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "民法第百四十三条ノ規定ハ年齢ノ計算ニ之ヲ準用ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "3",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "明治六年第三十六号布告ハ之ヲ廃止ス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

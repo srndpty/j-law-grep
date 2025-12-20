@@ -1,0 +1,428 @@
+{
+  "law_id": "昭和五十四年国家公安委員会規則第五号",
+  "law_name": "管区警察学校の各部の内部組織に関する規則",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第１条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "東北管区警察学校、中部管区警察学校、中国四国管区警察学校及び九州管区警察学校の教務部に、次の１科及び２教官室を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "近畿管区警察学校の教務部に、次の１科及び４教官室を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "関東管区警察学校の教務部に、次の２科及び５教官室を置く。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第２条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "教務科においては、次に掲げる事務（関東管区警察学校の教務科にあつては、初任幹部教養科の所掌に属するものを除く。）をつかさどる。"
+            },
+            {
+              "item_no": 1,
+              "text": "教育訓練計画の策定に関すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "教養効果測定の総括に関すること。"
+            },
+            {
+              "item_no": 3,
+              "text": "学籍簿その他の記録に関すること。"
+            },
+            {
+              "item_no": 4,
+              "text": "前各号に掲げるもののほか、部内の他の所掌に属しない事務に関すること。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第２条の２",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "初任幹部教養科においては、国家公務員採用一般職試験（大卒程度試験）により採用した警察官の教育訓練に係る事務（部内の他の教官室の所掌に属するものを除く。）で次に掲げるものをつかさどる。"
+            },
+            {
+              "item_no": 1,
+              "text": "教育訓練計画の策定に関すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "教養効果測定の総括に関すること。"
+            },
+            {
+              "item_no": 3,
+              "text": "学籍簿その他の教務の記録に関すること。"
+            },
+            {
+              "item_no": 4,
+              "text": "教育訓練に関すること。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第３条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "実務教官室においては、次に掲げる事項に関する教育訓練を行う。"
+            },
+            {
+              "item_no": 1,
+              "text": "犯罪、事故その他の事案に係る市民生活の安全と平穏、地域警察その他の警ら、犯罪の予防及び保安警察"
+            },
+            {
+              "item_no": 2,
+              "text": "刑事警察、犯罪鑑識、犯罪統計、暴力団対策、薬物及び銃器に関する犯罪の取締り、組織犯罪の取締り（刑事局の所掌に係るものに限る。）、犯罪による収益の移転防止並びに国際捜査共助"
+            },
+            {
+              "item_no": 3,
+              "text": "交通警察"
+            },
+            {
+              "item_no": 4,
+              "text": "警備警察、警衛、警護及び警備実施"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第４条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "生活安全刑事教官室においては、前条第１号及び第２号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第５条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "交通警備教官室においては、第３条第３号及び第４号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第６条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "近畿管区警察学校の生活安全教官室においては、第３条第１号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "関東管区警察学校の生活安全教官室においては、犯罪、事故その他の事案に係る市民生活の安全と平穏、犯罪の予防及び保安警察に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第７条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "刑事教官室においては、第３条第２号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第８条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "交通教官室においては、第３条第３号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第９条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警備教官室においては、第３条第４号に掲げる事項に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１０条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "地域教官室においては、地域警察その他の警らに関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１１条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "東北管区警察学校、中部管区警察学校、中国四国管区警察学校及び九州管区警察学校の指導部に、学生科及び警務術科教官室を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "関東管区警察学校及び近畿管区警察学校の指導部に、次の１科及び２教官室を置く。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１２条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "学生科においては、次に掲げる事務をつかさどる。"
+            },
+            {
+              "item_no": 1,
+              "text": "学生の身上に関すること。"
+            },
+            {
+              "item_no": 2,
+              "text": "学生の課外活動及び学生生活に関すること。"
+            },
+            {
+              "item_no": 3,
+              "text": "学生寮の運営に関すること。"
+            },
+            {
+              "item_no": 4,
+              "text": "前各号に掲げるもののほか、部内の他の所掌に属しない事務に関すること。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１３条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警務術科教官室においては、警察職員としての服務及び監督指導並びに術科及び自動車操法に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１４条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "警務教官室においては、警察職員としての服務及び監督指導に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１５条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "術科教官室においては、術科及び自動車操法に関する教育訓練を行う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第１６条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "科に科長を、教官室に教官室長を置き、教授をもつて充てる。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "科長又は教官室長は、命を受け、科又は教官室の事務を掌理する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この規則は、公布の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "四国警察支局警察学校（改正府令附則第二条第一項に規定する四国警察支局警察学校をいう。第三項において同じ。）の教務部に、教務科及び実務教官室を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "教務科及び実務教官室の所掌事務については、それぞれ、この規則による改正後の管区警察学校の各部の内部組織に関する規則（第四項において「新規則」という。）第二条及び第三条の規定を準用する。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "四国警察支局警察学校の指導部に、学生科及び警務術科教官室を置く。"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 4,
+          "items": [
+            {
+              "item_no": null,
+              "text": "学生科及び警務術科教官室の所掌事務については、それぞれ、新規則第十二条及び第十三条の規定を準用する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

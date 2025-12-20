@@ -1,0 +1,46 @@
+{
+  "law_id": "昭和八年勅令第三百十七号",
+  "law_name": "昭和八年勅令第三百十七号（小切手ノ呈示期間ノ特例ニ関スル件）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "朝鮮、台湾、樺太又ハ関東州ニ於テ振出シ日本内地ニ於テ支払フベキ小切手ノ呈示期間ハ之ヲ二十日トス"
+            }
+          ]
+        },
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "南洋群島ニ於テ振出シ日本内地ニ於テ支払フベキ小切手ノ呈示期間ハ之ヲ六十日トス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "日本及満州国以外ノ亜細亜洲ノ地域ニ於テ振出シ日本内地ニ於テ支払フベキ小切手ノ呈示期間ハ之ヲ六十日トス"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

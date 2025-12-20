@@ -1,0 +1,86 @@
+{
+  "law_id": "大正四年法律第十八号",
+  "law_name": "大正四年法律第十八号（法人ノ役員処罰ニ関スル法律）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法人ノ業務ヲ執行スル社員、取締役、会計参与、執行役、理事、監査役又ハ監事ニシテ刑事訴追又ハ刑ノ執行ヲ免レシムル為合併其ノ他ノ方法ニ依リ法人ヲ消滅セシメタル者ハ五年以下ノ拘禁刑ニ処ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "本法ハ大正四年七月一日ヨリ之ヲ施行ス"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この法律は、公布の日から起算して一年を超えない範囲内において政令で定める日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この法律は、会社法の施行の日から施行する。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "この法律は、刑法等一部改正法施行日から施行する。ただし、次の各号に掲げる規定は、当該各号に定める日から施行する。"
+            },
+            {
+              "item_no": 1,
+              "text": "第五百九条の規定公布の日"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

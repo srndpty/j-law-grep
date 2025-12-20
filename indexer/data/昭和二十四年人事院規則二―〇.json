@@ -1,0 +1,52 @@
+{
+  "law_id": "昭和二十四年人事院規則二―〇",
+  "law_name": "人事院規則二―〇（人事官の宣誓）",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "1",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "法第六条第一項の規定による宣誓は、次の通りとする。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "2",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 2,
+          "items": [
+            {
+              "item_no": null,
+              "text": "最高裁判所事務総長及び人事院事務総長は、前項の宣誓に立ち会わなければならない。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "3",
+      "heading": "",
+      "paragraphs": [
+        {
+          "paragraph_no": 3,
+          "items": [
+            {
+              "item_no": null,
+              "text": "人事委員の宣誓に関する人事委員会規則（昭和二十三年人事委員会規則第一号）は、廃止する。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

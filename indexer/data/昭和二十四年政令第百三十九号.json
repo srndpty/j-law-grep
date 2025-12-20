@@ -1,0 +1,37 @@
+{
+  "law_id": "昭和二十四年政令第百三十九号",
+  "law_name": "公証人身元保証金令",
+  "law_aliases": [],
+  "articles": [
+    {
+      "article_no": "",
+      "heading": "第一条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "公証人の納むべき身元保証金の額は、次の区別に従う。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "article_no": "",
+      "heading": "第二条",
+      "paragraphs": [
+        {
+          "paragraph_no": 1,
+          "items": [
+            {
+              "item_no": null,
+              "text": "身元保証金は、現金又は国債証券で納付しなければならない。"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
