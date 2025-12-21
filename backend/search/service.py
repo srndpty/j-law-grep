@@ -37,10 +37,24 @@ class SearchService:
                 re.compile(params.q)
                 must.append({"regexp": {"content": {"value": params.q, "flags": "ALL"}}})
             except re.error:
-                must.append({"match": {"content": params.q}})
+                must.append({
+                    "match_phrase": {
+                        "content": {"query": params.q, "analyzer": "whitespace"}
+                    }
+                })
         else:
-            must.append({"match_phrase": {"content": params.q}})
-
+            # must.append({"match_phrase": {"content": params.q}})
+            must.append(
+                {
+                    "match_phrase": {
+                        "content": {
+                            "query": params.q,
+                            "analyzer": "whitespace",
+                            "slop": 0,
+                        }
+                    }
+                }
+            )
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
 
