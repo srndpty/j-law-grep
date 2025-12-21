@@ -34,10 +34,21 @@ class OpenSearchBackend:
                     "max_ngram_diff": 20,
                 },
                 "analysis": {
+                    "tokenizer": {
+                        # Use an ngram tokenizer so character positions advance; this keeps phrase
+                        # queries from collapsing into a single position (which caused noisy matches
+                        # like 「当面の」 matching any token that contained 「面の」).
+                        "jp_ngram_tokenizer": {
+                            "type": "ngram",
+                            "min_gram": 2,
+                            "max_gram": 15,
+                            "token_chars": ["letter", "digit"],
+                        },
+                    },
                     "analyzer": {
                         "jp_ngram_analyzer": {
-                            "tokenizer": "whitespace",
-                            "filter": ["lowercase", "asciifolding", "jp_ngram_filter"],
+                            "tokenizer": "jp_ngram_tokenizer",
+                            "filter": ["lowercase", "asciifolding"],
                         },
                         "jp_edge_analyzer": {
                             "tokenizer": "whitespace",
@@ -45,11 +56,6 @@ class OpenSearchBackend:
                         },
                     },
                     "filter": {
-                        "jp_ngram_filter": {
-                            "type": "ngram",
-                            "min_gram": 2,
-                            "max_gram": 15,
-                        },
                         "jp_edge_filter": {
                             "type": "edge_ngram",
                             "min_gram": 1,
