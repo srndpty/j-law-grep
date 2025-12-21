@@ -5,6 +5,10 @@ import { Button } from "./components/ui/button";
 
 interface SearchHit {
   file_id: string;
+  law_name: string;
+  article_no: string;
+  paragraph_no: number | null;
+  item_no: number | null;
   path: string;
   line: number;
   snippet: string;
@@ -33,6 +37,49 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResponse>({ hits: [], total: 0, took_ms: 0 });
   const [error, setError] = useState<string | null>(null);
+
+  const deriveArticleNo = (hit: SearchHit) => {
+    if (hit.article_no) return hit.article_no;
+    const urlMatch = hit.url.match(/\/a\/([^/]+)/);
+    if (urlMatch) return urlMatch[1];
+    const parts = hit.path.split("/");
+    if (parts.length >= 2 && parts[1]) return parts[1];
+    return "";
+  };
+
+  const deriveParagraphNo = (hit: SearchHit) => {
+    if (hit.paragraph_no !== null && hit.paragraph_no !== undefined) return hit.paragraph_no;
+    const match = hit.url.match(/\/a\/[^/]+\/(\d+)/);
+    if (match) {
+      const value = Number(match[1]);
+      return Number.isNaN(value) ? null : value;
+    }
+    return null;
+  };
+
+  const formatArticlePosition = (hit: SearchHit) => {
+    const segments: string[] = [];
+    const articleNo = deriveArticleNo(hit);
+    const paragraphNo = deriveParagraphNo(hit);
+    if (articleNo) {
+      const articleLabel = articleNo.includes("条") ? articleNo : `第${articleNo}条`;
+      segments.push(articleLabel);
+    }
+    if (paragraphNo) {
+      segments.push(`${paragraphNo}項`);
+    }
+    if (hit.item_no) {
+      segments.push(`${hit.item_no}号`);
+    }
+    return segments.join(" ");
+  };
+
+  const formatLocation = (hit: SearchHit) => {
+    const base = hit.law_name || hit.path;
+    const position = formatArticlePosition(hit);
+    if (base && position) return `${base} / ${position}`;
+    return base || position || hit.path;
+  };
 
   const requestBody = useMemo(
     () => ({
@@ -161,7 +208,7 @@ export default function App() {
           <div className="space-y-3">
             {results.hits.map((hit) => (
               <article key={hit.file_id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="text-xs uppercase tracking-wide text-gray-500">{hit.path}</div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">{formatLocation(hit)}</div>
                 <div
                   className="mt-2 text-sm leading-relaxed text-gray-900"
                   dangerouslySetInnerHTML={{ __html: hit.snippet }}

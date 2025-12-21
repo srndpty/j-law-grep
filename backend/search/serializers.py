@@ -23,6 +23,10 @@ class SearchRequestSerializer(serializers.Serializer):
 
 class SearchHitSerializer(serializers.Serializer):
     file_id = serializers.CharField()
+    law_name = serializers.CharField(allow_blank=True, default="")
+    article_no = serializers.CharField(allow_blank=True, default="")
+    paragraph_no = serializers.IntegerField(required=False, allow_null=True)
+    item_no = serializers.IntegerField(required=False, allow_null=True)
     path = serializers.CharField()
     line = serializers.IntegerField()
     snippet = serializers.CharField()

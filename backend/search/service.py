@@ -110,22 +110,64 @@ class SearchService:
         source = hit.get("_source", {})
         highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
         snippet = self._ensure_highlight(highlight_snippet or source.get("content", ""), query)
+        law_name = source.get("law_name") or ""
+        article_no = source.get("article_no") or ""
+        paragraph_no = source.get("paragraph_no")
+        item_no = source.get("item_no")
+        path = source.get("path") or ""
+        url = source.get("url", "") or ""
+        if not article_no:
+            article_no = self._extract_article_from_url(url) or self._extract_article_from_path(path)
+        if paragraph_no is None:
+            paragraph_no = self._extract_paragraph_from_url(url)
+        if not path and law_name:
+            path = f"{law_name}/{article_no}" if article_no else law_name
         data = SearchHit(
             file_id=str(hit.get("_id", "")),
-            path=source.get("path", ""),
+            law_name=law_name,
+            article_no=article_no,
+            paragraph_no=paragraph_no,
+            item_no=item_no,
+            path=path,
             line=source.get("line", 0),
             snippet=snippet,
-            url=source.get("url", ""),
+            url=url,
             blocks=source.get("blocks", []),
         )
         return {
             "file_id": data.file_id,
+            "law_name": data.law_name,
+            "article_no": data.article_no,
+            "paragraph_no": data.paragraph_no,
+            "item_no": data.item_no,
             "path": data.path,
             "line": data.line,
             "snippet": data.snippet,
             "url": data.url,
             "blocks": data.blocks,
         }
+
+    @staticmethod
+    def _extract_article_from_url(url: str) -> str:
+        # URLs look like /l/{law_id}/a/{article_no}/[{paragraph_no}/[{item_no}]]
+        match = re.search(r"/a/([^/]+)", url)
+        return match.group(1) if match else ""
+
+    @staticmethod
+    def _extract_article_from_path(path: str) -> str:
+        # Paths look like {law_name}/{article_no}
+        parts = path.split("/")
+        return parts[1] if len(parts) >= 2 else ""
+
+    @staticmethod
+    def _extract_paragraph_from_url(url: str) -> Optional[int]:
+        match = re.search(r"/a/[^/]+/(\d+)", url)
+        if not match:
+            return None
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
 
     def _ensure_highlight(self, snippet: str, query: str) -> str:
         if not query:

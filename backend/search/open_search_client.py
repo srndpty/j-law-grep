@@ -10,6 +10,10 @@ from opensearchpy import OpenSearch
 @dataclass
 class SearchHit:
     file_id: str
+    law_name: str
+    article_no: str
+    paragraph_no: Optional[int]
+    item_no: Optional[int]
     path: str
     line: int
     snippet: str
