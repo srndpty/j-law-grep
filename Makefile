@@ -6,6 +6,7 @@ export MSYS2_ARG_CONV_EXCL = *
 INDEX_INPUT ?= indexer/sample_corpus
 PROGRESS ?= 1
 BULK_CHUNK ?= 1000
+BULK_MAX_MB ?= 40
 INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 
@@ -20,17 +21,17 @@ build-backend:
 reindex:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	else \
-		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest; \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	fi
 
 reindex-versioned:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest --versioned --alias $(INDEX_ALIAS); \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
 	else \
-		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest --versioned --alias $(INDEX_ALIAS); \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
 	fi
 
 golden: build-backend

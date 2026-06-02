@@ -38,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--provider", choices=["opensearch"], default="opensearch")
     parser.add_argument("--progress", action="store_true", help="Show progress while loading corpus")
     parser.add_argument("--chunk-size", type=int, default=1000, help="Bulk chunk size (default: 1000)")
+    parser.add_argument("--max-bulk-mb", type=int, default=None, help="Maximum bulk request size in MiB.")
     parser.add_argument("--index", help="Concrete index to write. Defaults to OPENSEARCH_INDEX.")
     parser.add_argument("--alias", help="Alias to switch after a successful versioned build.")
     parser.add_argument("--versioned", action="store_true", help="Build a fresh versioned index and switch --alias to it.")
@@ -70,7 +71,13 @@ def main() -> None:
     try:
         records = iter_records(args.input, show_progress=args.progress)
         actions = to_index_actions(records)
-        indexed = backend.bulk(actions, chunk_size=args.chunk_size, progress=args.progress)
+        max_chunk_bytes = args.max_bulk_mb * 1024 * 1024 if args.max_bulk_mb else None
+        indexed = backend.bulk(
+            actions,
+            chunk_size=args.chunk_size,
+            max_chunk_bytes=max_chunk_bytes,
+            progress=args.progress,
+        )
 
         print(f"Indexed {indexed} records into {backend.index}")
         if indexed != expected_records:

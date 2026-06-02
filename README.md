@@ -49,7 +49,8 @@ make reindex-versioned INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current
 ```
 
 `indexer/data` は `.dockerignore` で Docker image から除外しているため、この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
-フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。必要なら `BULK_CHUNK=2000` のように調整できます。
+フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。`BULK_CHUNK=20000` のように増やせますが、request size は既定 `BULK_MAX_MB=40` で自動分割します。
+OpenSearch はフルコーパス向けに既定 4 shards / 2GB heap です。既存コンテナに heap 変更を反映するには OpenSearch コンテナを再作成してください。
 
 ## API スモークテスト
 

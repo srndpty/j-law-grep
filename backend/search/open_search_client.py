@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
@@ -44,7 +45,7 @@ class OpenSearchBackend:
         return {
             "settings": {
                 "index": {
-                    "number_of_shards": 1,
+                    "number_of_shards": settings.OPENSEARCH_NUMBER_OF_SHARDS,
                     "number_of_replicas": 0,
                     "max_ngram_diff": 20,
                     "refresh_interval": "-1",
@@ -177,13 +178,35 @@ class OpenSearchBackend:
             request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
         )
 
-    def _chunked(self, actions: Iterable[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
+    @staticmethod
+    def _estimated_bulk_action_bytes(action: Dict[str, Any]) -> int:
+        meta = {"index": {"_id": action["_id"]}}
+        return (
+            len(json.dumps(meta, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            + len(json.dumps(action["_source"], ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            + 2
+        )
+
+    def _chunked(
+        self,
+        actions: Iterable[Dict[str, Any]],
+        size: int,
+        max_bytes: Optional[int] = None,
+    ) -> Iterable[List[Dict[str, Any]]]:
         batch: List[Dict[str, Any]] = []
+        batch_bytes = 0
         for action in actions:
+            action_bytes = self._estimated_bulk_action_bytes(action) if max_bytes else 0
+            if batch and max_bytes and batch_bytes + action_bytes > max_bytes:
+                yield batch
+                batch = []
+                batch_bytes = 0
             batch.append(action)
+            batch_bytes += action_bytes
             if len(batch) >= size:
                 yield batch
                 batch = []
+                batch_bytes = 0
         if batch:
             yield batch
 
@@ -191,11 +214,13 @@ class OpenSearchBackend:
         self,
         actions: Iterable[Dict[str, Any]],
         chunk_size: int = 200,
+        max_chunk_bytes: Optional[int] = None,
         progress: bool = False,
         refresh_at_end: bool = True,
     ) -> int:
         processed = 0
-        for chunk in self._chunked(actions, size=chunk_size):
+        max_bytes = max_chunk_bytes or settings.OPENSEARCH_BULK_MAX_BYTES
+        for chunk in self._chunked(actions, size=chunk_size, max_bytes=max_bytes):
             body: List[Dict[str, Any]] = []
             for action in chunk:
                 meta = {"index": {"_index": self.index, "_id": action["_id"]}}
@@ -215,10 +240,6 @@ class OpenSearchBackend:
                 preview = failures[:3]
                 raise RuntimeError(f"OpenSearch bulk indexing failed: {preview}")
             processed += len(chunk)
-            if progress and processed % 5000 == 0:
-                print(f"Indexed {processed} docs...", flush=True)
-        if progress:
-            print(f"Indexed {processed} docs.", flush=True)
         if refresh_at_end:
             self.client.indices.refresh(index=self.index)
         return processed
