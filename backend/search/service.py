@@ -36,6 +36,7 @@ class SearchService:
         raw_query = params.q.strip()
         citation = parse_citation(raw_query)
         citation_filter_key = citation_key(citation)
+        citation_only = self._is_citation_only_query(raw_query, citation_filter_key)
 
         must: List[Dict[str, Any]] = []
         filter_clauses: List[Dict[str, Any]] = []
@@ -54,6 +55,8 @@ class SearchService:
                     }
                 }
             )
+        elif citation.article_no and (params.mode in {"auto", "citation"} or citation_only):
+            must.append({"match_all": {}})
         else:
             # must.append({"match_phrase": {"content": params.q}})
             must.append(
@@ -83,9 +86,9 @@ class SearchService:
         if citation.article_no:
             filter_clauses.append({"term": {"article_no": citation.article_no}})
         if citation.paragraph_no is not None:
-            filter_clauses.append({"term": {"paragraph_no": citation.paragraph_no}})
+            filter_clauses.append({"term": {"paragraph_no": str(citation.paragraph_no)}})
         if citation.item_no is not None:
-            filter_clauses.append({"term": {"item_no": citation.item_no}})
+            filter_clauses.append({"term": {"item_no": str(citation.item_no)}})
 
         if citation_filter_key:
             should.append({"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}})
@@ -104,6 +107,14 @@ class SearchService:
             "query": query,
             "highlight": highlight_config(),
         }
+
+    @staticmethod
+    def _is_citation_only_query(raw_query: str, citation_filter_key: Optional[str]) -> bool:
+        if not citation_filter_key:
+            return False
+        compact_query = re.sub(r"\s+", "", raw_query)
+        compact_citation = re.sub(r"\s+", "", citation_filter_key)
+        return compact_query == compact_citation
 
     def search(self, params: SearchParams) -> Dict[str, Any]:
         if not params.q.strip():
@@ -195,14 +206,11 @@ class SearchService:
         return parts[1] if len(parts) >= 2 else ""
 
     @staticmethod
-    def _extract_paragraph_from_url(url: str) -> Optional[int]:
+    def _extract_paragraph_from_url(url: str) -> Optional[str]:
         match = re.search(r"/a/[^/]+/(\d+)", url)
         if not match:
             return None
-        try:
-            return int(match.group(1))
-        except ValueError:
-            return None
+        return match.group(1)
 
     def _snippet_with_ranges(self, snippet: str, query: str) -> Tuple[str, List[Dict[str, int]]]:
         if "<mark>" in snippet or "</mark>" in snippet:

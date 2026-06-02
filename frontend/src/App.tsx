@@ -7,8 +7,8 @@ interface SearchHit {
   file_id: string;
   law_name: string;
   article_no: string;
-  paragraph_no: number | null;
-  item_no: number | null;
+  paragraph_no: number | string | null;
+  item_no: number | string | null;
   path: string;
   line: number;
   snippet: string;

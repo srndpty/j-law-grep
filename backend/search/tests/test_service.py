@@ -16,10 +16,21 @@ class DummyBackend:
 def test_build_literal_query_uses_match_phrase(monkeypatch):
     backend = DummyBackend()
     service = SearchService(backend=backend)  # type: ignore[arg-type]
-    params = SearchParams(q="民法 709条", mode="literal", filters={}, size=20, page=1)
+    params = SearchParams(q="損害賠償", mode="literal", filters={}, size=20, page=1)
     service.search(params)
     content = backend.last_body["query"]["bool"]["must"][0]["match_phrase"]["content"]
-    assert content["query"] == "民法 709条"
+    assert content["query"] == "損害賠償"
+
+
+def test_build_literal_citation_only_query_uses_citation_filters():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    params = SearchParams(q="民法 709条", mode="literal", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+    assert query["must"] == [{"match_all": {}}]
+    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert {"term": {"article_no": "709"}} in query["filter"]
 
 
 def test_convert_hit_includes_article_metadata():
@@ -92,7 +103,7 @@ def test_convert_hit_derives_article_from_url_when_missing():
     }
     result = service._convert_hit(hit, query="")
     assert result["article_no"] == "23"
-    assert result["paragraph_no"] == 4
+    assert result["paragraph_no"] == "4"
 
 
 def test_regex_query_rejects_expensive_patterns():

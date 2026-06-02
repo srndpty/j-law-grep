@@ -14,6 +14,7 @@ except ImportError:  # pragma: no cover - optional
     tqdm = None
 
 from indexer.utils import normalize_text
+from indexer.manifest import write_manifest
 
 MAX_CORPUS_FILENAME_STEM = 64
 
@@ -206,7 +207,9 @@ def import_directory(xml_dir: Path, output_dir: Path) -> None:
         if not tqdm and count % 100 == 0:
             print(f"Converted {count} / {len(xml_paths)}", file=sys.stderr)
 
+    manifest_path = write_manifest(output_dir, source="e-gov-xml")
     print(f"Converted {count} XML files under {xml_dir} -> {output_dir}")
+    print(f"Wrote corpus manifest: {manifest_path}")
 
 
 def main() -> None:

@@ -62,3 +62,27 @@ def test_bulk_returns_processed_count(monkeypatch):
     actions = [{"_id": "1", "_source": {"content": "x"}}]
 
     assert backend.bulk(actions) == 1
+
+
+def test_position_fields_are_keywords(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=2),
+    )
+    backend = OpenSearchBackend(client=DummyBulkClient({"errors": False, "items": []}), index="laws")
+    properties = backend.get_index_definition()["mappings"]["properties"]
+    assert properties["paragraph_no"]["type"] == "keyword"
+    assert properties["item_no"]["type"] == "keyword"
+
+
+def test_large_source_only_fields_are_not_indexed(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=2),
+    )
+    backend = OpenSearchBackend(client=DummyBulkClient({"errors": False, "items": []}), index="laws")
+    properties = backend.get_index_definition()["mappings"]["properties"]
+    assert properties["content_plain"]["index"] is False
+    assert properties["blocks"]["enabled"] is False

@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend /app
 COPY indexer /app/indexer
+COPY tests /app/tests
 
 ENV PYTHONPATH=/app
 

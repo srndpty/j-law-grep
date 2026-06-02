@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
 
 from django.conf import settings
-from opensearchpy import OpenSearch
+from opensearchpy import OpenSearch, TransportError
 
 
 @dataclass
@@ -13,8 +13,8 @@ class SearchHit:
     file_id: str
     law_name: str
     article_no: str
-    paragraph_no: Optional[int]
-    item_no: Optional[int]
+    paragraph_no: Optional[str]
+    item_no: Optional[str]
     path: str
     line: int
     snippet: str
@@ -47,6 +47,7 @@ class OpenSearchBackend:
                     "number_of_shards": 1,
                     "number_of_replicas": 0,
                     "max_ngram_diff": 20,
+                    "refresh_interval": "-1",
                 },
                 "analysis": {
                     "tokenizer": {
@@ -98,8 +99,8 @@ class OpenSearchBackend:
                         },
                     },
                     "article_no": {"type": "keyword"},
-                    "paragraph_no": {"type": "integer"},
-                    "item_no": {"type": "integer"},
+                    "paragraph_no": {"type": "keyword"},
+                    "item_no": {"type": "keyword"},
                     "citation_key": {
                         "type": "keyword",
                         "fields": {
@@ -112,18 +113,12 @@ class OpenSearchBackend:
                         "analyzer": "jp_ngram_analyzer",
                         "term_vector": "with_positions_offsets",
                     },
-                    "content_plain": {"type": "text", "analyzer": "jp_ngram_analyzer"},
+                    "content_plain": {"type": "text", "index": False},
                     "year_enforced": {"type": "keyword"},
                     "path": {"type": "keyword"},
                     "url": {"type": "keyword"},
                     "line": {"type": "integer"},
-                    "blocks": {
-                        "type": "nested",
-                        "properties": {
-                            "kind": {"type": "keyword"},
-                            "html": {"type": "text", "analyzer": "jp_ngram_analyzer"}
-                        }
-                    },
+                    "blocks": {"type": "object", "enabled": False},
                 }
             },
         }
@@ -133,6 +128,45 @@ class OpenSearchBackend:
             return
         definition = self.get_index_definition()
         self.client.indices.create(index=self.index, body=definition)
+
+    def create_index(self, index: str) -> None:
+        if self.client.indices.exists(index=index):
+            raise RuntimeError(f"OpenSearch index already exists: {index}")
+        self.client.indices.create(index=index, body=self.get_index_definition())
+
+    def delete_index(self, index: str) -> None:
+        if self.client.indices.exists(index=index):
+            self.client.indices.delete(index=index)
+
+    def prepare_for_search(self, index: Optional[str] = None, forcemerge: bool = False) -> None:
+        target = index or self.index
+        self.client.indices.put_settings(
+            index=target,
+            body={"index": {"refresh_interval": "1s"}},
+        )
+        self.client.indices.refresh(index=target)
+        if forcemerge:
+            self.client.indices.forcemerge(index=target, max_num_segments=1)
+
+    def count(self, index: Optional[str] = None) -> int:
+        response = self.client.count(index=index or self.index)
+        return int(response.get("count", 0))
+
+    def switch_alias(self, alias: str, target_index: str) -> None:
+        actions: List[Dict[str, Any]] = []
+        for old_index in self.indices_for_alias(alias):
+            actions.append({"remove": {"index": old_index, "alias": alias}})
+        actions.append({"add": {"index": target_index, "alias": alias}})
+        self.client.indices.update_aliases(body={"actions": actions})
+
+    def indices_for_alias(self, alias: str) -> List[str]:
+        try:
+            response = self.client.indices.get_alias(name=alias)
+        except TransportError as exc:
+            if exc.status_code == 404:
+                return []
+            raise
+        return sorted(response.keys())
 
     def search(self, body: Dict[str, Any], size: int, from_: int) -> Dict[str, Any]:
         return self.client.search(

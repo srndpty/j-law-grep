@@ -17,7 +17,7 @@ class SearchFiltersField(serializers.DictField):
 
 class SearchRequestSerializer(serializers.Serializer):
     q = serializers.CharField(allow_blank=True, trim_whitespace=True)
-    mode = serializers.ChoiceField(choices=["auto", "literal", "regex"], default="literal")
+    mode = serializers.ChoiceField(choices=["auto", "literal", "citation", "regex"], default="literal")
     filters = SearchFiltersField(required=False, default=dict)
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     page = serializers.IntegerField(min_value=1, default=1)
@@ -39,8 +39,8 @@ class SearchHitSerializer(serializers.Serializer):
     file_id = serializers.CharField()
     law_name = serializers.CharField(allow_blank=True, default="")
     article_no = serializers.CharField(allow_blank=True, default="")
-    paragraph_no = serializers.IntegerField(required=False, allow_null=True)
-    item_no = serializers.IntegerField(required=False, allow_null=True)
+    paragraph_no = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    item_no = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     path = serializers.CharField()
     line = serializers.IntegerField()
     snippet = serializers.CharField()

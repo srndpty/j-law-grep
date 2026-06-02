@@ -25,13 +25,31 @@ make up
 make reindex
 ```
 
-`make up` は OpenSearch / Redis / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入します。
+`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入し、`manifest.json` を生成します。
 
 ### e-Gov XML からの取り込みと再インデックス
 
 1. e-Gov から法令 XML をダウンロードし、任意のディレクトリ (例: `data/egov-xml`) に展開する。
-2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。
+2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。変換後に `indexer/data/manifest.json` も生成されます。
 3. `make reindex INDEX_INPUT=indexer/data` で変換済み JSON を OpenSearch に投入する。
+
+### 世代付きインデックスと alias 切替
+
+mapping や analyzer を変えた場合は、既存 index に上書きせず versioned index を作って alias を切り替えます。
+
+```powershell
+make reindex-versioned INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-current
+```
+
+このターゲットは `jlaw-current-vYYYYMMDDHHMMSS` のような index を作成し、投入件数と OpenSearch 件数を検証してから `jlaw-current` alias を切り替えます。
+フルコーパスを検索したい場合は、sample ではなく次を実行します。
+
+```powershell
+make reindex-versioned INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current
+```
+
+`indexer/data` は `.dockerignore` で Docker image から除外しているため、この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
+フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。必要なら `BULK_CHUNK=2000` のように調整できます。
 
 ## API スモークテスト
 
@@ -41,11 +59,21 @@ make api-smoke
 
 `/api/search` に対して "民法 709条" を検索し、最初のヒットを表示します。
 
+## Golden query
+
+検索品質の最低限の回帰確認として `tests/golden_queries/sample.json` を使います。
+
+```powershell
+make golden
+```
+
+期待 top hit、期待 contains、期待 not contains を JSON で追加できます。
+
 ## 将来拡張メモ
 
 - OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。
-- `indexer/` を拡張し e-Gov 法令 XML からの取り込みに対応する予定です。
-- Redis は将来的な検索キャッシュやジョブキュー用にスタブとして構成しています。
+- コーパスは `manifest.json` の digest と件数で追跡し、法令本文は必要に応じて外部ディレクトリへ切り離します。
+- analyzer や mapping を変える場合は `make reindex-versioned` で alias 切替を使います。
 
 ## 動作確認
 

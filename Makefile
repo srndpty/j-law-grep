@@ -5,22 +5,39 @@ export MSYS2_ARG_CONV_EXCL = *
 
 INDEX_INPUT ?= indexer/sample_corpus
 PROGRESS ?= 1
-BULK_CHUNK ?= 200
+BULK_CHUNK ?= 1000
+INDEX_ALIAS ?= jlaw-current
+GOLDEN_FILE ?= tests/golden_queries/sample.json
 
-.PHONY: up down ps restart-backend reindex api-smoke
+.PHONY: up down ps build-backend restart-backend reindex reindex-versioned golden api-smoke
 
 up:
-	$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build --remove-orphans
+
+build-backend:
+	$(COMPOSE) build backend
 
 reindex:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK); \
+		$(COMPOSE) build backend; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest; \
 	else \
-		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK); \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest; \
 	fi
 
+reindex-versioned:
+	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
+		$(COMPOSE) build backend; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest --versioned --alias $(INDEX_ALIAS); \
+	else \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --write-manifest --versioned --alias $(INDEX_ALIAS); \
+	fi
+
+golden: build-backend
+	$(COMPOSE) run --rm backend python -m indexer.golden --file /app/$(GOLDEN_FILE)
+
 down:
-	$(COMPOSE) down -v
+	$(COMPOSE) down -v --remove-orphans
 
 ps:
 	$(COMPOSE) ps

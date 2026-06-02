@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from hashlib import sha1
 from pathlib import Path
 from typing import Iterable, Iterator, List, Optional
 
@@ -11,6 +12,7 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     tqdm = None
 from indexer.utils import normalize_text
+from indexer.manifest import iter_corpus_json_paths
 
 
 @dataclass
@@ -19,8 +21,8 @@ class IndexRecord:
     law_name: str
     law_aliases: List[str]
     article_no: str
-    paragraph_no: Optional[int]
-    item_no: Optional[int]
+    paragraph_no: Optional[str]
+    item_no: Optional[str]
     heading: str
     content: str
     content_plain: str
@@ -32,14 +34,21 @@ class IndexRecord:
 
 
 def load_documents(input_dir: Path) -> Iterable[dict]:
-    for path in sorted(input_dir.glob("*.json")):
+    for path in iter_corpus_json_paths(input_dir):
         with path.open("r", encoding="utf-8") as fh:
             yield json.load(fh)
 
 
+def position_label(value: object) -> Optional[str]:
+    if value is None:
+        return None
+    label = str(value).strip()
+    return label or None
+
+
 def iter_documents(input_dir: Path, show_progress: bool = False) -> Iterable[dict]:
     if show_progress and tqdm:
-        paths = sorted(input_dir.glob("*.json"))
+        paths = list(iter_corpus_json_paths(input_dir))
         iterator = tqdm(paths, desc="Loading corpus", unit="file")
         for path in iterator:
             with path.open("r", encoding="utf-8") as fh:
@@ -58,7 +67,6 @@ def collect_records(input_dir: Path, show_progress: bool = False) -> List[IndexR
 
 
 def records_from_document(doc: dict) -> Iterator[IndexRecord]:
-    records: List[IndexRecord] = []
     law_id = doc["law_id"]
     law_name = doc["law_name"]
     law_aliases = doc.get("law_aliases", [])
@@ -94,11 +102,13 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
                 if not text:
                     continue
                 item_no = item.get("item_no")
+                paragraph_label = position_label(paragraph_no)
+                item_label = position_label(item_no)
                 citation = Citation(
                     law_name=law_name,
                     article_no=article_no,
-                    paragraph_no=paragraph_no,
-                    item_no=item_no,
+                    paragraph_no=int(paragraph_label) if paragraph_label and paragraph_label.isdigit() else None,
+                    item_no=int(item_label) if item_label and item_label.isdigit() else None,
                 )
                 blocks = [
                     {
@@ -108,33 +118,30 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
                 ]
                 path = f"{law_name}/{article_no}"
                 url = f"/l/{law_id}/a/{article_no}"
-                if paragraph_no:
-                    url += f"/{paragraph_no}"
-                if item_no:
-                    url += f"/{item_no}"
-                records.append(
-                    IndexRecord(
-                        law_id=law_id,
-                        law_name=law_name,
-                        law_aliases=law_aliases,
-                        article_no=article_no,
-                        paragraph_no=paragraph_no,
-                        item_no=item_no,
-                        heading=heading,
-                        content=text,
-                        content_plain=text,
-                        citation=citation,
-                        year_enforced=year_enforced,
-                        path=path,
-                        url=url,
-                        blocks=blocks,
-                    )
+                if paragraph_label:
+                    url += f"/{paragraph_label}"
+                if item_label:
+                    url += f"/{item_label}"
+                yield IndexRecord(
+                    law_id=law_id,
+                    law_name=law_name,
+                    law_aliases=law_aliases,
+                    article_no=article_no,
+                    paragraph_no=paragraph_label,
+                    item_no=item_label,
+                    heading=heading,
+                    content=text,
+                    content_plain=text,
+                    citation=citation,
+                    year_enforced=year_enforced,
+                    path=path,
+                    url=url,
+                    blocks=blocks,
                 )
-    yield from records
 
 
 def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
-    for record in records:
+    for sequence, record in enumerate(records, start=1):
         citation = citation_key(record.citation)
         doc = {
             "law_id": record.law_id,
@@ -153,5 +160,20 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
             "line": 0,
             "blocks": record.blocks,
         }
-        doc_id = f"{record.law_id}-{record.article_no}-{record.paragraph_no or 0}-{record.item_no or 0}"
+        doc_id = stable_doc_id(record, sequence)
         yield {"_id": doc_id, "_source": doc}
+
+
+def stable_doc_id(record: IndexRecord, sequence: int) -> str:
+    key = "\0".join(
+        [
+            str(sequence),
+            record.law_id,
+            record.article_no,
+            record.paragraph_no or "",
+            record.item_no or "",
+            record.content,
+        ]
+    )
+    digest = sha1(key.encode("utf-8")).hexdigest()[:20]
+    return f"{record.law_id}-{record.article_no}-{record.paragraph_no or 0}-{record.item_no or 0}-{digest}"
