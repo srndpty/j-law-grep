@@ -78,6 +78,20 @@ alias が指す index の件数が manifest と一致するかを確認します
 make validate-index INDEX_ALIAS=jlaw-current MANIFEST=indexer/data/manifest.json
 ```
 
+## Health / metrics
+
+運用確認用の軽量 endpoint です。
+
+```powershell
+make health-smoke
+```
+
+- `/healthz`: Django process の生存確認
+- `/readyz`: OpenSearch と index alias の疎通確認
+- `/metrics`: HTTP request count / 5xx count / latency sum
+
+各 response には `X-Request-ID` が付与されます。リクエストログは JSON 1 行で標準出力に出ます。
+
 ## 検索モード
 
 - `auto`: 引用らしければ citation、そうでなければ通常全文検索

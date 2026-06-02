@@ -11,7 +11,7 @@ INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend reindex reindex-versioned validate-index golden api-smoke
+.PHONY: up down ps build-backend restart-backend reindex reindex-versioned validate-index golden health-smoke api-smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -40,6 +40,11 @@ golden: build-backend
 
 validate-index:
 	OPENSEARCH_HOST=http://localhost:9200 python -m indexer.validate_index --manifest $(MANIFEST) --index $(INDEX_ALIAS)
+
+health-smoke:
+	curl -sS http://localhost:8000/healthz
+	curl -sS http://localhost:8000/readyz
+	curl -sS http://localhost:8000/metrics
 
 down:
 	$(COMPOSE) down -v --remove-orphans

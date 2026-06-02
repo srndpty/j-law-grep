@@ -153,6 +153,9 @@ class OpenSearchBackend:
         response = self.client.count(index=index or self.index)
         return int(response.get("count", 0))
 
+    def cluster_health(self) -> Dict[str, Any]:
+        return self.client.cluster.health()
+
     def switch_alias(self, alias: str, target_index: str) -> None:
         actions: List[Dict[str, Any]] = []
         for old_index in self.indices_for_alias(alias):
