@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from .boolean_query import parse_boolean_query
-from .citation import citation_key, parse_citation
+from .citation import Citation, citation_key, parse_citation
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
@@ -120,6 +120,32 @@ class SearchService:
         }
 
     @staticmethod
+    def classify_query(raw_query: str, mode: str) -> Dict[str, Any]:
+        citation = parse_citation(raw_query.strip())
+        citation_filter_key = citation_key(citation)
+        citation_only = SearchService._is_citation_only_query(raw_query.strip(), citation_filter_key)
+        effective_mode = mode
+        if mode == "auto":
+            effective_mode = "citation" if citation.article_no else "literal"
+        elif mode == "literal" and citation.article_no and citation_only:
+            effective_mode = "citation"
+        return {
+            "raw": raw_query,
+            "mode": mode,
+            "effective_mode": effective_mode,
+            "parsed": SearchService._citation_payload(citation),
+        }
+
+    @staticmethod
+    def _citation_payload(citation: Citation) -> Dict[str, Any]:
+        return {
+            "law_name": citation.law_name,
+            "article_no": citation.article_no,
+            "paragraph_no": citation.paragraph_no,
+            "item_no": citation.item_no,
+        }
+
+    @staticmethod
     def _content_phrase_clause(term: str) -> Dict[str, Any]:
         return {
             "match_phrase": {
@@ -141,7 +167,13 @@ class SearchService:
 
     def search(self, params: SearchParams) -> Dict[str, Any]:
         if not params.q.strip():
-            return {"hits": [], "total": 0, "took_ms": 0}
+            return {
+                "hits": [],
+                "total": 0,
+                "took_ms": 0,
+                "query": self.classify_query(params.q, params.mode),
+                "index": {"name": self.backend.index},
+            }
         body = self.build_query(params)
         size = params.size
         page = max(params.page, 1)
@@ -152,6 +184,8 @@ class SearchService:
             "hits": hits,
             "total": response["hits"].get("total", {}).get("value", 0),
             "took_ms": response.get("took", 0),
+            "query": self.classify_query(params.q, params.mode),
+            "index": {"name": self.backend.index},
         }
 
     @staticmethod

@@ -54,3 +54,5 @@ class SearchResponseSerializer(serializers.Serializer):
     hits = SearchHitSerializer(many=True)
     total = serializers.IntegerField()
     took_ms = serializers.IntegerField()
+    query = serializers.DictField(required=False)
+    index = serializers.DictField(required=False)

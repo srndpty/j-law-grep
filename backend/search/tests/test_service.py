@@ -4,6 +4,7 @@ from search.service import SearchParams, SearchService
 class DummyBackend:
     def __init__(self) -> None:
         self.last_body = None
+        self.index = "laws"
 
     def ensure_index(self) -> None:
         pass
@@ -31,6 +32,17 @@ def test_build_literal_citation_only_query_uses_citation_filters():
     assert query["must"] == [{"match_all": {}}]
     assert {"term": {"law_name": "民法"}} in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
+
+
+def test_search_response_includes_query_and_index_metadata():
+    backend = DummyBackend()
+    backend.index = "jlaw-current"  # type: ignore[attr-defined]
+    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    params = SearchParams(q="民法 709条", mode="auto", filters={}, size=20, page=1)
+    result = service.search(params)
+    assert result["query"]["effective_mode"] == "citation"
+    assert result["query"]["parsed"]["law_name"] == "民法"
+    assert result["index"]["name"] == "jlaw-current"
 
 
 def test_build_boolean_query_uses_required_optional_and_excluded_terms():
