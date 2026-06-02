@@ -4,6 +4,8 @@ from typing import Any, Dict
 
 from rest_framework import serializers
 
+from .service import MAX_REGEX_LENGTH, SearchService
+
 
 class SearchFiltersField(serializers.DictField):
     child = serializers.CharField(allow_blank=True, required=False)
@@ -14,11 +16,23 @@ class SearchFiltersField(serializers.DictField):
 
 
 class SearchRequestSerializer(serializers.Serializer):
-    q = serializers.CharField()
-    mode = serializers.ChoiceField(choices=["literal", "regex"], default="literal")
+    q = serializers.CharField(allow_blank=True, trim_whitespace=True)
+    mode = serializers.ChoiceField(choices=["auto", "literal", "regex"], default="literal")
     filters = SearchFiltersField(required=False, default=dict)
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     page = serializers.IntegerField(min_value=1, default=1)
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        if attrs.get("mode") == "regex":
+            try:
+                SearchService.validate_regex(attrs.get("q", ""))
+            except ValueError as exc:
+                raise serializers.ValidationError({"q": str(exc)}) from exc
+        elif len(attrs.get("q", "")) > 500:
+            raise serializers.ValidationError({"q": "Query must be 500 characters or fewer."})
+        if attrs.get("mode") == "regex" and len(attrs.get("q", "")) > MAX_REGEX_LENGTH:
+            raise serializers.ValidationError({"q": f"Regex query must be {MAX_REGEX_LENGTH} characters or fewer."})
+        return attrs
 
 
 class SearchHitSerializer(serializers.Serializer):
@@ -30,6 +44,8 @@ class SearchHitSerializer(serializers.Serializer):
     path = serializers.CharField()
     line = serializers.IntegerField()
     snippet = serializers.CharField()
+    snippet_text = serializers.CharField()
+    highlights = serializers.ListField(child=serializers.DictField(), default=list)
     url = serializers.CharField(allow_blank=True, default="")
     blocks = serializers.ListField(child=serializers.DictField(), default=list)
 

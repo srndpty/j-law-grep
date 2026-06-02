@@ -20,7 +20,7 @@ django.setup()
 
 from search.open_search_client import OpenSearchBackend  # noqa: E402
 
-from .pipeline import collect_records, to_index_actions
+from .pipeline import iter_records, to_index_actions
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,11 +39,11 @@ def main() -> None:
     backend = OpenSearchBackend()
     backend.ensure_index()
 
-    records = collect_records(args.input, show_progress=args.progress)
+    records = iter_records(args.input, show_progress=args.progress)
     actions = to_index_actions(records)
-    backend.bulk(actions, chunk_size=args.chunk_size, progress=args.progress)
+    indexed = backend.bulk(actions, chunk_size=args.chunk_size, progress=args.progress)
 
-    print(f"Indexed {len(actions)} records into {backend.index}")
+    print(f"Indexed {indexed} records into {backend.index}")
 
 
 if __name__ == "__main__":

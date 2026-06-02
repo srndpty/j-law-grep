@@ -44,6 +44,32 @@ def test_convert_hit_includes_article_metadata():
     assert result["law_name"] == "民法"
     assert result["article_no"] == "709"
     assert result["path"] == "民法/709"
+    assert result["snippet"] == "不法行為による損害の賠償"
+    assert result["snippet_text"] == "不法行為による損害の賠償"
+    assert result["highlights"] == [{"start": 7, "end": 9}]
+
+
+def test_convert_hit_turns_opensearch_mark_tags_into_ranges():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    hit = {
+        "_id": "doc-marked",
+        "_source": {
+            "law_name": "民法",
+            "article_no": "709",
+            "paragraph_no": None,
+            "item_no": None,
+            "path": "民法/709",
+            "line": 0,
+            "content": "fallback",
+            "url": "/l/minpo/a/709",
+            "blocks": [],
+        },
+        "highlight": {"content": ["不法行為による<mark>損害</mark>の賠償"]},
+    }
+    result = service._convert_hit(hit, query="損害")
+    assert result["snippet"] == "不法行為による損害の賠償"
+    assert result["highlights"] == [{"start": 7, "end": 9}]
 
 
 def test_convert_hit_derives_article_from_url_when_missing():
@@ -67,3 +93,15 @@ def test_convert_hit_derives_article_from_url_when_missing():
     result = service._convert_hit(hit, query="")
     assert result["article_no"] == "23"
     assert result["paragraph_no"] == 4
+
+
+def test_regex_query_rejects_expensive_patterns():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    params = SearchParams(q=".*損害.*賠償", mode="regex", filters={}, size=20, page=1)
+    try:
+        service.build_query(params)
+    except ValueError as exc:
+        assert "too broad" in str(exc)
+    else:
+        raise AssertionError("Expected expensive regex to be rejected")

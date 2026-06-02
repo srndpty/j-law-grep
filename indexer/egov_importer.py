@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -13,6 +14,8 @@ except ImportError:  # pragma: no cover - optional
     tqdm = None
 
 from indexer.utils import normalize_text
+
+MAX_CORPUS_FILENAME_STEM = 64
 
 
 def local_name(tag: str) -> str:
@@ -171,6 +174,20 @@ def parse_law(xml_path: Path) -> dict:
     } | ({"year_enforced": year_enforced} if year_enforced else {})
 
 
+def stable_output_stem(law: dict) -> str:
+    raw_id = normalize_text(str(law.get("law_id", "")))
+    if raw_id and len(raw_id) <= MAX_CORPUS_FILENAME_STEM and all(ch not in raw_id for ch in "\\/:*?\"<>|"):
+        return raw_id
+    seed = "|".join(
+        [
+            raw_id,
+            normalize_text(str(law.get("law_name", ""))),
+            normalize_text(str(law.get("year_enforced", ""))),
+        ]
+    )
+    return hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
+
+
 def import_directory(xml_dir: Path, output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     xml_paths = sorted(xml_dir.rglob("*.xml"))
@@ -182,7 +199,7 @@ def import_directory(xml_dir: Path, output_dir: Path) -> None:
     count = 0
     for xml_path in iterator:
         law = parse_law(xml_path)
-        output_path = output_dir / f"{law['law_id']}.json"
+        output_path = output_dir / f"{stable_output_stem(law)}.json"
         with output_path.open("w", encoding="utf-8") as fh:
             json.dump(law, fh, ensure_ascii=False, indent=2)
         count += 1

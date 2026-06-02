@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional
 
 from django.conf import settings
@@ -17,8 +18,15 @@ class SearchHit:
     path: str
     line: int
     snippet: str
+    snippet_text: str
+    highlights: List[Dict[str, int]]
     url: str
     blocks: List[Dict[str, Any]]
+
+
+@lru_cache(maxsize=8)
+def get_opensearch_client(host: str, timeout: int) -> OpenSearch:
+    return OpenSearch(host, timeout=timeout)
 
 
 class OpenSearchBackend:
@@ -27,7 +35,10 @@ class OpenSearchBackend:
         self.index = index or settings.OPENSEARCH_INDEX
 
     def _create_client(self) -> OpenSearch:
-        return OpenSearch(settings.OPENSEARCH_HOST, timeout=30)
+        return get_opensearch_client(
+            settings.OPENSEARCH_HOST,
+            settings.OPENSEARCH_TIMEOUT_SECONDS,
+        )
 
     def get_index_definition(self) -> Dict[str, Any]:
         return {
@@ -69,6 +80,9 @@ class OpenSearchBackend:
                 },
             },
             "mappings": {
+                "_meta": {
+                    "schema_version": settings.OPENSEARCH_SCHEMA_VERSION,
+                },
                 "properties": {
                     "law_id": {"type": "keyword"},
                     "law_name": {
@@ -121,7 +135,13 @@ class OpenSearchBackend:
         self.client.indices.create(index=self.index, body=definition)
 
     def search(self, body: Dict[str, Any], size: int, from_: int) -> Dict[str, Any]:
-        return self.client.search(index=self.index, body=body, size=size, from_=from_)
+        return self.client.search(
+            index=self.index,
+            body=body,
+            size=size,
+            from_=from_,
+            request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+        )
 
     def _chunked(self, actions: Iterable[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
         batch: List[Dict[str, Any]] = []
@@ -135,15 +155,11 @@ class OpenSearchBackend:
 
     def bulk(
         self,
-        actions: List[Dict[str, Any]],
+        actions: Iterable[Dict[str, Any]],
         chunk_size: int = 200,
         progress: bool = False,
         refresh_at_end: bool = True,
-    ) -> None:
-        if not actions:
-            return
-
-        total = len(actions)
+    ) -> int:
         processed = 0
         for chunk in self._chunked(actions, size=chunk_size):
             body: List[Dict[str, Any]] = []
@@ -151,14 +167,27 @@ class OpenSearchBackend:
                 meta = {"index": {"_index": self.index, "_id": action["_id"]}}
                 body.extend([meta, action["_source"]])
             # Keep requests small and defer refresh to the end for better throughput
-            self.client.bulk(body=body, refresh=False)
+            response = self.client.bulk(
+                body=body,
+                refresh=False,
+                request_timeout=settings.OPENSEARCH_BULK_TIMEOUT_SECONDS,
+            )
+            if response.get("errors"):
+                failures = [
+                    item.get("index", item)
+                    for item in response.get("items", [])
+                    if item.get("index", {}).get("error")
+                ]
+                preview = failures[:3]
+                raise RuntimeError(f"OpenSearch bulk indexing failed: {preview}")
             processed += len(chunk)
             if progress and processed % 5000 == 0:
-                print(f"Indexed {processed}/{total} docs...", flush=True)
+                print(f"Indexed {processed} docs...", flush=True)
         if progress:
-            print(f"Indexed {total}/{total} docs.", flush=True)
+            print(f"Indexed {processed} docs.", flush=True)
         if refresh_at_end:
             self.client.indices.refresh(index=self.index)
+        return processed
 
 
 def highlight_config() -> Dict[str, Any]:

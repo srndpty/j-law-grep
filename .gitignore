@@ -9,3 +9,4 @@ frontend/.vite/
 .venv/
 .codex/
 data/egov-xml/
+tmp/

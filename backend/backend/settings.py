@@ -1,11 +1,27 @@
 import os
 from pathlib import Path
+from typing import List
+
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR.parent / ".env", override=False)
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dummy-secret-key")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = ["*"]
+DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "dev-only-insecure-secret-key"
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is not 1.")
+
+
+def _csv_env(name: str, default: str = "") -> List[str]:
+    raw = os.environ.get(name, default)
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+ALLOWED_HOSTS = _csv_env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,backend")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -67,7 +83,12 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 OPENSEARCH_HOST = os.environ.get("OPENSEARCH_HOST", "http://opensearch:9200")
-OPENSEARCH_INDEX = os.environ.get("OPENSEARCH_INDEX", "laws")
+OPENSEARCH_INDEX = os.environ.get("OPENSEARCH_INDEX", "jlaw-current")
+OPENSEARCH_SCHEMA_VERSION = int(os.environ.get("OPENSEARCH_SCHEMA_VERSION", "2"))
+OPENSEARCH_TIMEOUT_SECONDS = int(os.environ.get("OPENSEARCH_TIMEOUT_SECONDS", "30"))
+OPENSEARCH_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("OPENSEARCH_REQUEST_TIMEOUT_SECONDS", "10"))
+OPENSEARCH_BULK_TIMEOUT_SECONDS = int(os.environ.get("OPENSEARCH_BULK_TIMEOUT_SECONDS", "60"))
+REINDEX_TOKEN = os.environ.get("REINDEX_TOKEN", "")
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [

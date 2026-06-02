@@ -22,10 +22,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-
   backend:
     build:
       context: ..
@@ -35,6 +31,7 @@ services:
       - ../.env
     environment:
       OPENSEARCH_HOST: http://opensearch:9200
+      OPENSEARCH_INDEX: jlaw-current
     depends_on:
       opensearch:
         condition: service_healthy

@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .citation import citation_key, parse_citation
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
+
+MAX_REGEX_LENGTH = 120
+DANGEROUS_REGEX_PATTERNS = (
+    r"\.\*.*\.\*",
+    r"\(\.\+\)\+",
+    r"\(\.\*\)\+",
+    r"\([^)]*[+*][^)]*\)[+*]",
+)
 
 
 @dataclass
@@ -25,7 +33,8 @@ class SearchService:
         self.backend.ensure_index()
 
     def build_query(self, params: SearchParams) -> Dict[str, Any]:
-        citation = parse_citation(params.q)
+        raw_query = params.q.strip()
+        citation = parse_citation(raw_query)
         citation_filter_key = citation_key(citation)
 
         must: List[Dict[str, Any]] = []
@@ -33,22 +42,25 @@ class SearchService:
         should: List[Dict[str, Any]] = []
 
         if params.mode == "regex":
-            try:
-                re.compile(params.q)
-                must.append({"regexp": {"content": {"value": params.q, "flags": "ALL"}}})
-            except re.error:
-                must.append({
-                    "match_phrase": {
-                        "content": {"query": params.q, "analyzer": "whitespace"}
+            self.validate_regex(raw_query)
+            must.append(
+                {
+                    "regexp": {
+                        "content": {
+                            "value": raw_query,
+                            "flags": "ALL",
+                            "max_determinized_states": 5000,
+                        }
                     }
-                })
+                }
+            )
         else:
             # must.append({"match_phrase": {"content": params.q}})
             must.append(
                 {
                     "match_phrase": {
                         "content": {
-                            "query": params.q,
+                            "query": raw_query,
                             "analyzer": "whitespace",
                             "slop": 0,
                         }
@@ -94,6 +106,8 @@ class SearchService:
         }
 
     def search(self, params: SearchParams) -> Dict[str, Any]:
+        if not params.q.strip():
+            return {"hits": [], "total": 0, "took_ms": 0}
         body = self.build_query(params)
         size = params.size
         page = max(params.page, 1)
@@ -106,10 +120,27 @@ class SearchService:
             "took_ms": response.get("took", 0),
         }
 
+    @staticmethod
+    def validate_regex(pattern: str) -> None:
+        if not pattern:
+            raise ValueError("Regex query must not be empty.")
+        if len(pattern) > MAX_REGEX_LENGTH:
+            raise ValueError(f"Regex query must be {MAX_REGEX_LENGTH} characters or fewer.")
+        for dangerous in DANGEROUS_REGEX_PATTERNS:
+            if re.search(dangerous, pattern):
+                raise ValueError("Regex query is too broad or expensive.")
+        try:
+            re.compile(pattern)
+        except re.error as exc:
+            raise ValueError(f"Invalid regex query: {exc}") from exc
+
     def _convert_hit(self, hit: Dict[str, Any], query: str) -> Dict[str, Any]:
         source = hit.get("_source", {})
         highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
-        snippet = self._ensure_highlight(highlight_snippet or source.get("content", ""), query)
+        snippet_text, highlights = self._snippet_with_ranges(
+            highlight_snippet or source.get("content", ""),
+            query,
+        )
         law_name = source.get("law_name") or ""
         article_no = source.get("article_no") or ""
         paragraph_no = source.get("paragraph_no")
@@ -130,7 +161,9 @@ class SearchService:
             item_no=item_no,
             path=path,
             line=source.get("line", 0),
-            snippet=snippet,
+            snippet=snippet_text,
+            snippet_text=snippet_text,
+            highlights=highlights,
             url=url,
             blocks=source.get("blocks", []),
         )
@@ -143,6 +176,8 @@ class SearchService:
             "path": data.path,
             "line": data.line,
             "snippet": data.snippet,
+            "snippet_text": data.snippet_text,
+            "highlights": data.highlights,
             "url": data.url,
             "blocks": data.blocks,
         }
@@ -169,17 +204,56 @@ class SearchService:
         except ValueError:
             return None
 
-    def _ensure_highlight(self, snippet: str, query: str) -> str:
+    def _snippet_with_ranges(self, snippet: str, query: str) -> Tuple[str, List[Dict[str, int]]]:
+        if "<mark>" in snippet or "</mark>" in snippet:
+            return self._parse_marked_snippet(snippet)
+        return snippet, self._literal_ranges(snippet, query)
+
+    @staticmethod
+    def _parse_marked_snippet(snippet: str) -> Tuple[str, List[Dict[str, int]]]:
+        text_parts: List[str] = []
+        ranges: List[Dict[str, int]] = []
+        active_start: Optional[int] = None
+        i = 0
+        while i < len(snippet):
+            if snippet.startswith("<mark>", i):
+                if active_start is None:
+                    active_start = len("".join(text_parts))
+                i += len("<mark>")
+                continue
+            if snippet.startswith("</mark>", i):
+                if active_start is not None:
+                    end = len("".join(text_parts))
+                    if end > active_start:
+                        ranges.append({"start": active_start, "end": end})
+                    active_start = None
+                i += len("</mark>")
+                continue
+            if snippet[i] == "<":
+                close = snippet.find(">", i + 1)
+                if close != -1:
+                    i = close + 1
+                    continue
+            text_parts.append(snippet[i])
+            i += 1
+
+        if active_start is not None:
+            end = len("".join(text_parts))
+            if end > active_start:
+                ranges.append({"start": active_start, "end": end})
+        return "".join(text_parts), ranges
+
+    @staticmethod
+    def _literal_ranges(snippet: str, query: str) -> List[Dict[str, int]]:
         if not query:
-            return snippet
-        if "<mark>" in snippet:
-            # If the entire sentence is wrapped once, unwrap and re-apply to the term only
-            if snippet.count("<mark>") == 1 and snippet.startswith("<mark>") and snippet.endswith("</mark>"):
-                snippet = snippet.replace("<mark>", "", 1).rsplit("</mark>", 1)[0]
-            else:
-                return snippet
-        try:
-            pattern = re.escape(query)
-            return re.sub(pattern, lambda m: f"<mark>{m.group(0)}</mark>", snippet)
-        except re.error:
-            return snippet
+            return []
+        ranges: List[Dict[str, int]] = []
+        start = 0
+        while True:
+            idx = snippet.find(query, start)
+            if idx == -1:
+                break
+            end = idx + len(query)
+            ranges.append({"start": idx, "end": end})
+            start = end
+        return ranges
