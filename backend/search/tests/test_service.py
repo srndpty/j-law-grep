@@ -33,6 +33,30 @@ def test_build_literal_citation_only_query_uses_citation_filters():
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
+def test_build_boolean_query_uses_required_optional_and_excluded_terms():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    params = SearchParams(q='"不法行為" 損害 | 賠償 -故意', mode="boolean", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    must_terms = [
+        clause["match_phrase"]["content"]["query"]
+        for clause in query["must"]
+    ]
+    must_not_terms = [
+        clause["match_phrase"]["content"]["query"]
+        for clause in query["must_not"]
+    ]
+    optional_terms = [
+        clause["match_phrase"]["content"]["query"]
+        for clause in query["should"][0]["bool"]["should"]
+    ]
+    assert must_terms == ["不法行為"]
+    assert optional_terms == ["損害", "賠償"]
+    assert must_not_terms == ["故意"]
+
+
 def test_convert_hit_includes_article_metadata():
     backend = DummyBackend()
     service = SearchService(backend=backend)  # type: ignore[arg-type]

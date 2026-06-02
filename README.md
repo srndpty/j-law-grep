@@ -70,6 +70,22 @@ make golden
 
 期待 top hit、期待 contains、期待 not contains を JSON で追加できます。
 
+## Index validation
+
+alias が指す index の件数が manifest と一致するかを確認します。
+
+```powershell
+make validate-index INDEX_ALIAS=jlaw-current MANIFEST=indexer/data/manifest.json
+```
+
+## 検索モード
+
+- `auto`: 引用らしければ citation、そうでなければ通常全文検索
+- `literal`: 入力文字列をフレーズとして検索
+- `boolean`: `A B`, `A | B`, `-C`, `"..."` を解釈
+- `citation`: `民法709条` のような条文位置検索
+- `regex`: 制限付き正規表現検索。自動検索では実行しません。
+
 ## 将来拡張メモ
 
 - OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。

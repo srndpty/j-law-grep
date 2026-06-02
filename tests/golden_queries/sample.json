@@ -30,5 +30,22 @@
         "article_no": "709"
       }
     ]
+  },
+  {
+    "query": "故意 | 名誉",
+    "mode": "boolean",
+    "filters": {
+      "law": "民法"
+    },
+    "expected_contains": [
+      {
+        "law_name": "民法",
+        "article_no": "709"
+      },
+      {
+        "law_name": "民法",
+        "article_no": "710"
+      }
+    ]
   }
 ]

@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
+from .boolean_query import parse_boolean_query
 from .citation import citation_key, parse_citation
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
@@ -41,6 +42,7 @@ class SearchService:
         must: List[Dict[str, Any]] = []
         filter_clauses: List[Dict[str, Any]] = []
         should: List[Dict[str, Any]] = []
+        must_not: List[Dict[str, Any]] = []
 
         if params.mode == "regex":
             self.validate_regex(raw_query)
@@ -57,19 +59,26 @@ class SearchService:
             )
         elif citation.article_no and (params.mode in {"auto", "citation"} or citation_only):
             must.append({"match_all": {}})
-        else:
-            # must.append({"match_phrase": {"content": params.q}})
-            must.append(
-                {
-                    "match_phrase": {
-                        "content": {
-                            "query": raw_query,
-                            "analyzer": "whitespace",
-                            "slop": 0,
+        elif params.mode == "boolean":
+            boolean = parse_boolean_query(raw_query)
+            for term in boolean.required:
+                must.append(self._content_phrase_clause(term))
+            for group in boolean.optional_groups:
+                should.append(
+                    {
+                        "bool": {
+                            "should": [self._content_phrase_clause(term) for term in group],
+                            "minimum_should_match": 1,
                         }
                     }
-                }
-            )
+                )
+            for term in boolean.excluded:
+                must_not.append(self._content_phrase_clause(term))
+            if not must and not should and not must_not:
+                must.append({"match_all": {}})
+        else:
+            # must.append({"match_phrase": {"content": params.q}})
+            must.append(self._content_phrase_clause(raw_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
 
@@ -99,6 +108,8 @@ class SearchService:
                 "filter": filter_clauses,
             }
         }
+        if must_not:
+            query["bool"]["must_not"] = must_not
         if should:
             query["bool"]["should"] = should
             query["bool"]["minimum_should_match"] = 1
@@ -106,6 +117,18 @@ class SearchService:
         return {
             "query": query,
             "highlight": highlight_config(),
+        }
+
+    @staticmethod
+    def _content_phrase_clause(term: str) -> Dict[str, Any]:
+        return {
+            "match_phrase": {
+                "content": {
+                    "query": term,
+                    "analyzer": "whitespace",
+                    "slop": 0,
+                }
+            }
         }
 
     @staticmethod

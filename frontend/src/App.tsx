@@ -30,7 +30,10 @@ interface SearchResponse {
 }
 
 const MODES = [
+  { value: "auto", label: "自動" },
   { value: "literal", label: "リテラル" },
+  { value: "boolean", label: "Boolean" },
+  { value: "citation", label: "引用" },
   { value: "regex", label: "正規表現" },
 ];
 
@@ -38,7 +41,7 @@ const DEFAULT_QUERY = "民法 709条";
 
 export default function App() {
   const [query, setQuery] = useState(DEFAULT_QUERY);
-  const [mode, setMode] = useState<string>("literal");
+  const [mode, setMode] = useState<string>("auto");
   const [lawFilter, setLawFilter] = useState("民法");
   const [yearFilter, setYearFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -233,7 +236,7 @@ export default function App() {
                     type="button"
                     onClick={() => setMode(item.value)}
                     className={clsx(
-                      "rounded px-3 py-1 text-sm font-medium transition", 
+                      "rounded px-2.5 py-1 text-sm font-medium transition",
                       mode === item.value
                         ? "bg-gray-900 text-white"
                         : "text-gray-600 hover:bg-gray-100"
@@ -254,7 +257,7 @@ export default function App() {
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-gray-700">法令フィルタ</h2>
             <p className="mt-2 text-xs text-gray-500">
-              MVPでは民法のみを対象としたサンプルデータを検索します。
+              空欄で全ての法令を対象にします。
             </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">

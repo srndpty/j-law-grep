@@ -9,8 +9,9 @@ BULK_CHUNK ?= 1000
 BULK_MAX_MB ?= 40
 INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
+MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend reindex reindex-versioned golden api-smoke
+.PHONY: up down ps build-backend restart-backend reindex reindex-versioned validate-index golden api-smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -36,6 +37,9 @@ reindex-versioned:
 
 golden: build-backend
 	$(COMPOSE) run --rm backend python -m indexer.golden --file /app/$(GOLDEN_FILE)
+
+validate-index:
+	OPENSEARCH_HOST=http://localhost:9200 python -m indexer.validate_index --manifest $(MANIFEST) --index $(INDEX_ALIAS)
 
 down:
 	$(COMPOSE) down -v --remove-orphans
