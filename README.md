@@ -79,7 +79,7 @@ make reindex-versioned INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-curren
 make reindex-versioned INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current
 ```
 
-`indexer/data` は `.dockerignore` で Docker image から除外しているため、この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
+`indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
 フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。`BULK_CHUNK=20000` のように増やせますが、request size は既定 `BULK_MAX_MB=40` で自動分割します。
 OpenSearch はフルコーパス向けに既定 4 shards / 2GB heap です。既存コンテナに heap 変更を反映するには OpenSearch コンテナを再作成してください。
 
@@ -118,14 +118,14 @@ make health-smoke
 ```
 
 - `/healthz`: Django process の生存確認
-- `/readyz`: OpenSearch と index alias の疎通確認
-- `/metrics`: HTTP request count / 5xx count / latency sum
+- `/readyz`: OpenSearch、concrete index の存在、mapping schema version、count API の疎通確認
+- `/metrics`: HTTP request count / 5xx count / latency sum。値は process-local なので、multi worker 構成では worker ごとの値になります。
 
 各 response には `X-Request-ID` が付与されます。リクエストログは JSON 1 行で標準出力に出ます。
 
 ## 検索モード
 
-- `auto`: 引用らしければ citation、そうでなければ通常全文検索
+- `auto`: 引用だけなら citation、引用 + 残余語なら citation filter 付き全文検索、そうでなければ通常全文検索
 - `literal`: 入力文字列をフレーズとして検索
 - `boolean`: `A B`, `A | B`, `-C`, `"..."` を解釈
 - `citation`: `民法709条` のような条文位置検索
@@ -133,7 +133,7 @@ make health-smoke
 
 ## 将来拡張メモ
 
-- OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。
+- OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。compose は現時点では 2.9.0 を維持しています。3.x 系へ上げる場合は analyzer / highlight / alias switch の integration test を先に通してください。
 - コーパスは `manifest.json` の digest と件数で追跡し、法令本文は必要に応じて外部ディレクトリへ切り離します。
 - analyzer や mapping を変える場合は `make reindex-versioned` で alias 切替を使います。
 

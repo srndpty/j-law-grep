@@ -33,17 +33,19 @@ class SearchView(APIView):
         return Response(response_serializer.data)
 
 
-class ReindexView(APIView):
+class EnsureIndexView(APIView):
     service_class = SearchService
 
     def post(self, request) -> Response:
         if settings.REINDEX_TOKEN:
-            token = request.headers.get("X-Reindex-Token", "")
+            token = request.headers.get("X-Ensure-Index-Token", "") or request.headers.get(
+                "X-Reindex-Token", ""
+            )
             if token != settings.REINDEX_TOKEN:
-                raise PermissionDenied("Invalid reindex token.")
+                raise PermissionDenied("Invalid ensure-index token.")
         elif not settings.DEBUG:
             raise PermissionDenied(
-                "Reindex endpoint requires REINDEX_TOKEN when DEBUG is disabled."
+                "Ensure-index endpoint requires REINDEX_TOKEN when DEBUG is disabled."
             )
         service = self.service_class()
         service.ensure_index()

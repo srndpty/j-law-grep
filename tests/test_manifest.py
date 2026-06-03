@@ -82,3 +82,47 @@ def test_duplicate_positions_get_distinct_document_ids(tmp_path):
     actions = list(to_index_actions(collect_records(tmp_path)))
     assert len(actions) == 2
     assert len({action["_id"] for action in actions}) == 2
+
+
+def test_manifest_counts_normalized_records(tmp_path):
+    law = {
+        "law_id": "blank",
+        "law_name": "空白法",
+        "articles": [
+            {"article_no": "1", "paragraphs": [{"paragraph_no": 1, "items": [{"text": "   "}]}]},
+            {"article_no": "2", "paragraphs": [{"paragraph_no": 1, "items": [{"text": "本文"}]}]},
+        ],
+    }
+    (tmp_path / "blank.json").write_text(json.dumps(law, ensure_ascii=False), encoding="utf-8")
+
+    manifest = build_manifest(tmp_path, source="test")
+    records = collect_records(tmp_path)
+
+    assert manifest["counts"]["records"] == len(records) == 1
+
+
+def test_stable_document_ids_do_not_depend_on_previous_records(tmp_path):
+    original = {
+        "law_id": "stable",
+        "law_name": "安定法",
+        "articles": [
+            {"article_no": "1", "paragraphs": [{"paragraph_no": 1, "items": [{"text": "本文"}]}]},
+        ],
+    }
+    shifted = {
+        **original,
+        "articles": [
+            {"article_no": "0", "paragraphs": [{"paragraph_no": 1, "items": [{"text": "前文"}]}]},
+            *original["articles"],
+        ],
+    }
+    (tmp_path / "original.json").write_text(
+        json.dumps(original, ensure_ascii=False), encoding="utf-8"
+    )
+    original_id = list(to_index_actions(collect_records(tmp_path)))[0]["_id"]
+    (tmp_path / "original.json").write_text(
+        json.dumps(shifted, ensure_ascii=False), encoding="utf-8"
+    )
+    shifted_ids = [action["_id"] for action in to_index_actions(collect_records(tmp_path))]
+
+    assert original_id in shifted_ids

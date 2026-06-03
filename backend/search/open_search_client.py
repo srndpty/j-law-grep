@@ -127,6 +127,7 @@ class OpenSearchBackend:
 
     def ensure_index(self) -> None:
         if self.client.indices.exists(index=self.index):
+            self.validate_schema(self.index)
             return
         definition = self.get_index_definition()
         self.client.indices.create(index=self.index, body=definition)
@@ -153,6 +154,41 @@ class OpenSearchBackend:
     def count(self, index: str | None = None) -> int:
         response = self.client.count(index=index or self.index)
         return int(response.get("count", 0))
+
+    def get_schema_version(self, index: str) -> int | None:
+        response = self.client.indices.get_mapping(index=index)
+        metadata = response.get(index, {}).get("mappings", {}).get("_meta", {})
+        version = metadata.get("schema_version")
+        return int(version) if version is not None else None
+
+    def validate_schema(self, index: str) -> None:
+        actual = self.get_schema_version(index)
+        expected = settings.OPENSEARCH_SCHEMA_VERSION
+        if actual != expected:
+            raise RuntimeError(
+                f"Index schema version mismatch for {index}: expected {expected}, got {actual}. "
+                "Run versioned reindex."
+            )
+
+    def concrete_indices(self, index_or_alias: str | None = None) -> list[str]:
+        target = index_or_alias or self.index
+        alias_indices = self.indices_for_alias(target)
+        if alias_indices:
+            return alias_indices
+        if not self.client.indices.exists(index=target):
+            raise RuntimeError(f"OpenSearch index does not exist: {target}")
+        return [target]
+
+    def validate_ready(self) -> dict[str, Any]:
+        concrete_indices = self.concrete_indices(self.index)
+        for index in concrete_indices:
+            self.validate_schema(index)
+            self.count(index=index)
+        return {
+            "name": self.index,
+            "concrete": concrete_indices,
+            "schema_version": settings.OPENSEARCH_SCHEMA_VERSION,
+        }
 
     def cluster_health(self) -> dict[str, Any]:
         return self.client.cluster.health()

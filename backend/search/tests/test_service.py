@@ -36,6 +36,32 @@ def test_build_literal_citation_only_query_uses_citation_filters():
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
+def test_auto_citation_with_residual_terms_keeps_content_phrase():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条 損害", mode="auto", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+    content = query["must"][0]["match_phrase"]["content"]
+
+    assert content["query"] == "損害"
+    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert {"term": {"article_no": "709"}} in query["filter"]
+
+
+def test_citation_mode_rejects_non_citation_query():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害賠償", mode="citation", filters={}, size=20, page=1)
+
+    try:
+        service.build_query(params)
+    except ValueError as exc:
+        assert "article number" in str(exc)
+    else:
+        raise AssertionError("Expected citation mode without article number to fail")
+
+
 def test_search_response_includes_query_and_index_metadata():
     backend = DummyBackend()
     backend.index = "jlaw-current"

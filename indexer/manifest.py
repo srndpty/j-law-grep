@@ -6,6 +6,8 @@ from collections.abc import Iterable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
+from indexer.utils import normalize_text
+
 MANIFEST_FILENAME = "manifest.json"
 CORPUS_SCHEMA_VERSION = 2
 
@@ -24,14 +26,14 @@ def document_stats(doc: dict) -> tuple[int, int]:
         article_count += 1
         paragraphs = article.get("paragraphs", [])
         if not paragraphs:
-            record_count += 1 if article.get("text") else 0
+            record_count += 1 if normalize_text(article.get("text", "")) else 0
             continue
         for paragraph in paragraphs:
             items = paragraph.get("items", [])
             if not items:
-                record_count += 1 if paragraph.get("text") else 0
+                record_count += 1 if normalize_text(paragraph.get("text", "")) else 0
                 continue
-            record_count += sum(1 for item in items if item.get("text"))
+            record_count += sum(1 for item in items if normalize_text(item.get("text", "")))
     return article_count, record_count
 
 

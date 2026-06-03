@@ -101,8 +101,7 @@ def main() -> None:
                 f"Indexed record count mismatch: expected {expected_records}, got {indexed}"
             )
 
-        if args.versioned:
-            backend.prepare_for_search(forcemerge=args.forcemerge)
+        backend.prepare_for_search(forcemerge=args.forcemerge if args.versioned else False)
 
         actual_count = backend.count()
         if actual_count != expected_records:

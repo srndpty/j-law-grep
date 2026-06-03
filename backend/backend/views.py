@@ -18,17 +18,14 @@ def readyz(request) -> JsonResponse:
     backend = OpenSearchBackend()
     try:
         health = backend.cluster_health()
-        concrete_indices = backend.indices_for_alias(backend.index) or [backend.index]
+        index_payload = backend.validate_ready()
         payload = {
             "status": "ok",
             "opensearch": {
                 "status": health.get("status"),
                 "cluster_name": health.get("cluster_name"),
             },
-            "index": {
-                "name": backend.index,
-                "concrete": concrete_indices,
-            },
+            "index": index_payload,
         }
         return JsonResponse(payload)
     except Exception as exc:

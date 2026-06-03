@@ -15,7 +15,10 @@ def parse_boolean_query(query: str) -> BooleanQuery:
     lexer = shlex.shlex(query, posix=True)
     lexer.whitespace_split = True
     lexer.commenters = ""
-    tokens = list(lexer)
+    try:
+        tokens = list(lexer)
+    except ValueError as exc:
+        raise ValueError(f"Invalid boolean query: {exc}") from exc
 
     required: list[str] = []
     optional_groups: list[list[str]] = []
@@ -24,15 +27,21 @@ def parse_boolean_query(query: str) -> BooleanQuery:
     in_or = False
 
     for token in tokens:
-        if token == "|":
+        if token in {"|", "OR"}:
             if required:
                 current_or_group.append(required.pop())
+            elif not current_or_group:
+                raise ValueError("Invalid boolean query: OR must follow a term.")
             in_or = True
             continue
+        if token == "-":
+            raise ValueError("Invalid boolean query: '-' must be attached to a term.")
         if token.startswith("-") and len(token) > 1:
             excluded.append(token[1:])
             continue
         if in_or:
+            if token in {"|", "OR"} or token.startswith("-"):
+                raise ValueError("Invalid boolean query: OR must be followed by a term.")
             current_or_group.append(token)
             in_or = False
             continue
@@ -42,6 +51,8 @@ def parse_boolean_query(query: str) -> BooleanQuery:
         required.append(token)
 
     if current_or_group:
+        if in_or:
+            raise ValueError("Invalid boolean query: OR must be followed by a term.")
         optional_groups.append(current_or_group)
 
     return BooleanQuery(required=required, optional_groups=optional_groups, excluded=excluded)

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .boolean_query import parse_boolean_query
-from .citation import Citation, citation_key, parse_citation
+from .citation import Citation, citation_key, parse_citation_query
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
@@ -35,9 +35,11 @@ class SearchService:
 
     def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
-        citation = parse_citation(raw_query)
+        parsed_citation = parse_citation_query(raw_query)
+        citation = parsed_citation.citation
         citation_filter_key = citation_key(citation)
-        citation_only = self._is_citation_only_query(raw_query, citation_filter_key)
+        citation_only = bool(citation.article_no and not parsed_citation.residual_query)
+        residual_query = parsed_citation.residual_query
 
         must: list[dict[str, Any]] = []
         filter_clauses: list[dict[str, Any]] = []
@@ -57,7 +59,11 @@ class SearchService:
                     }
                 }
             )
-        elif citation.article_no and (params.mode in {"auto", "citation"} or citation_only):
+        elif params.mode == "citation":
+            if not citation.article_no:
+                raise ValueError("Citation query must include an article number.")
+            must.append({"match_all": {}})
+        elif params.mode in {"auto", "literal"} and citation.article_no and citation_only:
             must.append({"match_all": {}})
         elif params.mode == "boolean":
             boolean = parse_boolean_query(raw_query)
@@ -78,7 +84,7 @@ class SearchService:
                 must.append({"match_all": {}})
         else:
             # must.append({"match_phrase": {"content": params.q}})
-            must.append(self._content_phrase_clause(raw_query))
+            must.append(self._content_phrase_clause(residual_query or raw_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
 
@@ -121,14 +127,12 @@ class SearchService:
 
     @staticmethod
     def classify_query(raw_query: str, mode: str) -> dict[str, Any]:
-        citation = parse_citation(raw_query.strip())
-        citation_filter_key = citation_key(citation)
-        citation_only = SearchService._is_citation_only_query(
-            raw_query.strip(), citation_filter_key
-        )
+        parsed_citation = parse_citation_query(raw_query.strip())
+        citation = parsed_citation.citation
+        citation_only = bool(citation.article_no and not parsed_citation.residual_query)
         effective_mode = mode
         if mode == "auto":
-            effective_mode = "citation" if citation.article_no else "literal"
+            effective_mode = "citation" if citation.article_no and citation_only else "literal"
         elif mode == "literal" and citation.article_no and citation_only:
             effective_mode = "citation"
         return {

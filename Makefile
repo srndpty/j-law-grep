@@ -1,6 +1,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 POWERSHELL := powershell.exe -NoProfile -ExecutionPolicy Bypass -Command
+PYTHON ?= python
 
 export MSYS2_ARG_CONV_EXCL = *
 
@@ -21,17 +22,17 @@ build-backend:
 	$(COMPOSE) build backend
 
 lint:
-	.venv/Scripts/python.exe -m ruff check backend indexer tests
-	.venv/Scripts/python.exe -m ruff format --check backend indexer tests
+	$(PYTHON) -m ruff check backend indexer tests
+	$(PYTHON) -m ruff format --check backend indexer tests
 
 typecheck:
-	.venv/Scripts/python.exe -m mypy backend indexer tests
+	$(PYTHON) -m mypy backend indexer tests
 
 test:
-	.venv/Scripts/python.exe -m pytest
+	$(PYTHON) -m pytest
 
 coverage:
-	.venv/Scripts/python.exe -m pytest --cov=backend --cov=indexer --cov-report=term-missing
+	$(PYTHON) -m pytest --cov=backend --cov=indexer --cov-report=term-missing
 
 frontend-check:
 	$(POWERSHELL) "Set-Location frontend; npm run check"

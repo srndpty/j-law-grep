@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "./components/ui/button";
+import { isEditableTarget, mergeHighlightRanges } from "./highlight-ranges";
 import { shouldAutoSearch } from "./search-behavior";
 
 interface SearchHit {
@@ -212,14 +213,16 @@ export default function App() {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowDown") {
+        if (isEditableTarget(event.target) || event.isComposing) return;
         event.preventDefault();
         setSelectedIndex((current) => Math.min(current + 1, Math.max(results.hits.length - 1, 0)));
       }
       if (event.key === "ArrowUp") {
+        if (isEditableTarget(event.target) || event.isComposing) return;
         event.preventDefault();
         setSelectedIndex((current) => Math.max(current - 1, 0));
       }
-      if (event.key === "Enter" && document.activeElement?.tagName !== "INPUT") {
+      if (event.key === "Enter" && !isEditableTarget(event.target) && !event.isComposing) {
         const selected = results.hits[selectedIndex];
         if (selected?.url) {
           window.location.href = selected.url;
@@ -236,9 +239,7 @@ export default function App() {
 
   function renderSnippet(hit: SearchHit) {
     const text = hit.snippet_text ?? hit.snippet;
-    const highlights = (hit.highlights ?? [])
-      .filter((range) => range.start >= 0 && range.end > range.start && range.end <= text.length)
-      .sort((a, b) => a.start - b.start);
+    const highlights = mergeHighlightRanges(hit.highlights ?? [], text.length);
     if (!highlights.length) return text;
 
     const nodes: JSX.Element[] = [];

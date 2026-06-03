@@ -14,4 +14,7 @@ frontend/.vite/
 coverage.xml
 htmlcov/
 data/egov-xml/
+indexer/data/
+!indexer/data/
+!indexer/data/.gitkeep
 tmp/

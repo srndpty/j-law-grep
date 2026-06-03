@@ -144,7 +144,8 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
 
 
 def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
-    for sequence, record in enumerate(records, start=1):
+    seen: dict[str, int] = {}
+    for record in records:
         citation = citation_key(record.citation)
         doc = {
             "law_id": record.law_id,
@@ -163,19 +164,21 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
             "line": 0,
             "blocks": record.blocks,
         }
-        doc_id = stable_doc_id(record, sequence)
+        base_doc_id = stable_doc_id(record)
+        seen[base_doc_id] = seen.get(base_doc_id, 0) + 1
+        doc_id = base_doc_id if seen[base_doc_id] == 1 else f"{base_doc_id}-{seen[base_doc_id]}"
         yield {"_id": doc_id, "_source": doc}
 
 
-def stable_doc_id(record: IndexRecord, sequence: int) -> str:
+def stable_doc_id(record: IndexRecord) -> str:
+    content_digest = sha1(record.content.encode("utf-8")).hexdigest()[:12]
     key = "\0".join(
         [
-            str(sequence),
             record.law_id,
             record.article_no,
             record.paragraph_no or "",
             record.item_no or "",
-            record.content,
+            content_digest,
         ]
     )
     digest = sha1(key.encode("utf-8")).hexdigest()[:20]

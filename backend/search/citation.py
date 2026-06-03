@@ -46,6 +46,16 @@ class Citation:
     item_no: int | None
 
 
+@dataclass
+class ParsedCitation:
+    citation: Citation
+    matched_text: str
+    residual_query: str
+
+
+EMPTY_CITATION = Citation(law_name=None, article_no=None, paragraph_no=None, item_no=None)
+
+
 def _kanji_to_int(value: str) -> int | None:
     if not value:
         return None
@@ -75,7 +85,7 @@ def _normalize_number(value: str | None) -> int | None:
     return kanji_value
 
 
-def parse_citation(text: str) -> Citation:
+def parse_citation_query(text: str) -> ParsedCitation:
     normalized = text.translate(FULLWIDTH_DIGITS)
     pattern = re.compile(
         r"(?:(?P<law>[\w\-・（）()\u3000\s\u4e00-\u9fff々〆]+?)\s*)?"
@@ -85,7 +95,7 @@ def parse_citation(text: str) -> Citation:
     )
     match = pattern.search(normalized)
     if not match:
-        return Citation(law_name=None, article_no=None, paragraph_no=None, item_no=None)
+        return ParsedCitation(citation=EMPTY_CITATION, matched_text="", residual_query=text.strip())
 
     law_name = match.group("law")
     if law_name:
@@ -107,12 +117,26 @@ def parse_citation(text: str) -> Citation:
             kanji = _kanji_to_int(article_raw)
             article_no = str(kanji) if kanji is not None else article_raw
 
-    return Citation(
+    citation = Citation(
         law_name=law_name,
         article_no=article_no,
         paragraph_no=paragraph_no,
         item_no=item_no,
     )
+    residual_query = " ".join(
+        part.strip()
+        for part in (normalized[: match.start()], normalized[match.end() :])
+        if part.strip()
+    )
+    return ParsedCitation(
+        citation=citation,
+        matched_text=normalized[match.start() : match.end()].strip(),
+        residual_query=residual_query,
+    )
+
+
+def parse_citation(text: str) -> Citation:
+    return parse_citation_query(text).citation
 
 
 def citation_key(citation: Citation) -> str | None:
