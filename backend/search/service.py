@@ -37,6 +37,9 @@ class SearchService:
     def ensure_index(self) -> None:
         self.backend.ensure_index()
 
+    def list_laws(self) -> list[str]:
+        return sorted(self.backend.law_names())
+
     def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
         parsed_citation = parse_citation_query(raw_query)

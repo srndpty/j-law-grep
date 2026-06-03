@@ -226,6 +226,19 @@ class OpenSearchBackend:
             raise
         return sorted(response.keys())
 
+    def law_names(self, size: int = 2000) -> list[str]:
+        body = {
+            "size": 0,
+            "aggs": {"laws": {"terms": {"field": "law_name", "size": size}}},
+        }
+        response = self.client.search(
+            index=self.index,
+            body=body,
+            request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+        )
+        buckets = response.get("aggregations", {}).get("laws", {}).get("buckets", [])
+        return [bucket["key"] for bucket in buckets if bucket.get("key")]
+
     def search(self, body: dict[str, Any], size: int, from_: int) -> dict[str, Any]:
         return self.client.search(
             index=self.index,

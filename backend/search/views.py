@@ -45,6 +45,24 @@ class SearchView(APIView):
         return Response(response_serializer.data)
 
 
+class LawsView(APIView):
+    service_class = SearchService
+
+    def get(self, request) -> Response:
+        service = self.service_class()
+        try:
+            laws = service.list_laws()
+        except OpenSearchConnectionError:
+            return Response(
+                {
+                    "detail": "検索バックエンドに接続できませんでした。時間をおいて再試行してください。",
+                    "request_id": getattr(request, "request_id", None),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"laws": laws})
+
+
 class EnsureIndexView(APIView):
     service_class = SearchService
 
