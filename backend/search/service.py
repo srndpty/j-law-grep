@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .boolean_query import parse_boolean_query
 from .citation import Citation, citation_key, parse_citation
@@ -21,28 +21,28 @@ DANGEROUS_REGEX_PATTERNS = (
 class SearchParams:
     q: str
     mode: str
-    filters: Dict[str, Optional[str]]
+    filters: dict[str, str | None]
     size: int
     page: int
 
 
 class SearchService:
-    def __init__(self, backend: Optional[OpenSearchBackend] = None) -> None:
+    def __init__(self, backend: OpenSearchBackend | None = None) -> None:
         self.backend = backend or OpenSearchBackend()
 
     def ensure_index(self) -> None:
         self.backend.ensure_index()
 
-    def build_query(self, params: SearchParams) -> Dict[str, Any]:
+    def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
         citation = parse_citation(raw_query)
         citation_filter_key = citation_key(citation)
         citation_only = self._is_citation_only_query(raw_query, citation_filter_key)
 
-        must: List[Dict[str, Any]] = []
-        filter_clauses: List[Dict[str, Any]] = []
-        should: List[Dict[str, Any]] = []
-        must_not: List[Dict[str, Any]] = []
+        must: list[dict[str, Any]] = []
+        filter_clauses: list[dict[str, Any]] = []
+        should: list[dict[str, Any]] = []
+        must_not: list[dict[str, Any]] = []
 
         if params.mode == "regex":
             self.validate_regex(raw_query)
@@ -102,7 +102,7 @@ class SearchService:
         if citation_filter_key:
             should.append({"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}})
 
-        query: Dict[str, Any] = {
+        query: dict[str, Any] = {
             "bool": {
                 "must": must,
                 "filter": filter_clauses,
@@ -120,10 +120,12 @@ class SearchService:
         }
 
     @staticmethod
-    def classify_query(raw_query: str, mode: str) -> Dict[str, Any]:
+    def classify_query(raw_query: str, mode: str) -> dict[str, Any]:
         citation = parse_citation(raw_query.strip())
         citation_filter_key = citation_key(citation)
-        citation_only = SearchService._is_citation_only_query(raw_query.strip(), citation_filter_key)
+        citation_only = SearchService._is_citation_only_query(
+            raw_query.strip(), citation_filter_key
+        )
         effective_mode = mode
         if mode == "auto":
             effective_mode = "citation" if citation.article_no else "literal"
@@ -137,7 +139,7 @@ class SearchService:
         }
 
     @staticmethod
-    def _citation_payload(citation: Citation) -> Dict[str, Any]:
+    def _citation_payload(citation: Citation) -> dict[str, Any]:
         return {
             "law_name": citation.law_name,
             "article_no": citation.article_no,
@@ -146,7 +148,7 @@ class SearchService:
         }
 
     @staticmethod
-    def _content_phrase_clause(term: str) -> Dict[str, Any]:
+    def _content_phrase_clause(term: str) -> dict[str, Any]:
         return {
             "match_phrase": {
                 "content": {
@@ -158,14 +160,14 @@ class SearchService:
         }
 
     @staticmethod
-    def _is_citation_only_query(raw_query: str, citation_filter_key: Optional[str]) -> bool:
+    def _is_citation_only_query(raw_query: str, citation_filter_key: str | None) -> bool:
         if not citation_filter_key:
             return False
         compact_query = re.sub(r"\s+", "", raw_query)
         compact_citation = re.sub(r"\s+", "", citation_filter_key)
         return compact_query == compact_citation
 
-    def search(self, params: SearchParams) -> Dict[str, Any]:
+    def search(self, params: SearchParams) -> dict[str, Any]:
         if not params.q.strip():
             return {
                 "hits": [],
@@ -202,7 +204,7 @@ class SearchService:
         except re.error as exc:
             raise ValueError(f"Invalid regex query: {exc}") from exc
 
-    def _convert_hit(self, hit: Dict[str, Any], query: str) -> Dict[str, Any]:
+    def _convert_hit(self, hit: dict[str, Any], query: str) -> dict[str, Any]:
         source = hit.get("_source", {})
         highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
         snippet_text, highlights = self._snippet_with_ranges(
@@ -216,7 +218,9 @@ class SearchService:
         path = source.get("path") or ""
         url = source.get("url", "") or ""
         if not article_no:
-            article_no = self._extract_article_from_url(url) or self._extract_article_from_path(path)
+            article_no = self._extract_article_from_url(url) or self._extract_article_from_path(
+                path
+            )
         if paragraph_no is None:
             paragraph_no = self._extract_paragraph_from_url(url)
         if not path and law_name:
@@ -263,22 +267,22 @@ class SearchService:
         return parts[1] if len(parts) >= 2 else ""
 
     @staticmethod
-    def _extract_paragraph_from_url(url: str) -> Optional[str]:
+    def _extract_paragraph_from_url(url: str) -> str | None:
         match = re.search(r"/a/[^/]+/(\d+)", url)
         if not match:
             return None
         return match.group(1)
 
-    def _snippet_with_ranges(self, snippet: str, query: str) -> Tuple[str, List[Dict[str, int]]]:
+    def _snippet_with_ranges(self, snippet: str, query: str) -> tuple[str, list[dict[str, int]]]:
         if "<mark>" in snippet or "</mark>" in snippet:
             return self._parse_marked_snippet(snippet)
         return snippet, self._literal_ranges(snippet, query)
 
     @staticmethod
-    def _parse_marked_snippet(snippet: str) -> Tuple[str, List[Dict[str, int]]]:
-        text_parts: List[str] = []
-        ranges: List[Dict[str, int]] = []
-        active_start: Optional[int] = None
+    def _parse_marked_snippet(snippet: str) -> tuple[str, list[dict[str, int]]]:
+        text_parts: list[str] = []
+        ranges: list[dict[str, int]] = []
+        active_start: int | None = None
         i = 0
         while i < len(snippet):
             if snippet.startswith("<mark>", i):
@@ -309,10 +313,10 @@ class SearchService:
         return "".join(text_parts), ranges
 
     @staticmethod
-    def _literal_ranges(snippet: str, query: str) -> List[Dict[str, int]]:
+    def _literal_ranges(snippet: str, query: str) -> list[dict[str, int]]:
         if not query:
             return []
-        ranges: List[Dict[str, int]] = []
+        ranges: list[dict[str, int]] = []
         start = 0
         while True:
             idx = snippet.find(query, start)

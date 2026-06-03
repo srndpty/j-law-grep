@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import List
 
 from dotenv import load_dotenv
 
@@ -16,7 +15,7 @@ if not SECRET_KEY:
         raise RuntimeError("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is not 1.")
 
 
-def _csv_env(name: str, default: str = "") -> List[str]:
+def _csv_env(name: str, default: str = "") -> list[str]:
     raw = os.environ.get(name, default)
     return [item.strip() for item in raw.split(",") if item.strip()]
 
@@ -73,7 +72,7 @@ DATABASES = {
     }
 }
 
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS: list[dict[str, str]] = []
 
 LANGUAGE_CODE = "ja"
 TIME_ZONE = "Asia/Tokyo"

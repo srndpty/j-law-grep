@@ -1,9 +1,11 @@
+from typing import Any
+
 from search.service import SearchParams, SearchService
 
 
 class DummyBackend:
     def __init__(self) -> None:
-        self.last_body = None
+        self.last_body: dict[str, Any] = {}
         self.index = "laws"
 
     def ensure_index(self) -> None:
@@ -16,7 +18,7 @@ class DummyBackend:
 
 def test_build_literal_query_uses_match_phrase(monkeypatch):
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     params = SearchParams(q="損害賠償", mode="literal", filters={}, size=20, page=1)
     service.search(params)
     content = backend.last_body["query"]["bool"]["must"][0]["match_phrase"]["content"]
@@ -25,7 +27,7 @@ def test_build_literal_query_uses_match_phrase(monkeypatch):
 
 def test_build_literal_citation_only_query_uses_citation_filters():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     params = SearchParams(q="民法 709条", mode="literal", filters={}, size=20, page=1)
     service.search(params)
     query = backend.last_body["query"]["bool"]
@@ -36,8 +38,8 @@ def test_build_literal_citation_only_query_uses_citation_filters():
 
 def test_search_response_includes_query_and_index_metadata():
     backend = DummyBackend()
-    backend.index = "jlaw-current"  # type: ignore[attr-defined]
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    backend.index = "jlaw-current"
+    service = SearchService(backend=backend)
     params = SearchParams(q="民法 709条", mode="auto", filters={}, size=20, page=1)
     result = service.search(params)
     assert result["query"]["effective_mode"] == "citation"
@@ -47,19 +49,15 @@ def test_search_response_includes_query_and_index_metadata():
 
 def test_build_boolean_query_uses_required_optional_and_excluded_terms():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
-    params = SearchParams(q='"不法行為" 損害 | 賠償 -故意', mode="boolean", filters={}, size=20, page=1)
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q='"不法行為" 損害 | 賠償 -故意', mode="boolean", filters={}, size=20, page=1
+    )
     service.search(params)
     query = backend.last_body["query"]["bool"]
 
-    must_terms = [
-        clause["match_phrase"]["content"]["query"]
-        for clause in query["must"]
-    ]
-    must_not_terms = [
-        clause["match_phrase"]["content"]["query"]
-        for clause in query["must_not"]
-    ]
+    must_terms = [clause["match_phrase"]["content"]["query"] for clause in query["must"]]
+    must_not_terms = [clause["match_phrase"]["content"]["query"] for clause in query["must_not"]]
     optional_terms = [
         clause["match_phrase"]["content"]["query"]
         for clause in query["should"][0]["bool"]["should"]
@@ -71,7 +69,7 @@ def test_build_boolean_query_uses_required_optional_and_excluded_terms():
 
 def test_convert_hit_includes_article_metadata():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     hit = {
         "_id": "doc1",
         "_source": {
@@ -98,7 +96,7 @@ def test_convert_hit_includes_article_metadata():
 
 def test_convert_hit_turns_opensearch_mark_tags_into_ranges():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     hit = {
         "_id": "doc-marked",
         "_source": {
@@ -121,7 +119,7 @@ def test_convert_hit_turns_opensearch_mark_tags_into_ranges():
 
 def test_convert_hit_derives_article_from_url_when_missing():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     hit = {
         "_id": "doc2",
         "_source": {
@@ -144,7 +142,7 @@ def test_convert_hit_derives_article_from_url_when_missing():
 
 def test_regex_query_rejects_expensive_patterns():
     backend = DummyBackend()
-    service = SearchService(backend=backend)  # type: ignore[arg-type]
+    service = SearchService(backend=backend)
     params = SearchParams(q=".*損害.*賠償", mode="regex", filters={}, size=20, page=1)
     try:
         service.build_query(params)

@@ -4,17 +4,17 @@ import argparse
 import hashlib
 import json
 import sys
-from pathlib import Path
-from typing import Iterable, List, Optional
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
+from pathlib import Path
 
 try:
-    from tqdm import tqdm  # type: ignore
+    from tqdm import tqdm
 except ImportError:  # pragma: no cover - optional
     tqdm = None
 
-from indexer.utils import normalize_text
 from indexer.manifest import write_manifest
+from indexer.utils import normalize_text
 
 MAX_CORPUS_FILENAME_STEM = 64
 
@@ -25,13 +25,13 @@ def local_name(tag: str) -> str:
     return tag
 
 
-def parse_number(value: Optional[str]) -> Optional[int | str]:
+def parse_number(value: str | None) -> int | str | None:
     if value is None:
         return None
     value = normalize_text(value)
     if not value:
         return None
-    translated = value.translate(str.maketrans({"０": "0", "１": "1", "２": "2", "３": "3", "４": "4", "５": "5", "６": "6", "７": "7", "８": "8", "９": "9"}))
+    translated = value.translate(str.maketrans("０１２３４５６７８９", "0123456789"))
     if translated.isdigit():
         return int(translated)
     return value
@@ -42,7 +42,7 @@ def _joined_text(elem: ET.Element) -> str:
     return "".join(elem.itertext())
 
 
-def find_first_text(element: ET.Element, *names: str) -> Optional[str]:
+def find_first_text(element: ET.Element, *names: str) -> str | None:
     # 1) 直下優先（従来互換）
     for child in element:
         if local_name(child.tag) in names:
@@ -60,7 +60,7 @@ def find_first_text(element: ET.Element, *names: str) -> Optional[str]:
 
 
 def extract_sentence_texts(elements: Iterable[ET.Element]) -> str:
-    sentences: List[str] = []
+    sentences: list[str] = []
     for elem in elements:
         for node in elem.iter():
             if local_name(node.tag) in {"SentenceText", "Sentence"} and node.text:
@@ -69,7 +69,7 @@ def extract_sentence_texts(elements: Iterable[ET.Element]) -> str:
     return normalize_text(joined)
 
 
-def parse_item(item_elem: ET.Element) -> Optional[dict]:
+def parse_item(item_elem: ET.Element) -> dict | None:
     item_no = item_elem.attrib.get("Num") or find_first_text(item_elem, "ItemTitle", "ItemNum")
     text = extract_sentence_texts([item_elem])
     if not text:
@@ -80,12 +80,14 @@ def parse_item(item_elem: ET.Element) -> Optional[dict]:
     }
 
 
-def parse_paragraph(paragraph_elem: ET.Element) -> Optional[dict]:
-    paragraph_no = paragraph_elem.attrib.get("Num") or find_first_text(paragraph_elem, "ParagraphNum")
-    paragraph_text = extract_sentence_texts(paragraph_elem.findall('./{*}ParagraphSentence'))
+def parse_paragraph(paragraph_elem: ET.Element) -> dict | None:
+    paragraph_no = paragraph_elem.attrib.get("Num") or find_first_text(
+        paragraph_elem, "ParagraphNum"
+    )
+    paragraph_text = extract_sentence_texts(paragraph_elem.findall("./{*}ParagraphSentence"))
 
-    items: List[dict] = []
-    for item_elem in paragraph_elem.findall('./{*}Item'):
+    items: list[dict] = []
+    for item_elem in paragraph_elem.findall("./{*}Item"):
         item = parse_item(item_elem)
         if item:
             items.append(item)
@@ -105,12 +107,12 @@ def parse_paragraph(paragraph_elem: ET.Element) -> Optional[dict]:
     }
 
 
-def parse_article(article_elem: ET.Element) -> Optional[dict]:
+def parse_article(article_elem: ET.Element) -> dict | None:
     article_no = find_first_text(article_elem, "ArticleNum")
     heading = normalize_text(find_first_text(article_elem, "ArticleTitle") or "")
 
-    paragraphs: List[dict] = []
-    for paragraph_elem in article_elem.findall('./{*}Paragraph'):
+    paragraphs: list[dict] = []
+    for paragraph_elem in article_elem.findall("./{*}Paragraph"):
         paragraph = parse_paragraph(paragraph_elem)
         if paragraph:
             paragraphs.append(paragraph)
@@ -119,7 +121,9 @@ def parse_article(article_elem: ET.Element) -> Optional[dict]:
         article_text = extract_sentence_texts([article_elem])
         if not article_text:
             return None
-        paragraphs.append({"paragraph_no": None, "items": [{"item_no": None, "text": article_text}]})
+        paragraphs.append(
+            {"paragraph_no": None, "items": [{"item_no": None, "text": article_text}]}
+        )
 
     return {
         "article_no": normalize_text(article_no or ""),
@@ -142,8 +146,8 @@ def parse_law(xml_path: Path) -> dict:
     enforce_date = find_first_text(root, "EnactDate", "AmendmentDate", "PromulgationDate")
     year_enforced = enforce_date[:4] if enforce_date and len(enforce_date) >= 4 else None
 
-    articles: List[dict] = []
-    for article_elem in root.findall('.//{*}Article'):
+    articles: list[dict] = []
+    for article_elem in root.findall(".//{*}Article"):
         article = parse_article(article_elem)
         if article:
             articles.append(article)
@@ -151,14 +155,15 @@ def parse_law(xml_path: Path) -> dict:
     # Fallback: some early-era or appendix-only laws have no Article nodes.
     # Convert top-level paragraphs into pseudo articles so the corpus is not empty.
     if not articles:
-        for idx, paragraph_elem in enumerate(root.findall('.//{*}LawBody//{*}Paragraph'), start=1):
+        for idx, paragraph_elem in enumerate(root.findall(".//{*}LawBody//{*}Paragraph"), start=1):
             paragraph = parse_paragraph(paragraph_elem)
             if not paragraph:
                 continue
-            article_no = (
-                normalize_text(paragraph_elem.attrib.get("Num") or find_first_text(paragraph_elem, "ParagraphNum") or "")
-                or str(idx)
-            )
+            article_no = normalize_text(
+                paragraph_elem.attrib.get("Num")
+                or find_first_text(paragraph_elem, "ParagraphNum")
+                or ""
+            ) or str(idx)
             articles.append(
                 {
                     "article_no": article_no,
@@ -177,7 +182,11 @@ def parse_law(xml_path: Path) -> dict:
 
 def stable_output_stem(law: dict) -> str:
     raw_id = normalize_text(str(law.get("law_id", "")))
-    if raw_id and len(raw_id) <= MAX_CORPUS_FILENAME_STEM and all(ch not in raw_id for ch in "\\/:*?\"<>|"):
+    if (
+        raw_id
+        and len(raw_id) <= MAX_CORPUS_FILENAME_STEM
+        and all(ch not in raw_id for ch in '\\/:*?"<>|')
+    ):
         return raw_id
     seed = "|".join(
         [
@@ -213,9 +222,18 @@ def import_directory(xml_dir: Path, output_dir: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import e-Gov law XML files into JSON corpus format")
-    parser.add_argument("--xml-dir", type=Path, required=True, help="Directory containing downloaded e-Gov law XML files")
-    parser.add_argument("--output", type=Path, required=True, help="Directory to store converted JSON files")
+    parser = argparse.ArgumentParser(
+        description="Import e-Gov law XML files into JSON corpus format"
+    )
+    parser.add_argument(
+        "--xml-dir",
+        type=Path,
+        required=True,
+        help="Directory containing downloaded e-Gov law XML files",
+    )
+    parser.add_argument(
+        "--output", type=Path, required=True, help="Directory to store converted JSON files"
+    )
     args = parser.parse_args()
 
     import_directory(args.xml_dir, args.output)

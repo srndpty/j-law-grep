@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
-FULLWIDTH_DIGITS = str.maketrans({
-    "０": "0",
-    "１": "1",
-    "２": "2",
-    "３": "3",
-    "４": "4",
-    "５": "5",
-    "６": "6",
-    "７": "7",
-    "８": "8",
-    "９": "9",
-})
+FULLWIDTH_DIGITS = str.maketrans(
+    {
+        "０": "0",
+        "１": "1",
+        "２": "2",
+        "３": "3",
+        "４": "4",
+        "５": "5",
+        "６": "6",
+        "７": "7",
+        "８": "8",
+        "９": "9",
+    }
+)
 
 KANJI_DIGITS = {
     "〇": 0,
@@ -39,13 +40,13 @@ KANJI_UNITS = {
 
 @dataclass
 class Citation:
-    law_name: Optional[str]
-    article_no: Optional[str]
-    paragraph_no: Optional[int]
-    item_no: Optional[int]
+    law_name: str | None
+    article_no: str | None
+    paragraph_no: int | None
+    item_no: int | None
 
 
-def _kanji_to_int(value: str) -> Optional[int]:
+def _kanji_to_int(value: str) -> int | None:
     if not value:
         return None
     total = 0
@@ -64,7 +65,7 @@ def _kanji_to_int(value: str) -> Optional[int]:
     return total
 
 
-def _normalize_number(value: Optional[str]) -> Optional[int]:
+def _normalize_number(value: str | None) -> int | None:
     if value is None:
         return None
     normalized = value.translate(FULLWIDTH_DIGITS)
@@ -114,7 +115,7 @@ def parse_citation(text: str) -> Citation:
     )
 
 
-def citation_key(citation: Citation) -> Optional[str]:
+def citation_key(citation: Citation) -> str | None:
     if not citation.law_name or not citation.article_no:
         return None
     parts = [citation.law_name.strip(), f"{citation.article_no}条"]

@@ -23,8 +23,12 @@ from search.open_search_client import OpenSearchBackend  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate an OpenSearch index against a corpus manifest")
-    parser.add_argument("--manifest", type=Path, default=PROJECT_ROOT / "indexer" / "data" / "manifest.json")
+    parser = argparse.ArgumentParser(
+        description="Validate an OpenSearch index against a corpus manifest"
+    )
+    parser.add_argument(
+        "--manifest", type=Path, default=PROJECT_ROOT / "indexer" / "data" / "manifest.json"
+    )
     parser.add_argument("--index", default=os.environ.get("OPENSEARCH_INDEX", "jlaw-current"))
     return parser.parse_args()
 

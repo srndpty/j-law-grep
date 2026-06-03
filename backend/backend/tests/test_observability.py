@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 OBSERVABILITY_PATH = Path(__file__).resolve().parents[1] / "observability.py"
 spec = importlib.util.spec_from_file_location("observability_under_test", OBSERVABILITY_PATH)
-observability = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
+observability = importlib.util.module_from_spec(spec)
 sys.modules["observability_under_test"] = observability
 spec.loader.exec_module(observability)
 

@@ -44,9 +44,7 @@ def test_non_numeric_item_number_is_indexed_as_label(tmp_path):
                 "paragraphs": [
                     {
                         "paragraph_no": 1,
-                        "items": [
-                            {"item_no": "1_2", "text": "不当に制限しないこと。"}
-                        ],
+                        "items": [{"item_no": "1_2", "text": "不当に制限しないこと。"}],
                     }
                 ],
             }

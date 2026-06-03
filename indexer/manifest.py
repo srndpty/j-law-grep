@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable, Iterator
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable, Iterator
 
 MANIFEST_FILENAME = "manifest.json"
 CORPUS_SCHEMA_VERSION = 2

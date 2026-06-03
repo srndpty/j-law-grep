@@ -1,5 +1,6 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
+POWERSHELL := powershell.exe -NoProfile -ExecutionPolicy Bypass -Command
 
 export MSYS2_ARG_CONV_EXCL = *
 
@@ -11,13 +12,31 @@ INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend reindex reindex-versioned validate-index golden health-smoke api-smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned validate-index golden health-smoke api-smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
 
 build-backend:
 	$(COMPOSE) build backend
+
+lint:
+	.venv/Scripts/python.exe -m ruff check backend indexer tests
+	.venv/Scripts/python.exe -m ruff format --check backend indexer tests
+
+typecheck:
+	.venv/Scripts/python.exe -m mypy backend indexer tests
+
+test:
+	.venv/Scripts/python.exe -m pytest
+
+coverage:
+	.venv/Scripts/python.exe -m pytest --cov=backend --cov=indexer --cov-report=term-missing
+
+frontend-check:
+	$(POWERSHELL) "Set-Location frontend; npm run check"
+
+check: lint typecheck test frontend-check
 
 reindex:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \

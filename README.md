@@ -16,6 +16,8 @@ scripts/           補助スクリプト (wait-for.sh)
 
 - Docker Desktop (Windows + PowerShell を想定)
 - make
+- Python 3.10
+- Node.js / npm
 
 ## セットアップ
 
@@ -26,6 +28,35 @@ make reindex
 ```
 
 `make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入し、`manifest.json` を生成します。
+
+### 開発用ツールのセットアップ
+
+品質ゲート用に backend は Ruff / mypy / pytest-cov / pre-commit、frontend は ESLint / Prettier / TypeScript / Vitest を使います。
+
+```powershell
+uv pip install -r requirements-dev.txt
+cd frontend
+npm install
+cd ..
+.\.venv\Scripts\python.exe -m pre_commit install
+```
+
+通常の確認は次でまとめて実行できます。
+
+```powershell
+make check
+```
+
+個別に見る場合は次を使います。
+
+```powershell
+make lint
+make typecheck
+make test
+make coverage
+make frontend-check
+.\.venv\Scripts\python.exe -m pre_commit run --all-files
+```
 
 ### e-Gov XML からの取り込みと再インデックス
 

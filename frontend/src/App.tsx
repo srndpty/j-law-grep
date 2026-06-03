@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ExternalLink, Loader2, Search as SearchIcon } from "lucide-react";
 import { clsx } from "clsx";
 import { Button } from "./components/ui/button";
+import { shouldAutoSearch } from "./search-behavior";
 
 interface SearchHit {
   file_id: string;
@@ -140,10 +141,7 @@ export default function App() {
   );
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ query, mode, lawFilter, yearFilter })
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, mode, lawFilter, yearFilter }));
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (mode !== "auto") params.set("mode", mode);
@@ -196,12 +194,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isComposing || mode === "regex") {
-      return;
-    }
-    if (query.trim().length < 2) {
+    if (!shouldAutoSearch(query, mode, isComposing)) {
       abortRef.current?.abort();
-      setResults({ hits: [], total: 0, took_ms: 0 });
+      if (query.trim().length < 2) {
+        setResults({ hits: [], total: 0, took_ms: 0 });
+      }
       setIsLoading(false);
       return;
     }
@@ -334,7 +331,9 @@ export default function App() {
               </div>
               <div className="flex justify-between gap-3">
                 <dt>index</dt>
-                <dd className="truncate font-mono" title={results.index?.name}>{results.index?.name ?? "-"}</dd>
+                <dd className="truncate font-mono" title={results.index?.name}>
+                  {results.index?.name ?? "-"}
+                </dd>
               </div>
             </dl>
             <button
@@ -358,10 +357,18 @@ export default function App() {
             </div>
             {isLoading && <Loader2 className="h-5 w-5 animate-spin text-gray-500" />}
           </div>
-          {error && <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {error && (
+            <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </p>
+          )}
           {showDebug && (
             <pre className="max-h-64 overflow-auto rounded-md border border-gray-300 bg-white p-3 text-xs text-gray-700">
-              {JSON.stringify({ request: requestBody, query: results.query, index: results.index }, null, 2)}
+              {JSON.stringify(
+                { request: requestBody, query: results.query, index: results.index },
+                null,
+                2
+              )}
             </pre>
           )}
           <div className="space-y-3">
@@ -374,13 +381,22 @@ export default function App() {
                 onClick={() => setSelectedIndex(index)}
                 className={clsx(
                   "rounded-lg border bg-white p-4 shadow-sm",
-                  selectedIndex === index ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
+                  selectedIndex === index
+                    ? "border-blue-500 ring-1 ring-blue-500"
+                    : "border-gray-200"
                 )}
               >
-                <div className="text-xs uppercase tracking-wide text-gray-500">{formatLocation(hit)}</div>
-                <div className="mt-2 text-sm leading-relaxed text-gray-900">{renderSnippet(hit)}</div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">
+                  {formatLocation(hit)}
+                </div>
+                <div className="mt-2 text-sm leading-relaxed text-gray-900">
+                  {renderSnippet(hit)}
+                </div>
                 {hit.url && (
-                  <a href={hit.url} className="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                  <a
+                    href={hit.url}
+                    className="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  >
                     パーマリンク
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>

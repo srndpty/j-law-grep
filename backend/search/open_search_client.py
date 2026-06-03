@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 from django.conf import settings
 from opensearchpy import OpenSearch, TransportError
@@ -14,15 +15,15 @@ class SearchHit:
     file_id: str
     law_name: str
     article_no: str
-    paragraph_no: Optional[str]
-    item_no: Optional[str]
+    paragraph_no: str | None
+    item_no: str | None
     path: str
     line: int
     snippet: str
     snippet_text: str
-    highlights: List[Dict[str, int]]
+    highlights: list[dict[str, int]]
     url: str
-    blocks: List[Dict[str, Any]]
+    blocks: list[dict[str, Any]]
 
 
 @lru_cache(maxsize=8)
@@ -31,7 +32,7 @@ def get_opensearch_client(host: str, timeout: int) -> OpenSearch:
 
 
 class OpenSearchBackend:
-    def __init__(self, client: Optional[OpenSearch] = None, index: Optional[str] = None) -> None:
+    def __init__(self, client: OpenSearch | None = None, index: str | None = None) -> None:
         self.client = client or self._create_client()
         self.index = index or settings.OPENSEARCH_INDEX
 
@@ -41,7 +42,7 @@ class OpenSearchBackend:
             settings.OPENSEARCH_TIMEOUT_SECONDS,
         )
 
-    def get_index_definition(self) -> Dict[str, Any]:
+    def get_index_definition(self) -> dict[str, Any]:
         return {
             "settings": {
                 "index": {
@@ -120,7 +121,7 @@ class OpenSearchBackend:
                     "url": {"type": "keyword"},
                     "line": {"type": "integer"},
                     "blocks": {"type": "object", "enabled": False},
-                }
+                },
             },
         }
 
@@ -139,7 +140,7 @@ class OpenSearchBackend:
         if self.client.indices.exists(index=index):
             self.client.indices.delete(index=index)
 
-    def prepare_for_search(self, index: Optional[str] = None, forcemerge: bool = False) -> None:
+    def prepare_for_search(self, index: str | None = None, forcemerge: bool = False) -> None:
         target = index or self.index
         self.client.indices.put_settings(
             index=target,
@@ -149,21 +150,21 @@ class OpenSearchBackend:
         if forcemerge:
             self.client.indices.forcemerge(index=target, max_num_segments=1)
 
-    def count(self, index: Optional[str] = None) -> int:
+    def count(self, index: str | None = None) -> int:
         response = self.client.count(index=index or self.index)
         return int(response.get("count", 0))
 
-    def cluster_health(self) -> Dict[str, Any]:
+    def cluster_health(self) -> dict[str, Any]:
         return self.client.cluster.health()
 
     def switch_alias(self, alias: str, target_index: str) -> None:
-        actions: List[Dict[str, Any]] = []
+        actions: list[dict[str, Any]] = []
         for old_index in self.indices_for_alias(alias):
             actions.append({"remove": {"index": old_index, "alias": alias}})
         actions.append({"add": {"index": target_index, "alias": alias}})
         self.client.indices.update_aliases(body={"actions": actions})
 
-    def indices_for_alias(self, alias: str) -> List[str]:
+    def indices_for_alias(self, alias: str) -> list[str]:
         try:
             response = self.client.indices.get_alias(name=alias)
         except TransportError as exc:
@@ -172,7 +173,7 @@ class OpenSearchBackend:
             raise
         return sorted(response.keys())
 
-    def search(self, body: Dict[str, Any], size: int, from_: int) -> Dict[str, Any]:
+    def search(self, body: dict[str, Any], size: int, from_: int) -> dict[str, Any]:
         return self.client.search(
             index=self.index,
             body=body,
@@ -182,21 +183,25 @@ class OpenSearchBackend:
         )
 
     @staticmethod
-    def _estimated_bulk_action_bytes(action: Dict[str, Any]) -> int:
+    def _estimated_bulk_action_bytes(action: dict[str, Any]) -> int:
         meta = {"index": {"_id": action["_id"]}}
         return (
             len(json.dumps(meta, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-            + len(json.dumps(action["_source"], ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+            + len(
+                json.dumps(action["_source"], ensure_ascii=False, separators=(",", ":")).encode(
+                    "utf-8"
+                )
+            )
             + 2
         )
 
     def _chunked(
         self,
-        actions: Iterable[Dict[str, Any]],
+        actions: Iterable[dict[str, Any]],
         size: int,
-        max_bytes: Optional[int] = None,
-    ) -> Iterable[List[Dict[str, Any]]]:
-        batch: List[Dict[str, Any]] = []
+        max_bytes: int | None = None,
+    ) -> Iterable[list[dict[str, Any]]]:
+        batch: list[dict[str, Any]] = []
         batch_bytes = 0
         for action in actions:
             action_bytes = self._estimated_bulk_action_bytes(action) if max_bytes else 0
@@ -215,16 +220,16 @@ class OpenSearchBackend:
 
     def bulk(
         self,
-        actions: Iterable[Dict[str, Any]],
+        actions: Iterable[dict[str, Any]],
         chunk_size: int = 200,
-        max_chunk_bytes: Optional[int] = None,
+        max_chunk_bytes: int | None = None,
         progress: bool = False,
         refresh_at_end: bool = True,
     ) -> int:
         processed = 0
         max_bytes = max_chunk_bytes or settings.OPENSEARCH_BULK_MAX_BYTES
         for chunk in self._chunked(actions, size=chunk_size, max_bytes=max_bytes):
-            body: List[Dict[str, Any]] = []
+            body: list[dict[str, Any]] = []
             for action in chunk:
                 meta = {"index": {"_index": self.index, "_id": action["_id"]}}
                 body.extend([meta, action["_source"]])
@@ -248,7 +253,7 @@ class OpenSearchBackend:
         return processed
 
 
-def highlight_config() -> Dict[str, Any]:
+def highlight_config() -> dict[str, Any]:
     return {
         "fields": {
             "content": {

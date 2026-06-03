@@ -21,7 +21,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         className={clsx(
-          "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm transition", 
+          "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm transition",
           variantStyles[variant],
           className
         )}

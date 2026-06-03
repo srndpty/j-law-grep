@@ -1,36 +1,37 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from hashlib import sha1
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional
 
 from search.citation import Citation, citation_key
+
 try:
-    from tqdm import tqdm  # type: ignore
+    from tqdm import tqdm
 except ImportError:  # pragma: no cover - optional dependency
     tqdm = None
-from indexer.utils import normalize_text
 from indexer.manifest import iter_corpus_json_paths
+from indexer.utils import normalize_text
 
 
 @dataclass
 class IndexRecord:
     law_id: str
     law_name: str
-    law_aliases: List[str]
+    law_aliases: list[str]
     article_no: str
-    paragraph_no: Optional[str]
-    item_no: Optional[str]
+    paragraph_no: str | None
+    item_no: str | None
     heading: str
     content: str
     content_plain: str
     citation: Citation
-    year_enforced: Optional[str]
+    year_enforced: str | None
     path: str
     url: str
-    blocks: List[dict]
+    blocks: list[dict]
 
 
 def load_documents(input_dir: Path) -> Iterable[dict]:
@@ -39,7 +40,7 @@ def load_documents(input_dir: Path) -> Iterable[dict]:
             yield json.load(fh)
 
 
-def position_label(value: object) -> Optional[str]:
+def position_label(value: object) -> str | None:
     if value is None:
         return None
     label = str(value).strip()
@@ -62,7 +63,7 @@ def iter_records(input_dir: Path, show_progress: bool = False) -> Iterator[Index
         yield from records_from_document(doc)
 
 
-def collect_records(input_dir: Path, show_progress: bool = False) -> List[IndexRecord]:
+def collect_records(input_dir: Path, show_progress: bool = False) -> list[IndexRecord]:
     return list(iter_records(input_dir, show_progress=show_progress))
 
 
@@ -107,7 +108,9 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
                 citation = Citation(
                     law_name=law_name,
                     article_no=article_no,
-                    paragraph_no=int(paragraph_label) if paragraph_label and paragraph_label.isdigit() else None,
+                    paragraph_no=int(paragraph_label)
+                    if paragraph_label and paragraph_label.isdigit()
+                    else None,
                     item_no=int(item_label) if item_label and item_label.isdigit() else None,
                 )
                 blocks = [

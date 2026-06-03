@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from rest_framework import serializers
 
@@ -10,19 +10,21 @@ from .service import MAX_REGEX_LENGTH, SearchService
 class SearchFiltersField(serializers.DictField):
     child = serializers.CharField(allow_blank=True, required=False)
 
-    def to_internal_value(self, data: Any) -> Dict[str, str]:
+    def to_internal_value(self, data: Any) -> dict[str, str]:
         value = super().to_internal_value(data)
         return {key: val for key, val in value.items() if val != ""}
 
 
 class SearchRequestSerializer(serializers.Serializer):
     q = serializers.CharField(allow_blank=True, trim_whitespace=True)
-    mode = serializers.ChoiceField(choices=["auto", "literal", "boolean", "citation", "regex"], default="literal")
+    mode = serializers.ChoiceField(
+        choices=["auto", "literal", "boolean", "citation", "regex"], default="literal"
+    )
     filters = SearchFiltersField(required=False, default=dict)
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     page = serializers.IntegerField(min_value=1, default=1)
 
-    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs.get("mode") == "regex":
             try:
                 SearchService.validate_regex(attrs.get("q", ""))
@@ -31,7 +33,9 @@ class SearchRequestSerializer(serializers.Serializer):
         elif len(attrs.get("q", "")) > 500:
             raise serializers.ValidationError({"q": "Query must be 500 characters or fewer."})
         if attrs.get("mode") == "regex" and len(attrs.get("q", "")) > MAX_REGEX_LENGTH:
-            raise serializers.ValidationError({"q": f"Regex query must be {MAX_REGEX_LENGTH} characters or fewer."})
+            raise serializers.ValidationError(
+                {"q": f"Regex query must be {MAX_REGEX_LENGTH} characters or fewer."}
+            )
         return attrs
 
 

@@ -22,8 +22,8 @@ django.setup()
 
 from search.open_search_client import OpenSearchBackend  # noqa: E402
 
-from .manifest import build_manifest, write_manifest
-from .pipeline import iter_records, to_index_actions
+from .manifest import build_manifest, write_manifest  # noqa: E402
+from .pipeline import iter_records, to_index_actions  # noqa: E402
 
 
 def versioned_index_name(alias: str) -> str:
@@ -36,14 +36,28 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Index sample Japanese law corpus")
     parser.add_argument("--input", type=Path, default=PROJECT_ROOT / "indexer" / "sample_corpus")
     parser.add_argument("--provider", choices=["opensearch"], default="opensearch")
-    parser.add_argument("--progress", action="store_true", help="Show progress while loading corpus")
-    parser.add_argument("--chunk-size", type=int, default=1000, help="Bulk chunk size (default: 1000)")
-    parser.add_argument("--max-bulk-mb", type=int, default=None, help="Maximum bulk request size in MiB.")
+    parser.add_argument(
+        "--progress", action="store_true", help="Show progress while loading corpus"
+    )
+    parser.add_argument(
+        "--chunk-size", type=int, default=1000, help="Bulk chunk size (default: 1000)"
+    )
+    parser.add_argument(
+        "--max-bulk-mb", type=int, default=None, help="Maximum bulk request size in MiB."
+    )
     parser.add_argument("--index", help="Concrete index to write. Defaults to OPENSEARCH_INDEX.")
     parser.add_argument("--alias", help="Alias to switch after a successful versioned build.")
-    parser.add_argument("--versioned", action="store_true", help="Build a fresh versioned index and switch --alias to it.")
-    parser.add_argument("--write-manifest", action="store_true", help="Write manifest.json before indexing.")
-    parser.add_argument("--forcemerge", action="store_true", help="Force merge the new index before alias switch.")
+    parser.add_argument(
+        "--versioned",
+        action="store_true",
+        help="Build a fresh versioned index and switch --alias to it.",
+    )
+    parser.add_argument(
+        "--write-manifest", action="store_true", help="Write manifest.json before indexing."
+    )
+    parser.add_argument(
+        "--forcemerge", action="store_true", help="Force merge the new index before alias switch."
+    )
     return parser.parse_args()
 
 
@@ -63,7 +77,9 @@ def main() -> None:
 
     if args.versioned:
         if not args.alias:
-            raise SystemExit("--versioned requires --alias so the new index can be promoted atomically.")
+            raise SystemExit(
+                "--versioned requires --alias so the new index can be promoted atomically."
+            )
         backend.create_index(backend.index)
     else:
         backend.ensure_index()
@@ -81,14 +97,18 @@ def main() -> None:
 
         print(f"Indexed {indexed} records into {backend.index}")
         if indexed != expected_records:
-            raise RuntimeError(f"Indexed record count mismatch: expected {expected_records}, got {indexed}")
+            raise RuntimeError(
+                f"Indexed record count mismatch: expected {expected_records}, got {indexed}"
+            )
 
         if args.versioned:
             backend.prepare_for_search(forcemerge=args.forcemerge)
 
         actual_count = backend.count()
         if actual_count != expected_records:
-            raise RuntimeError(f"OpenSearch count mismatch: expected {expected_records}, got {actual_count}")
+            raise RuntimeError(
+                f"OpenSearch count mismatch: expected {expected_records}, got {actual_count}"
+            )
 
         if args.versioned:
             backend.switch_alias(args.alias, backend.index)

@@ -25,7 +25,9 @@ from search.service import SearchParams, SearchService  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run golden query checks against OpenSearch")
-    parser.add_argument("--file", type=Path, default=PROJECT_ROOT / "tests" / "golden_queries" / "sample.json")
+    parser.add_argument(
+        "--file", type=Path, default=PROJECT_ROOT / "tests" / "golden_queries" / "sample.json"
+    )
     parser.add_argument("--size", type=int, default=10)
     return parser.parse_args()
 
@@ -33,10 +35,7 @@ def parse_args() -> argparse.Namespace:
 def matches(hit: dict[str, Any], expected: dict[str, Any] | str) -> bool:
     if isinstance(expected, str):
         return expected in json.dumps(hit, ensure_ascii=False)
-    for key, value in expected.items():
-        if hit.get(key) != value:
-            return False
-    return True
+    return all(hit.get(key) == value for key, value in expected.items())
 
 
 def run_case(service: SearchService, case: dict[str, Any], size: int) -> list[str]:

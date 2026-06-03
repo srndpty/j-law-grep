@@ -8,5 +8,10 @@ frontend/.vite/
 .DS_Store
 .venv/
 .codex/
+.coverage
+.mypy_cache/
+.ruff_cache/
+coverage.xml
+htmlcov/
 data/egov-xml/
 tmp/
