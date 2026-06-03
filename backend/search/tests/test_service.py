@@ -34,7 +34,7 @@ def test_build_literal_citation_only_query_uses_citation_filters():
     service.search(params)
     query = backend.last_body["query"]["bool"]
     assert query["must"] == [{"match_all": {}}]
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -47,7 +47,7 @@ def test_auto_citation_with_residual_terms_keeps_content_phrase():
     content = query["must"][0]["match_phrase"]["content"]
 
     assert content["query"] == "損害"
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -60,7 +60,7 @@ def test_auto_citation_with_prefix_residual_terms_keeps_content_phrase():
     content = query["must"][0]["match_phrase"]["content"]
 
     assert content["query"] == "損害"
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -142,8 +142,22 @@ def test_boolean_or_requirements_are_not_satisfied_by_boosts():
             }
         }
     ]
-    assert query["should"] == [{"match_phrase_prefix": {"law_name.prefix": "民法"}}]
+    assert query["should"] == service._law_name_boosts("民法")
     assert "minimum_should_match" not in query
+
+
+def test_law_filter_matches_name_or_alias():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={"law": "民法典"}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    alias_filter = service._law_name_filter("民法典")
+    assert alias_filter in query["filter"]
+    should = alias_filter["bool"]["should"]
+    assert {"term": {"law_name": "民法典"}} in should
+    assert {"term": {"law_aliases": "民法典"}} in should
 
 
 def test_convert_hit_includes_article_metadata():

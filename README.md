@@ -27,7 +27,7 @@ make up
 make reindex
 ```
 
-`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を投入する**標準導線**です。新しい versioned index を作成し、schema 検証と golden query を新 index に対して通してから `jlaw-current` alias を切り替えます。いずれかの検証が失敗した場合は alias を切り替えず、作りかけの index を削除して既存 index を生かしたままにします (安全なロールバック)。`manifest.json` も生成します。
+`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法 1/2/90/709/710/711条) を投入する**標準導線**です。新しい versioned index を作成し、schema 検証と golden query を新 index に対して通してから `jlaw-current` alias を切り替えます。いずれかの検証が失敗した場合は alias を切り替えず、作りかけの index を削除して既存 index を生かしたままにします (安全なロールバック)。`manifest.json` も生成します。
 
 > 補足: 上書き型 (非 versioned) の高速 reindex は開発専用として `make reindex-dev` に残しています。alias 切替も世代管理も行わず、削除済み文書が index に残り得るため本番運用には使いません。
 
@@ -123,13 +123,23 @@ make smoke
 
 ## Golden query
 
-検索品質の最低限の回帰確認として `tests/golden_queries/sample.json` を使います。
+検索品質の回帰確認として `tests/golden_queries/sample.json` を使います。サンプルコーパス (民法 1/2/90/709/710/711条) に対する citation・literal・boolean・law alias・除外条件など約 30 ケースで、各検索モードの挙動を契約として固定しています。
 
 ```powershell
 make golden
 ```
 
-期待 top hit、期待 contains、期待 not contains を JSON で追加できます。
+各ケースは `query` / `mode` / `filters` と、`expected_top` (先頭ヒット一致)・`expected_contains` (いずれかのヒットが一致)・`not_expected_contains` (どのヒットも一致しない) で記述します。期待値は文字列 (ヒット JSON に部分一致) か `{"law_name": "民法", "article_no": "709"}` のようなフィールド一致を取れます。
+
+```json
+{
+  "query": "民法709条 損害",
+  "mode": "auto",
+  "expected_contains": [{ "article_no": "709" }, "損害"]
+}
+```
+
+`make golden` は live alias に対して実行します。標準導線の `make reindex` は alias 切替前に新 index へ同じ golden を流すため、analyzer や mapping を壊す変更は alias が切り替わる前に検出できます。
 
 ## Index validation
 
@@ -153,13 +163,23 @@ make health-smoke
 
 各 response には `X-Request-ID` が付与されます。リクエストログは JSON 1 行で標準出力に出ます。
 
-## 検索モード
+## 検索モード（検索仕様の契約）
 
-- `auto`: 引用だけなら citation、引用 + 残余語なら citation filter 付き全文検索、そうでなければ通常全文検索
-- `literal`: 入力文字列をフレーズとして検索
-- `boolean`: `A B`, `A | B`, `-C`, `"..."` を解釈
-- `citation`: `民法709条` のような条文位置検索
+各モードの意味は `tests/golden_queries/sample.json` の golden query で契約として固定しています。analyzer / mapping / クエリ組み立てを変えるときは、この golden を必ず通します (標準導線の `make reindex` が alias 切替前に新 index へ golden を実行)。
+
+- `auto`: 引用だけ (`民法709条`) なら citation、引用 + 残余語 (`民法709条 損害`) なら citation filter 付き全文検索、引用がなければ通常の全文フレーズ検索。
+- `literal`: 入力文字列を 1 つのフレーズとして検索。引用だけの入力 (`民法90条`) は citation として解決します。
+- `boolean`: `A B` (AND)、`A | B` / `A OR B` (OR グループ)、`-C` (除外)、`"..."` (フレーズ) を解釈。
+- `citation`: `民法709条` のような条文位置検索。漢数字 (`第七百九条`) と全角数字 (`７０９`) を正規化します。枝番条文 (`第2条の2`) のクエリ解析は未対応です。
 - `regex`: 制限付き正規表現検索。自動検索では実行しません。OpenSearch の term-level regexp を使うため、grep の行単位 regex と完全に同じ挙動ではありません。
+
+### 法令名と別名 (alias)
+
+`law` フィルタと citation の法令名は、`law_name` だけでなく `law_aliases` にも一致します。例えば民法に別名 `民法典` を登録しておくと、`民法典709条` や `law=民法典` での検索が `民法` にヒットします (`law_aliases` はコーパス JSON の各法令に配列で持たせます)。
+
+### literal フレーズ長の制限
+
+content の ngram analyzer は `max_gram=15` です。空白を含まない 15 文字超の完全一致フレーズは現状の literal では当たりにくいので、長文は分割するか keyword 寄りの検索を使ってください (multi-field 化は今後の課題)。
 
 ## API の制限とエラー
 
@@ -181,6 +201,6 @@ make health-smoke
 ## 動作確認
 
 1. `make up` でコンテナを起動し、OpenSearch のヘルスチェックが通るまで待つ。
-2. 別ターミナルで `make reindex` を実行し、"Indexed 2 records" → "Golden gate passed" → "Switched alias jlaw-current -> ..." のログを確認する。
+2. 別ターミナルで `make reindex` を実行し、"Indexed 8 records" → "Golden gate passed" → "Switched alias jlaw-current -> ..." のログを確認する。
 3. `make smoke` を実行し、`/healthz` `/readyz` `/metrics`、backend の `/api/search`、frontend proxy 経由の `/api/search` がすべて通ることを確認する。
 4. ブラウザで `http://localhost:5173` を開き、検索 UI から "過失" や "不法行為" を検索してハイライト付きで結果が表示されることを確認する。
