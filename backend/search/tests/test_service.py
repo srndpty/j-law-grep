@@ -1,6 +1,8 @@
 from typing import Any
 
-from search.service import SearchParams, SearchService
+import pytest
+
+from search.service import MAX_RESULT_WINDOW, SearchParams, SearchService
 
 
 class DummyBackend:
@@ -32,7 +34,7 @@ def test_build_literal_citation_only_query_uses_citation_filters():
     service.search(params)
     query = backend.last_body["query"]["bool"]
     assert query["must"] == [{"match_all": {}}]
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -45,7 +47,7 @@ def test_auto_citation_with_residual_terms_keeps_content_phrase():
     content = query["must"][0]["match_phrase"]["content"]
 
     assert content["query"] == "損害"
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -58,7 +60,7 @@ def test_auto_citation_with_prefix_residual_terms_keeps_content_phrase():
     content = query["must"][0]["match_phrase"]["content"]
 
     assert content["query"] == "損害"
-    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert service._law_name_filter("民法") in query["filter"]
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
@@ -140,8 +142,22 @@ def test_boolean_or_requirements_are_not_satisfied_by_boosts():
             }
         }
     ]
-    assert query["should"] == [{"match_phrase_prefix": {"law_name.prefix": "民法"}}]
+    assert query["should"] == service._law_name_boosts("民法")
     assert "minimum_should_match" not in query
+
+
+def test_law_filter_matches_name_or_alias():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={"law": "民法典"}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    alias_filter = service._law_name_filter("民法典")
+    assert alias_filter in query["filter"]
+    should = alias_filter["bool"]["should"]
+    assert {"term": {"law_name": "民法典"}} in should
+    assert {"term": {"law_aliases": "民法典"}} in should
 
 
 def test_convert_hit_includes_article_metadata():
@@ -215,6 +231,21 @@ def test_convert_hit_derives_article_from_url_when_missing():
     result = service._convert_hit(hit, query="")
     assert result["article_no"] == "23"
     assert result["paragraph_no"] == "4"
+
+
+def test_validate_pagination_allows_window_boundary():
+    # from + size exactly at the window must pass.
+    SearchService.validate_pagination(page=MAX_RESULT_WINDOW // 20, size=20)
+
+
+def test_validate_pagination_rejects_deep_paging():
+    with pytest.raises(ValueError, match=f"beyond {MAX_RESULT_WINDOW}"):
+        SearchService.validate_pagination(page=999999, size=20)
+
+
+def test_validate_pagination_rejects_window_overflow_by_one():
+    with pytest.raises(ValueError):
+        SearchService.validate_pagination(page=(MAX_RESULT_WINDOW // 20) + 1, size=20)
 
 
 def test_regex_query_rejects_expensive_patterns():

@@ -1,51 +1,73 @@
 [
+  { "query": "民法709条", "mode": "auto", "expected_top": [{ "law_name": "民法", "article_no": "709" }] },
+  { "query": "民法 第七百九条", "mode": "auto", "expected_contains": [{ "article_no": "709" }] },
+  { "query": "民法７０９条", "mode": "auto", "expected_contains": [{ "article_no": "709" }] },
+  { "query": "民法 709条", "mode": "auto", "expected_contains": [{ "article_no": "709" }] },
+  { "query": "民法90条", "mode": "auto", "expected_top": [{ "article_no": "90" }] },
+  { "query": "民法第90条", "mode": "auto", "expected_top": [{ "article_no": "90" }] },
+  { "query": "民法711条", "mode": "auto", "expected_top": [{ "article_no": "711" }] },
+  { "query": "民法 ７１０条", "mode": "auto", "expected_contains": [{ "article_no": "710" }] },
+  { "query": "民法1条2項", "mode": "auto", "expected_contains": [{ "article_no": "1", "paragraph_no": "2" }] },
+
+  { "query": "民法典709条", "mode": "auto", "expected_contains": [{ "article_no": "709" }] },
+
+  { "query": "民法709条 損害", "mode": "auto", "expected_contains": [{ "article_no": "709" }, "損害"] },
+  { "query": "損害 民法709条", "mode": "auto", "expected_contains": [{ "article_no": "709" }] },
+
+  { "query": "民法90条", "mode": "literal", "expected_top": [{ "article_no": "90" }] },
+
+  { "query": "損害", "mode": "literal", "filters": { "law": "民法" }, "expected_contains": [{ "law_name": "民法" }] },
+  { "query": "故意又は過失", "mode": "literal", "filters": { "law": "民法" }, "expected_top": [{ "article_no": "709" }] },
+  { "query": "公の秩序", "mode": "literal", "expected_contains": [{ "article_no": "90" }] },
+  { "query": "善良の風俗", "mode": "literal", "expected_contains": [{ "article_no": "90" }] },
+  { "query": "個人の尊厳", "mode": "literal", "expected_contains": [{ "article_no": "2" }] },
+  { "query": "権利の濫用", "mode": "literal", "expected_contains": [{ "article_no": "1" }] },
   {
-    "query": "損害",
-    "filters": {
-      "law": "民法"
-    },
-    "expected_contains": [
-      {
-        "law_name": "民法"
-      }
-    ]
+    "query": "名誉",
+    "mode": "literal",
+    "filters": { "law": "民法" },
+    "expected_top": [{ "article_no": "710" }],
+    "not_expected_contains": [{ "article_no": "709" }]
   },
+  { "query": "配偶者", "mode": "literal", "expected_contains": [{ "article_no": "711" }] },
+
   {
-    "query": "故意又は過失",
-    "filters": {
-      "law": "民法"
-    },
-    "expected_top": [
-      {
-        "law_name": "民法",
-        "article_no": "709"
-      }
-    ]
-  },
-  {
-    "query": "民法 709条",
-    "expected_contains": [
-      {
-        "law_name": "民法",
-        "article_no": "709"
-      }
-    ]
-  },
-  {
-    "query": "故意 | 名誉",
+    "query": "損害 -過失",
     "mode": "boolean",
-    "filters": {
-      "law": "民法"
-    },
-    "expected_contains": [
-      {
-        "law_name": "民法",
-        "article_no": "709"
-      },
-      {
-        "law_name": "民法",
-        "article_no": "710"
-      }
-    ]
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "article_no": "710" }, { "article_no": "711" }],
+    "not_expected_contains": [{ "article_no": "709" }]
+  },
+  {
+    "query": "権利 | 名誉",
+    "mode": "boolean",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "article_no": "709" }, { "article_no": "710" }]
+  },
+  { "query": "公の秩序 善良", "mode": "boolean", "expected_contains": [{ "article_no": "90" }] },
+  { "query": "損害 賠償", "mode": "boolean", "filters": { "law": "民法" }, "expected_contains": [{ "article_no": "709" }] },
+  {
+    "query": "賠償 -名誉",
+    "mode": "boolean",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "article_no": "709" }],
+    "not_expected_contains": [{ "article_no": "710" }]
+  },
+
+  { "query": "損害", "mode": "literal", "filters": { "law": "民法典" }, "expected_contains": [{ "law_name": "民法" }] },
+  { "query": "賠償", "mode": "literal", "filters": { "law": "民法典" }, "expected_contains": [{ "article_no": "709" }] },
+
+  {
+    "query": "過失",
+    "mode": "literal",
+    "filters": { "law": "民法" },
+    "expected_top": [{ "article_no": "709" }],
+    "not_expected_contains": [{ "article_no": "710" }]
+  },
+  {
+    "query": "生命",
+    "mode": "literal",
+    "expected_contains": [{ "article_no": "711" }],
+    "not_expected_contains": [{ "article_no": "709" }]
   }
 ]

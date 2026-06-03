@@ -204,6 +204,13 @@ class OpenSearchBackend:
         return self.client.cluster.health()
 
     def switch_alias(self, alias: str, target_index: str) -> None:
+        if not self.client.indices.exists(index=target_index):
+            raise RuntimeError(
+                f"Cannot switch alias {alias}: target index does not exist: {target_index}"
+            )
+        # Refuse to promote an index whose mapping schema does not match the
+        # backend expectation, so a stale or half-built index never becomes live.
+        self.validate_schema(target_index)
         actions: list[dict[str, Any]] = []
         for old_index in self.indices_for_alias(alias):
             actions.append({"remove": {"index": old_index, "alias": alias}})
@@ -218,6 +225,44 @@ class OpenSearchBackend:
                 return []
             raise
         return sorted(response.keys())
+
+    def law_names(self, page_size: int = 1000) -> list[str]:
+        names: list[str] = []
+        after: dict[str, Any] | None = None
+        while True:
+            composite: dict[str, Any] = {
+                "size": page_size,
+                "sources": [
+                    {
+                        "law": {
+                            "terms": {
+                                "field": "law_name",
+                                "order": "asc",
+                            }
+                        }
+                    }
+                ],
+            }
+            if after:
+                composite["after"] = after
+            body = {
+                "size": 0,
+                "aggs": {"laws": {"composite": composite}},
+            }
+            response = self.client.search(
+                index=self.index,
+                body=body,
+                request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+            )
+            aggregation = response.get("aggregations", {}).get("laws", {})
+            buckets = aggregation.get("buckets", [])
+            names.extend(
+                bucket["key"]["law"] for bucket in buckets if bucket.get("key", {}).get("law")
+            )
+            after = aggregation.get("after_key")
+            if not after:
+                break
+        return names
 
     def search(self, body: dict[str, Any], size: int, from_: int) -> dict[str, Any]:
         return self.client.search(

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Law Era="Heisei" Year="1" Num="1">
+  <LawNum>平成元年法律第一号</LawNum>
+  <LawBody>
+    <LawTitle>テスト法</LawTitle>
+    <MainProvision>
+      <Article Num="1">
+        <ArticleCaption>（目的）</ArticleCaption>
+        <ArticleTitle>第一条</ArticleTitle>
+        <Paragraph Num="1">
+          <ParagraphNum/>
+          <ParagraphSentence>
+            <Sentence>この法律は、<Ruby>試験<Rt>しけん</Rt></Ruby>のために定める。</Sentence>
+          </ParagraphSentence>
+          <Item Num="1">
+            <ItemTitle>一</ItemTitle>
+            <ItemSentence><Sentence>第一号の内容。</Sentence></ItemSentence>
+          </Item>
+          <Item Num="2">
+            <ItemTitle>イ</ItemTitle>
+            <ItemSentence><Sentence>イ号の内容。</Sentence></ItemSentence>
+          </Item>
+        </Paragraph>
+      </Article>
+      <Article Num="2_2">
+        <ArticleTitle>第二条の二</ArticleTitle>
+        <Paragraph Num="1">
+          <ParagraphSentence><Sentence>枝番条文の本文。</Sentence></ParagraphSentence>
+        </Paragraph>
+      </Article>
+    </MainProvision>
+  </LawBody>
+</Law>

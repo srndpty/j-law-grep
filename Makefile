@@ -3,17 +3,19 @@ COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 POWERSHELL := powershell.exe -NoProfile -ExecutionPolicy Bypass -Command
 PYTHON ?= python scripts/precommit-python.py
 
+-include .env
+
 export MSYS2_ARG_CONV_EXCL = *
 
 INDEX_INPUT ?= indexer/sample_corpus
 PROGRESS ?= 1
 BULK_CHUNK ?= 1000
 BULK_MAX_MB ?= 40
-INDEX_ALIAS ?= jlaw-current
+INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned validate-index golden health-smoke api-smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned reindex-dev validate-index golden health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -39,20 +41,34 @@ frontend-check:
 
 check: lint typecheck test frontend-check
 
+# Standard reindex: build a fresh versioned index, validate schema + golden
+# queries against it, then atomically switch the alias. The old index stays
+# live (and the new one is deleted) if any gate fails.
+# Set GOLDEN_FILE= (empty) to skip the golden gate, e.g. for the full corpus
+# until tests/golden_queries has corpus-appropriate cases.
 reindex:
+	@if [ "$(INDEX_INPUT)" != "indexer/sample_corpus" ] && [ "$(GOLDEN_FILE)" = "tests/golden_queries/sample.json" ]; then \
+		echo "ERROR: sample golden is only for indexer/sample_corpus. Use GOLDEN_FILE= or a corpus-specific golden file."; \
+		exit 2; \
+	fi
+	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
+		$(COMPOSE) build backend; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
+	else \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
+	fi
+
+# Backward-compatible alias for the standard versioned reindex.
+reindex-versioned: reindex
+
+# Dev-only fast path: index in place without versioning or alias switch.
+# Deleted documents from the previous build may linger; not for production.
+reindex-dev:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
 		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	else \
 		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
-	fi
-
-reindex-versioned:
-	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
-		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
-	else \
-		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
 	fi
 
 golden: build-backend
@@ -76,7 +92,11 @@ restart-backend:
 	$(COMPOSE) restart backend
 
 api-smoke:
-	curl -sS http://localhost:8000/api/search -X POST \
-	  -H 'Content-Type: application/json' \
-	  -d '{"q": "民法 709条", "mode": "literal", "filters": {"law": "民法"}, "size": 5, "page": 1}' | \
-	  python -c "import json,sys; d=json.load(sys.stdin); h=d.get('hits', []); print(json.dumps(h[0], ensure_ascii=False, indent=2) if h else 'no hits')"
+	python scripts/smoke_search.py api-smoke http://localhost:8000
+
+frontend-smoke:
+	@echo "frontend (5173) -> /api/search proxy -> backend reachability"
+	python scripts/smoke_search.py frontend-smoke http://localhost:5173
+
+smoke: health-smoke api-smoke frontend-smoke
+	@echo "smoke OK: healthz/readyz/metrics + backend /api/search + frontend proxy"

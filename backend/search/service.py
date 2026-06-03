@@ -9,6 +9,10 @@ from .citation import Citation, citation_key, parse_citation_query
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
+# OpenSearch refuses `from + size` beyond index.max_result_window (default 10000).
+# Cap deep pagination here so a request like page=999999 fails fast with a clear
+# 400 instead of hitting OpenSearch with a huge `from` (slow / 5xx).
+MAX_RESULT_WINDOW = 10000
 DANGEROUS_REGEX_PATTERNS = (
     r"\.\*.*\.\*",
     r"\(\.\+\)\+",
@@ -32,6 +36,9 @@ class SearchService:
 
     def ensure_index(self) -> None:
         self.backend.ensure_index()
+
+    def list_laws(self) -> list[str]:
+        return sorted(self.backend.law_names())
 
     def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
@@ -89,15 +96,15 @@ class SearchService:
         year_filter = params.filters.get("year") if params.filters else None
 
         if law_filter:
-            filter_clauses.append({"term": {"law_name": law_filter}})
-            boost_should.append({"match_phrase_prefix": {"law_name.prefix": law_filter}})
+            filter_clauses.append(self._law_name_filter(law_filter))
+            boost_should.extend(self._law_name_boosts(law_filter))
 
         if year_filter:
             filter_clauses.append({"term": {"year_enforced": year_filter}})
 
         if citation.law_name:
-            filter_clauses.append({"term": {"law_name": citation.law_name}})
-            boost_should.append({"match_phrase_prefix": {"law_name.prefix": citation.law_name}})
+            filter_clauses.append(self._law_name_filter(citation.law_name))
+            boost_should.extend(self._law_name_boosts(citation.law_name))
         if citation.article_no:
             filter_clauses.append({"term": {"article_no": citation.article_no}})
         if citation.paragraph_no is not None:
@@ -153,6 +160,27 @@ class SearchService:
         }
 
     @staticmethod
+    def _law_name_filter(value: str) -> dict[str, Any]:
+        # Match the canonical law_name OR any registered alias (民法典 -> 民法),
+        # so a law selected/typed by an alias still filters correctly.
+        return {
+            "bool": {
+                "should": [
+                    {"term": {"law_name": value}},
+                    {"term": {"law_aliases": value}},
+                ],
+                "minimum_should_match": 1,
+            }
+        }
+
+    @staticmethod
+    def _law_name_boosts(value: str) -> list[dict[str, Any]]:
+        return [
+            {"match_phrase_prefix": {"law_name.prefix": value}},
+            {"match_phrase_prefix": {"law_aliases.prefix": value}},
+        ]
+
+    @staticmethod
     def _content_phrase_clause(term: str) -> dict[str, Any]:
         return {
             "match_phrase": {
@@ -194,6 +222,15 @@ class SearchService:
             "query": self.classify_query(params.q, params.mode),
             "index": {"name": self.backend.index},
         }
+
+    @staticmethod
+    def validate_pagination(page: int, size: int) -> None:
+        window = (page - 1) * size + size
+        if window > MAX_RESULT_WINDOW:
+            raise ValueError(
+                f"Pagination beyond {MAX_RESULT_WINDOW} results is not supported "
+                "(narrow the query or reduce page/size)."
+            )
 
     @staticmethod
     def validate_regex(pattern: str) -> None:

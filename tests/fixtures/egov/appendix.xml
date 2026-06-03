@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Law Era="Reiwa" Year="2" Num="2">
+  <LawNum>令和二年法律第二号</LawNum>
+  <LawBody>
+    <LawTitle>別表テスト法</LawTitle>
+    <MainProvision>
+      <Article Num="1">
+        <ArticleTitle>第一条</ArticleTitle>
+        <Paragraph Num="1">
+          <ParagraphSentence><Sentence>本則の本文。</Sentence></ParagraphSentence>
+        </Paragraph>
+      </Article>
+    </MainProvision>
+    <SupplProvision>
+      <SupplProvisionLabel>附則</SupplProvisionLabel>
+      <Paragraph Num="1">
+        <ParagraphSentence><Sentence>この法律は、公布の日から施行する。</Sentence></ParagraphSentence>
+      </Paragraph>
+    </SupplProvision>
+    <AppdxTable Num="1">
+      <AppdxTableTitle>別表第一</AppdxTableTitle>
+      <TableStruct>
+        <Table>
+          <TableRow>
+            <TableColumn><Sentence>表のセル</Sentence></TableColumn>
+          </TableRow>
+        </Table>
+      </TableStruct>
+    </AppdxTable>
+  </LawBody>
+</Law>

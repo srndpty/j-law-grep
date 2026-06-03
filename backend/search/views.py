@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from django.conf import settings
+from opensearchpy import ConnectionError as OpenSearchConnectionError
+from opensearchpy import ConnectionTimeout as OpenSearchConnectionTimeout
+from opensearchpy import NotFoundError as OpenSearchNotFoundError
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -8,6 +11,14 @@ from rest_framework.views import APIView
 
 from .serializers import SearchRequestSerializer, SearchResponseSerializer
 from .service import SearchParams, SearchService
+
+OPENSEARCH_UNAVAILABLE_EXCEPTIONS = (
+    OpenSearchConnectionError,
+    OpenSearchConnectionTimeout,
+    # Treat a missing index/alias as temporarily unavailable for the UI:
+    # reindex/alias promotion has not completed, but the client request is valid.
+    OpenSearchNotFoundError,
+)
 
 
 class SearchView(APIView):
@@ -29,8 +40,37 @@ class SearchView(APIView):
             result = service.search(params)
         except ValueError as exc:
             raise ValidationError({"q": str(exc)}) from exc
+        except OPENSEARCH_UNAVAILABLE_EXCEPTIONS:
+            # OpenSearch unreachable or timed out: a transient backend problem,
+            # not a client error. Surface 503 with the request id for debugging
+            # instead of a generic 500.
+            return Response(
+                {
+                    "detail": "検索バックエンドに接続できませんでした。時間をおいて再試行してください。",
+                    "request_id": getattr(request, "request_id", None),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
         response_serializer = SearchResponseSerializer(result)
         return Response(response_serializer.data)
+
+
+class LawsView(APIView):
+    service_class = SearchService
+
+    def get(self, request) -> Response:
+        service = self.service_class()
+        try:
+            laws = service.list_laws()
+        except OPENSEARCH_UNAVAILABLE_EXCEPTIONS:
+            return Response(
+                {
+                    "detail": "検索バックエンドに接続できませんでした。時間をおいて再試行してください。",
+                    "request_id": getattr(request, "request_id", None),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        return Response({"laws": laws})
 
 
 class EnsureIndexView(APIView):

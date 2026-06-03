@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable
@@ -14,9 +15,36 @@ except ImportError:  # pragma: no cover - optional
     tqdm = None
 
 from indexer.manifest import write_manifest
+from indexer.schema import (
+    WARN_APPENDIX_SKIPPED,
+    WARN_LOST_TABLE,
+    ParseWarning,
+    validate_law_document,
+    write_warnings_jsonl,
+)
 from indexer.utils import normalize_text
 
 MAX_CORPUS_FILENAME_STEM = 64
+WARNINGS_FILENAME = "import_warnings.jsonl"
+
+_FULLWIDTH_DIGITS = str.maketrans("０１２３４５６７８９", "0123456789")
+
+# Appendix/table containers the converter does not turn into searchable records.
+APPENDIX_TABLE_TAGS = {"AppdxTable"}
+APPENDIX_OTHER_TAGS = {"Appdx", "AppdxStyle", "AppdxFig", "AppdxFormat", "AppdxNote"}
+
+
+def normalize_article_no(num_attr: str | None) -> str:
+    """Turn an e-Gov Article ``Num`` attribute into a display article number.
+
+    e-Gov encodes branch articles (第2条の2) as ``Num="2_2"``; ``:`` is also
+    seen. Join the parts with ``の`` so ``2_2`` -> ``2の2`` and ``2`` -> ``2``.
+    """
+    if not num_attr:
+        return ""
+    value = normalize_text(num_attr).translate(_FULLWIDTH_DIGITS)
+    parts = [part for part in re.split(r"[_:]", value) if part]
+    return "の".join(parts)
 
 
 def local_name(tag: str) -> str:
@@ -62,9 +90,17 @@ def find_first_text(element: ET.Element, *names: str) -> str | None:
 def extract_sentence_texts(elements: Iterable[ET.Element]) -> str:
     sentences: list[str] = []
     for elem in elements:
-        for node in elem.iter():
-            if local_name(node.tag) in {"SentenceText", "Sentence"} and node.text:
-                sentences.append(node.text)
+        # Prefer <Sentence> nodes and use itertext() so nested markup (Ruby,
+        # Sub/Sup, etc.) and tail text are not dropped. Fall back to
+        # <SentenceText> only when no <Sentence> exists in the subtree.
+        sentence_nodes = [node for node in elem.iter() if local_name(node.tag) == "Sentence"]
+        if sentence_nodes:
+            for node in sentence_nodes:
+                sentences.append("".join(node.itertext()))
+        else:
+            for node in elem.iter():
+                if local_name(node.tag) == "SentenceText":
+                    sentences.append("".join(node.itertext()))
     joined = "".join(sentences)
     return normalize_text(joined)
 
@@ -108,7 +144,12 @@ def parse_paragraph(paragraph_elem: ET.Element) -> dict | None:
 
 
 def parse_article(article_elem: ET.Element) -> dict | None:
-    article_no = find_first_text(article_elem, "ArticleNum")
+    # e-Gov carries the article number in the Num attribute (e.g. Num="709",
+    # Num="2_2" for 第2条の2). Older code only looked for an <ArticleNum>
+    # element, which does not exist in e-Gov XML, leaving article_no empty.
+    article_no = normalize_article_no(article_elem.attrib.get("Num")) or normalize_text(
+        find_first_text(article_elem, "ArticleNum", "ArticleTitle") or ""
+    )
     heading = normalize_text(find_first_text(article_elem, "ArticleTitle") or "")
 
     paragraphs: list[dict] = []
@@ -132,15 +173,36 @@ def parse_article(article_elem: ET.Element) -> dict | None:
     }
 
 
-def parse_law(xml_path: Path) -> dict:
-    tree = ET.parse(xml_path)
-    root = tree.getroot()
+def collect_structural_warnings(root: ET.Element, law_id: str) -> list[ParseWarning]:
+    """Flag content the converter drops: appendix tables, figures, and
+    supplementary provisions whose body is paragraphs (not articles)."""
+    warnings: list[ParseWarning] = []
+    for node in root.iter():
+        name = local_name(node.tag)
+        if name in APPENDIX_TABLE_TAGS:
+            warnings.append(ParseWarning(WARN_LOST_TABLE, law_id, f"{name} not converted"))
+        elif name in APPENDIX_OTHER_TAGS:
+            warnings.append(ParseWarning(WARN_APPENDIX_SKIPPED, law_id, f"{name} not converted"))
+    for node in root.iter():
+        if local_name(node.tag) != "SupplProvision":
+            continue
+        has_article = any(local_name(child.tag) == "Article" for child in node.iter())
+        has_paragraph = any(local_name(child.tag) == "Paragraph" for child in node.iter())
+        if has_paragraph and not has_article:
+            warnings.append(
+                ParseWarning(
+                    WARN_APPENDIX_SKIPPED, law_id, "SupplProvision paragraphs not converted"
+                )
+            )
+    return warnings
 
+
+def parse_law_tree(root: ET.Element, fallback_stem: str) -> dict:
     law_id = (
         find_first_text(root, "LawId", "LawID", "LawNum")
         or root.attrib.get("LawID")
         or root.attrib.get("Id")
-        or xml_path.stem
+        or fallback_stem
     )
     law_name = find_first_text(root, "LawTitle", "LawName") or law_id
     enforce_date = find_first_text(root, "EnactDate", "AmendmentDate", "PromulgationDate")
@@ -180,6 +242,11 @@ def parse_law(xml_path: Path) -> dict:
     } | ({"year_enforced": year_enforced} if year_enforced else {})
 
 
+def parse_law(xml_path: Path) -> dict:
+    root = ET.parse(xml_path).getroot()
+    return parse_law_tree(root, xml_path.stem)
+
+
 def stable_output_stem(law: dict) -> str:
     raw_id = normalize_text(str(law.get("law_id", "")))
     if (
@@ -207,8 +274,12 @@ def import_directory(xml_dir: Path, output_dir: Path) -> None:
 
     iterator = tqdm(xml_paths, desc="Converting", unit="file") if tqdm else xml_paths
     count = 0
+    warnings: list[ParseWarning] = []
     for xml_path in iterator:
-        law = parse_law(xml_path)
+        root = ET.parse(xml_path).getroot()
+        law = parse_law_tree(root, xml_path.stem)
+        warnings.extend(collect_structural_warnings(root, law["law_id"]))
+        warnings.extend(validate_law_document(law))
         output_path = output_dir / f"{stable_output_stem(law)}.json"
         with output_path.open("w", encoding="utf-8") as fh:
             json.dump(law, fh, ensure_ascii=False, indent=2)
@@ -217,8 +288,18 @@ def import_directory(xml_dir: Path, output_dir: Path) -> None:
             print(f"Converted {count} / {len(xml_paths)}", file=sys.stderr)
 
     manifest_path = write_manifest(output_dir, source="e-gov-xml")
+    warnings_path = output_dir / WARNINGS_FILENAME
+    written = write_warnings_jsonl(warnings_path, warnings)
     print(f"Converted {count} XML files under {xml_dir} -> {output_dir}")
     print(f"Wrote corpus manifest: {manifest_path}")
+    if written:
+        summary: dict[str, int] = {}
+        for warning in warnings:
+            summary[warning.code] = summary.get(warning.code, 0) + 1
+        ordered = ", ".join(f"{code}={n}" for code, n in sorted(summary.items()))
+        print(f"Wrote {written} parse warnings -> {warnings_path} ({ordered})", file=sys.stderr)
+    else:
+        print("No parse warnings.", file=sys.stderr)
 
 
 def main() -> None:

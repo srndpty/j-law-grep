@@ -50,6 +50,60 @@ class DummyCountClient(DummyBulkClient):
         return {"count": 1}
 
 
+class DummyLawNamesClient:
+    def __init__(self):
+        self.calls = []
+        self.indices = DummyIndices()
+        self.responses = [
+            {
+                "aggregations": {
+                    "laws": {
+                        "buckets": [
+                            {"key": {"law": "民法"}},
+                            {"key": {"law": "刑法"}},
+                        ],
+                        "after_key": {"law": "刑法"},
+                    }
+                }
+            },
+            {
+                "aggregations": {
+                    "laws": {
+                        "buckets": [
+                            {"key": {"law": "商法"}},
+                        ],
+                    }
+                }
+            },
+        ]
+
+    def search(self, index, body, request_timeout):
+        self.calls.append((index, body, request_timeout))
+        return self.responses.pop(0)
+
+
+def test_law_names_pages_composite_aggregation(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_REQUEST_TIMEOUT_SECONDS=10),
+    )
+    client = DummyLawNamesClient()
+    backend = OpenSearchBackend(client=client, index="laws")
+
+    names = backend.law_names(page_size=2)
+
+    assert names == ["民法", "刑法", "商法"]
+    first_body = client.calls[0][1]
+    second_body = client.calls[1][1]
+    assert first_body["aggs"]["laws"]["composite"]["size"] == 2
+    assert first_body["aggs"]["laws"]["composite"]["sources"] == [
+        {"law": {"terms": {"field": "law_name", "order": "asc"}}}
+    ]
+    assert "after" not in first_body["aggs"]["laws"]["composite"]
+    assert second_body["aggs"]["laws"]["composite"]["after"] == {"law": "刑法"}
+
+
 def test_bulk_raises_on_partial_failure(monkeypatch):
     monkeypatch.setattr(
         open_search_client,
