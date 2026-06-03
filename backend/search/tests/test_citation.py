@@ -1,4 +1,4 @@
-from search.citation import citation_key, parse_citation
+from search.citation import citation_key, parse_citation, parse_citation_query
 
 
 def test_parse_basic_citation():
@@ -20,3 +20,10 @@ def test_parse_with_paragraph_item():
 def test_citation_key():
     key = citation_key(parse_citation("民法 95条 1項 1号"))
     assert key == "民法 95条 1項 1号"
+
+
+def test_parse_citation_query_keeps_prefix_residual_terms():
+    result = parse_citation_query("損害 民法 709条")
+    assert result.citation.law_name == "民法"
+    assert result.citation.article_no == "709"
+    assert result.residual_query == "損害"

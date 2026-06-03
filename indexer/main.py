@@ -28,7 +28,7 @@ from .pipeline import iter_records, to_index_actions  # noqa: E402
 
 def versioned_index_name(alias: str) -> str:
     safe_alias = alias.replace("*", "").replace(",", "").replace(" ", "-")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
     return f"{safe_alias}-v{stamp}"
 
 

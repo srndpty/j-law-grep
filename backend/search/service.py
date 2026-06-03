@@ -43,7 +43,8 @@ class SearchService:
 
         must: list[dict[str, Any]] = []
         filter_clauses: list[dict[str, Any]] = []
-        should: list[dict[str, Any]] = []
+        required_should: list[dict[str, Any]] = []
+        boost_should: list[dict[str, Any]] = []
         must_not: list[dict[str, Any]] = []
 
         if params.mode == "regex":
@@ -70,7 +71,7 @@ class SearchService:
             for term in boolean.required:
                 must.append(self._content_phrase_clause(term))
             for group in boolean.optional_groups:
-                should.append(
+                required_should.append(
                     {
                         "bool": {
                             "should": [self._content_phrase_clause(term) for term in group],
@@ -80,7 +81,7 @@ class SearchService:
                 )
             for term in boolean.excluded:
                 must_not.append(self._content_phrase_clause(term))
-            if not must and not should and not must_not:
+            if not must and not required_should and not must_not:
                 must.append({"match_all": {}})
         else:
             # must.append({"match_phrase": {"content": params.q}})
@@ -90,14 +91,14 @@ class SearchService:
 
         if law_filter:
             filter_clauses.append({"term": {"law_name": law_filter}})
-            should.append({"match_phrase_prefix": {"law_name.prefix": law_filter}})
+            boost_should.append({"match_phrase_prefix": {"law_name.prefix": law_filter}})
 
         if year_filter:
             filter_clauses.append({"term": {"year_enforced": year_filter}})
 
         if citation.law_name:
             filter_clauses.append({"term": {"law_name": citation.law_name}})
-            should.append({"match_phrase_prefix": {"law_name.prefix": citation.law_name}})
+            boost_should.append({"match_phrase_prefix": {"law_name.prefix": citation.law_name}})
         if citation.article_no:
             filter_clauses.append({"term": {"article_no": citation.article_no}})
         if citation.paragraph_no is not None:
@@ -106,7 +107,9 @@ class SearchService:
             filter_clauses.append({"term": {"item_no": str(citation.item_no)}})
 
         if citation_filter_key:
-            should.append({"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}})
+            boost_should.append(
+                {"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}}
+            )
 
         query: dict[str, Any] = {
             "bool": {
@@ -116,8 +119,10 @@ class SearchService:
         }
         if must_not:
             query["bool"]["must_not"] = must_not
+        should = required_should + boost_should
         if should:
             query["bool"]["should"] = should
+        if required_should:
             query["bool"]["minimum_should_match"] = 1
 
         return {

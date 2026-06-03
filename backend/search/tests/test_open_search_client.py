@@ -169,6 +169,22 @@ def test_ensure_index_rejects_schema_version_mismatch(monkeypatch):
         raise AssertionError("Expected schema mismatch to fail")
 
 
+def test_ensure_index_validates_alias_mapping_response(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=2, OPENSEARCH_NUMBER_OF_SHARDS=4),
+    )
+    client = DummyBulkClient({"errors": False, "items": []})
+    client.indices._exists = True
+    client.indices.mapping = {
+        "laws-v20260603000000": {"mappings": {"_meta": {"schema_version": 2}}}
+    }
+    backend = OpenSearchBackend(client=client, index="laws")
+
+    backend.ensure_index()
+
+
 def test_validate_ready_checks_index_schema_and_count(monkeypatch):
     monkeypatch.setattr(
         open_search_client,

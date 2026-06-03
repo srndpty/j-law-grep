@@ -29,7 +29,7 @@ services:
       - ../.env
     environment:
       OPENSEARCH_HOST: http://opensearch:9200
-      OPENSEARCH_INDEX: jlaw-current
+      OPENSEARCH_INDEX: ${OPENSEARCH_INDEX:-jlaw-current}
     depends_on:
       opensearch:
         condition: service_healthy

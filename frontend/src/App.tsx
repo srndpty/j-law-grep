@@ -186,6 +186,9 @@ export default function App() {
       if (err instanceof DOMException && err.name === "AbortError") {
         return;
       }
+      if (requestSeqRef.current !== requestSeq) {
+        return;
+      }
       setError(err instanceof Error ? err.message : "検索に失敗しました");
     } finally {
       if (requestSeqRef.current === requestSeq) {

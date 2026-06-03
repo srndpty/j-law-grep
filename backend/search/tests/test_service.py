@@ -49,6 +49,30 @@ def test_auto_citation_with_residual_terms_keeps_content_phrase():
     assert {"term": {"article_no": "709"}} in query["filter"]
 
 
+def test_auto_citation_with_prefix_residual_terms_keeps_content_phrase():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害 民法 709条", mode="auto", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+    content = query["must"][0]["match_phrase"]["content"]
+
+    assert content["query"] == "損害"
+    assert {"term": {"law_name": "民法"}} in query["filter"]
+    assert {"term": {"article_no": "709"}} in query["filter"]
+
+
+def test_citation_prefix_should_is_boost_only():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条", mode="auto", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    assert "should" in query
+    assert "minimum_should_match" not in query
+
+
 def test_citation_mode_rejects_non_citation_query():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -91,6 +115,7 @@ def test_build_boolean_query_uses_required_optional_and_excluded_terms():
     assert must_terms == ["不法行為"]
     assert optional_terms == ["損害", "賠償"]
     assert must_not_terms == ["故意"]
+    assert query["minimum_should_match"] == 1
 
 
 def test_convert_hit_includes_article_metadata():

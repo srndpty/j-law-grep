@@ -98,8 +98,13 @@ def parse_citation_query(text: str) -> ParsedCitation:
         return ParsedCitation(citation=EMPTY_CITATION, matched_text="", residual_query=text.strip())
 
     law_name = match.group("law")
+    residual_prefix = normalized[: match.start()].strip()
     if law_name:
         law_name = law_name.strip()
+        law_parts = law_name.split()
+        if len(law_parts) > 1:
+            residual_prefix = " ".join(part for part in [residual_prefix, *law_parts[:-1]] if part)
+            law_name = law_parts[-1]
 
     article_raw = match.group("article")
     paragraph_raw = match.group("paragraph")
@@ -124,9 +129,7 @@ def parse_citation_query(text: str) -> ParsedCitation:
         item_no=item_no,
     )
     residual_query = " ".join(
-        part.strip()
-        for part in (normalized[: match.start()], normalized[match.end() :])
-        if part.strip()
+        part.strip() for part in (residual_prefix, normalized[match.end() :]) if part.strip()
     )
     return ParsedCitation(
         citation=citation,

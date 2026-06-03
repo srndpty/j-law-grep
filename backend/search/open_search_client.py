@@ -155,18 +155,28 @@ class OpenSearchBackend:
         response = self.client.count(index=index or self.index)
         return int(response.get("count", 0))
 
-    def get_schema_version(self, index: str) -> int | None:
-        response = self.client.indices.get_mapping(index=index)
-        metadata = response.get(index, {}).get("mappings", {}).get("_meta", {})
-        version = metadata.get("schema_version")
-        return int(version) if version is not None else None
+    def schema_versions(self, index_or_alias: str) -> dict[str, int | None]:
+        response = self.client.indices.get_mapping(index=index_or_alias)
+        versions: dict[str, int | None] = {}
+        for concrete_index, payload in response.items():
+            metadata = payload.get("mappings", {}).get("_meta", {})
+            version = metadata.get("schema_version")
+            versions[concrete_index] = int(version) if version is not None else None
+        return versions
 
-    def validate_schema(self, index: str) -> None:
-        actual = self.get_schema_version(index)
+    def get_schema_version(self, index: str) -> int | None:
+        versions = self.schema_versions(index)
+        if len(versions) == 1:
+            return next(iter(versions.values()))
+        return versions.get(index)
+
+    def validate_schema(self, index_or_alias: str) -> None:
+        versions = self.schema_versions(index_or_alias)
         expected = settings.OPENSEARCH_SCHEMA_VERSION
-        if actual != expected:
+        mismatches = {index: actual for index, actual in versions.items() if actual != expected}
+        if mismatches:
             raise RuntimeError(
-                f"Index schema version mismatch for {index}: expected {expected}, got {actual}. "
+                f"Index schema version mismatch: expected {expected}, got {mismatches}. "
                 "Run versioned reindex."
             )
 

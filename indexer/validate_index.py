@@ -40,8 +40,10 @@ def main() -> None:
     expected = int(manifest["counts"]["records"])
 
     backend = OpenSearchBackend(index=args.index)
-    actual = backend.count()
-    concrete = backend.indices_for_alias(args.index) or [args.index]
+    concrete = backend.concrete_indices(args.index)
+    for concrete_index in concrete:
+        backend.validate_schema(concrete_index)
+    actual = backend.count(index=args.index)
 
     print(f"index: {args.index}")
     print(f"concrete: {', '.join(concrete)}")
