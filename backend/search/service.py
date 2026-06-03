@@ -43,7 +43,6 @@ class SearchService:
 
         must: list[dict[str, Any]] = []
         filter_clauses: list[dict[str, Any]] = []
-        required_should: list[dict[str, Any]] = []
         boost_should: list[dict[str, Any]] = []
         must_not: list[dict[str, Any]] = []
 
@@ -71,7 +70,7 @@ class SearchService:
             for term in boolean.required:
                 must.append(self._content_phrase_clause(term))
             for group in boolean.optional_groups:
-                required_should.append(
+                must.append(
                     {
                         "bool": {
                             "should": [self._content_phrase_clause(term) for term in group],
@@ -81,7 +80,7 @@ class SearchService:
                 )
             for term in boolean.excluded:
                 must_not.append(self._content_phrase_clause(term))
-            if not must and not required_should and not must_not:
+            if not must and not must_not:
                 must.append({"match_all": {}})
         else:
             # must.append({"match_phrase": {"content": params.q}})
@@ -119,11 +118,8 @@ class SearchService:
         }
         if must_not:
             query["bool"]["must_not"] = must_not
-        should = required_should + boost_should
-        if should:
-            query["bool"]["should"] = should
-        if required_should:
-            query["bool"]["minimum_should_match"] = 1
+        if boost_should:
+            query["bool"]["should"] = boost_should
 
         return {
             "query": query,

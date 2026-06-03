@@ -106,16 +106,42 @@ def test_build_boolean_query_uses_required_optional_and_excluded_terms():
     service.search(params)
     query = backend.last_body["query"]["bool"]
 
-    must_terms = [clause["match_phrase"]["content"]["query"] for clause in query["must"]]
+    must_terms = [
+        clause["match_phrase"]["content"]["query"]
+        for clause in query["must"]
+        if "match_phrase" in clause
+    ]
     must_not_terms = [clause["match_phrase"]["content"]["query"] for clause in query["must_not"]]
     optional_terms = [
-        clause["match_phrase"]["content"]["query"]
-        for clause in query["should"][0]["bool"]["should"]
+        clause["match_phrase"]["content"]["query"] for clause in query["must"][1]["bool"]["should"]
     ]
     assert must_terms == ["不法行為"]
     assert optional_terms == ["損害", "賠償"]
     assert must_not_terms == ["故意"]
-    assert query["minimum_should_match"] == 1
+    assert query["must"][1]["bool"]["minimum_should_match"] == 1
+    assert "minimum_should_match" not in query
+
+
+def test_boolean_or_requirements_are_not_satisfied_by_boosts():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害 | 賠償", mode="boolean", filters={"law": "民法"}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    assert query["must"] == [
+        {
+            "bool": {
+                "should": [
+                    service._content_phrase_clause("損害"),
+                    service._content_phrase_clause("賠償"),
+                ],
+                "minimum_should_match": 1,
+            }
+        }
+    ]
+    assert query["should"] == [{"match_phrase_prefix": {"law_name.prefix": "民法"}}]
+    assert "minimum_should_match" not in query
 
 
 def test_convert_hit_includes_article_metadata():
