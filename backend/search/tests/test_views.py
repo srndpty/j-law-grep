@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import django
 from opensearchpy import ConnectionError as OpenSearchConnectionError
 from opensearchpy import ConnectionTimeout as OpenSearchConnectionTimeout
 from opensearchpy import NotFoundError as OpenSearchNotFoundError
@@ -8,6 +9,8 @@ from rest_framework.test import APIRequestFactory
 
 from search.service import SearchParams
 from search.views import LawsView, SearchView
+
+django.setup()
 
 
 class SuccessfulSearchService:

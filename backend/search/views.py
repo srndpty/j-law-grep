@@ -15,6 +15,8 @@ from .service import SearchParams, SearchService
 OPENSEARCH_UNAVAILABLE_EXCEPTIONS = (
     OpenSearchConnectionError,
     OpenSearchConnectionTimeout,
+    # Treat a missing index/alias as temporarily unavailable for the UI:
+    # reindex/alias promotion has not completed, but the client request is valid.
     OpenSearchNotFoundError,
 )
 
