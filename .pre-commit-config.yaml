@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: python scripts/precommit-python.py -m ruff check
+        language: system
+        types_or: [python]
+        pass_filenames: true
+      - id: ruff-format
+        name: ruff format
+        entry: python scripts/precommit-python.py -m ruff format --check
+        language: system
+        types_or: [python]
+        pass_filenames: true
+      - id: mypy
+        name: mypy
+        entry: python scripts/precommit-python.py -m mypy backend indexer tests
+        language: system
+        pass_filenames: false
+      - id: pytest
+        name: pytest
+        entry: python scripts/precommit-python.py -m pytest
+        language: system
+        pass_filenames: false
+      - id: frontend-check
+        name: frontend lint/test/build
+        entry: powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location frontend; npm run check"
+        language: system
+        pass_filenames: false

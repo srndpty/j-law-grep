@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from hashlib import sha1
 from pathlib import Path
-from typing import Iterable, List, Optional
 
 from search.citation import Citation, citation_key
+
 try:
-    from tqdm import tqdm  # type: ignore
+    from tqdm import tqdm
 except ImportError:  # pragma: no cover - optional dependency
     tqdm = None
+from indexer.manifest import iter_corpus_json_paths
 from indexer.utils import normalize_text
 
 
@@ -17,116 +20,131 @@ from indexer.utils import normalize_text
 class IndexRecord:
     law_id: str
     law_name: str
-    law_aliases: List[str]
+    law_aliases: list[str]
     article_no: str
-    paragraph_no: Optional[int]
-    item_no: Optional[int]
+    paragraph_no: str | None
+    item_no: str | None
     heading: str
     content: str
     content_plain: str
     citation: Citation
-    year_enforced: Optional[str]
+    year_enforced: str | None
     path: str
     url: str
-    blocks: List[dict]
+    blocks: list[dict]
 
 
 def load_documents(input_dir: Path) -> Iterable[dict]:
-    for path in sorted(input_dir.glob("*.json")):
+    for path in iter_corpus_json_paths(input_dir):
         with path.open("r", encoding="utf-8") as fh:
             yield json.load(fh)
 
 
-def collect_records(input_dir: Path, show_progress: bool = False) -> List[IndexRecord]:
-    # If tqdm is available and requested, iterate with progress over file paths.
+def position_label(value: object) -> str | None:
+    if value is None:
+        return None
+    label = str(value).strip()
+    return label or None
+
+
+def iter_documents(input_dir: Path, show_progress: bool = False) -> Iterable[dict]:
     if show_progress and tqdm:
-        paths = sorted(input_dir.glob("*.json"))
+        paths = list(iter_corpus_json_paths(input_dir))
         iterator = tqdm(paths, desc="Loading corpus", unit="file")
-        docs = []
         for path in iterator:
             with path.open("r", encoding="utf-8") as fh:
-                docs.append(json.load(fh))
-    else:
-        docs = load_documents(input_dir)
+                yield json.load(fh)
+        return
+    yield from load_documents(input_dir)
 
-    records: List[IndexRecord] = []
-    for doc in docs:
-        law_id = doc["law_id"]
-        law_name = doc["law_name"]
-        law_aliases = doc.get("law_aliases", [])
-        year_enforced = doc.get("year_enforced")
-        for article in doc.get("articles", []):
-            article_no = str(article["article_no"])
-            heading = normalize_text(article.get("heading", ""))
-            paragraphs = article.get("paragraphs", [])
-            if not paragraphs:
-                paragraphs = [
-                    {
-                        "paragraph_no": None,
-                        "items": [
-                            {
-                                "item_no": None,
-                                "text": article.get("text", ""),
-                            }
-                        ],
-                    }
-                ]
-            for paragraph in paragraphs:
-                paragraph_no = paragraph.get("paragraph_no")
-                items = paragraph.get("items", [])
-                if not items:
-                    items = [
+
+def iter_records(input_dir: Path, show_progress: bool = False) -> Iterator[IndexRecord]:
+    for doc in iter_documents(input_dir, show_progress=show_progress):
+        yield from records_from_document(doc)
+
+
+def collect_records(input_dir: Path, show_progress: bool = False) -> list[IndexRecord]:
+    return list(iter_records(input_dir, show_progress=show_progress))
+
+
+def records_from_document(doc: dict) -> Iterator[IndexRecord]:
+    law_id = doc["law_id"]
+    law_name = doc["law_name"]
+    law_aliases = doc.get("law_aliases", [])
+    year_enforced = doc.get("year_enforced")
+    for article in doc.get("articles", []):
+        article_no = str(article["article_no"])
+        heading = normalize_text(article.get("heading", ""))
+        paragraphs = article.get("paragraphs", [])
+        if not paragraphs:
+            paragraphs = [
+                {
+                    "paragraph_no": None,
+                    "items": [
                         {
                             "item_no": None,
-                            "text": paragraph.get("text", ""),
+                            "text": article.get("text", ""),
                         }
-                    ]
-                for item in items:
-                    text = normalize_text(item.get("text", ""))
-                    if not text:
-                        continue
-                    item_no = item.get("item_no")
-                    citation = Citation(
-                        law_name=law_name,
-                        article_no=article_no,
-                        paragraph_no=paragraph_no,
-                        item_no=item_no,
-                    )
-                    blocks = [
-                        {
-                            "kind": "text",
-                            "html": text,
-                        }
-                    ]
-                    path = f"{law_name}/{article_no}"
-                    url = f"/l/{law_id}/a/{article_no}"
-                    if paragraph_no:
-                        url += f"/{paragraph_no}"
-                    if item_no:
-                        url += f"/{item_no}"
-                    records.append(
-                        IndexRecord(
-                            law_id=law_id,
-                            law_name=law_name,
-                            law_aliases=law_aliases,
-                            article_no=article_no,
-                            paragraph_no=paragraph_no,
-                            item_no=item_no,
-                            heading=heading,
-                            content=text,
-                            content_plain=text,
-                            citation=citation,
-                            year_enforced=year_enforced,
-                            path=path,
-                            url=url,
-                            blocks=blocks,
-                        )
-                    )
-    return records
+                    ],
+                }
+            ]
+        for paragraph in paragraphs:
+            paragraph_no = paragraph.get("paragraph_no")
+            items = paragraph.get("items", [])
+            if not items:
+                items = [
+                    {
+                        "item_no": None,
+                        "text": paragraph.get("text", ""),
+                    }
+                ]
+            for item in items:
+                text = normalize_text(item.get("text", ""))
+                if not text:
+                    continue
+                item_no = item.get("item_no")
+                paragraph_label = position_label(paragraph_no)
+                item_label = position_label(item_no)
+                citation = Citation(
+                    law_name=law_name,
+                    article_no=article_no,
+                    paragraph_no=int(paragraph_label)
+                    if paragraph_label and paragraph_label.isdigit()
+                    else None,
+                    item_no=int(item_label) if item_label and item_label.isdigit() else None,
+                )
+                blocks = [
+                    {
+                        "kind": "text",
+                        "html": text,
+                    }
+                ]
+                path = f"{law_name}/{article_no}"
+                url = f"/l/{law_id}/a/{article_no}"
+                if paragraph_label:
+                    url += f"/{paragraph_label}"
+                if item_label:
+                    url += f"/{item_label}"
+                yield IndexRecord(
+                    law_id=law_id,
+                    law_name=law_name,
+                    law_aliases=law_aliases,
+                    article_no=article_no,
+                    paragraph_no=paragraph_label,
+                    item_no=item_label,
+                    heading=heading,
+                    content=text,
+                    content_plain=text,
+                    citation=citation,
+                    year_enforced=year_enforced,
+                    path=path,
+                    url=url,
+                    blocks=blocks,
+                )
 
 
-def to_index_actions(records: Iterable[IndexRecord]) -> List[dict]:
-    actions: List[dict] = []
+def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
+    seen: dict[str, int] = {}
     for record in records:
         citation = citation_key(record.citation)
         doc = {
@@ -146,6 +164,22 @@ def to_index_actions(records: Iterable[IndexRecord]) -> List[dict]:
             "line": 0,
             "blocks": record.blocks,
         }
-        doc_id = f"{record.law_id}-{record.article_no}-{record.paragraph_no or 0}-{record.item_no or 0}"
-        actions.append({"_id": doc_id, "_source": doc})
-    return actions
+        base_doc_id = stable_doc_id(record)
+        seen[base_doc_id] = seen.get(base_doc_id, 0) + 1
+        doc_id = base_doc_id if seen[base_doc_id] == 1 else f"{base_doc_id}-{seen[base_doc_id]}"
+        yield {"_id": doc_id, "_source": doc}
+
+
+def stable_doc_id(record: IndexRecord) -> str:
+    content_digest = sha1(record.content.encode("utf-8")).hexdigest()[:12]
+    key = "\0".join(
+        [
+            record.law_id,
+            record.article_no,
+            record.paragraph_no or "",
+            record.item_no or "",
+            content_digest,
+        ]
+    )
+    digest = sha1(key.encode("utf-8")).hexdigest()[:20]
+    return f"{record.law_id}-{record.article_no}-{record.paragraph_no or 0}-{record.item_no or 0}-{digest}"

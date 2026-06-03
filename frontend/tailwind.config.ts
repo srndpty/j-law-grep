@@ -8,11 +8,11 @@ const config: Config = {
       colors: {
         background: "hsl(0 0% 100%)",
         foreground: "hsl(240 10% 3.9%)",
-        muted: "hsl(240 4.8% 95.9%)"
-      }
-    }
+        muted: "hsl(240 4.8% 95.9%)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;

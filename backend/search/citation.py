@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Optional
 
-FULLWIDTH_DIGITS = str.maketrans({
-    "０": "0",
-    "１": "1",
-    "２": "2",
-    "３": "3",
-    "４": "4",
-    "５": "5",
-    "６": "6",
-    "７": "7",
-    "８": "8",
-    "９": "9",
-})
+FULLWIDTH_DIGITS = str.maketrans(
+    {
+        "０": "0",
+        "１": "1",
+        "２": "2",
+        "３": "3",
+        "４": "4",
+        "５": "5",
+        "６": "6",
+        "７": "7",
+        "８": "8",
+        "９": "9",
+    }
+)
 
 KANJI_DIGITS = {
     "〇": 0,
@@ -35,17 +36,29 @@ KANJI_UNITS = {
     "百": 100,
     "千": 1000,
 }
+LAW_SUFFIX_TOKENS = {"法", "令", "規則", "条例", "省令", "府令", "庁令"}
+LAW_SUFFIXES = tuple(LAW_SUFFIX_TOKENS)
 
 
 @dataclass
 class Citation:
-    law_name: Optional[str]
-    article_no: Optional[str]
-    paragraph_no: Optional[int]
-    item_no: Optional[int]
+    law_name: str | None
+    article_no: str | None
+    paragraph_no: int | None
+    item_no: int | None
 
 
-def _kanji_to_int(value: str) -> Optional[int]:
+@dataclass
+class ParsedCitation:
+    citation: Citation
+    matched_text: str
+    residual_query: str
+
+
+EMPTY_CITATION = Citation(law_name=None, article_no=None, paragraph_no=None, item_no=None)
+
+
+def _kanji_to_int(value: str) -> int | None:
     if not value:
         return None
     total = 0
@@ -64,7 +77,7 @@ def _kanji_to_int(value: str) -> Optional[int]:
     return total
 
 
-def _normalize_number(value: Optional[str]) -> Optional[int]:
+def _normalize_number(value: str | None) -> int | None:
     if value is None:
         return None
     normalized = value.translate(FULLWIDTH_DIGITS)
@@ -74,7 +87,7 @@ def _normalize_number(value: Optional[str]) -> Optional[int]:
     return kanji_value
 
 
-def parse_citation(text: str) -> Citation:
+def parse_citation_query(text: str) -> ParsedCitation:
     normalized = text.translate(FULLWIDTH_DIGITS)
     pattern = re.compile(
         r"(?:(?P<law>[\w\-・（）()\u3000\s\u4e00-\u9fff々〆]+?)\s*)?"
@@ -84,11 +97,24 @@ def parse_citation(text: str) -> Citation:
     )
     match = pattern.search(normalized)
     if not match:
-        return Citation(law_name=None, article_no=None, paragraph_no=None, item_no=None)
+        return ParsedCitation(citation=EMPTY_CITATION, matched_text="", residual_query=text.strip())
 
     law_name = match.group("law")
+    residual_prefix = normalized[: match.start()].strip()
     if law_name:
         law_name = law_name.strip()
+        law_parts = law_name.split()
+        if len(law_parts) > 1:
+            last_part = law_parts[-1]
+            if last_part in LAW_SUFFIX_TOKENS or (
+                len(last_part) > 2 and last_part.endswith(LAW_SUFFIXES)
+            ):
+                law_name = "".join(law_parts)
+            else:
+                residual_prefix = " ".join(
+                    part for part in [residual_prefix, *law_parts[:-1]] if part
+                )
+                law_name = last_part
 
     article_raw = match.group("article")
     paragraph_raw = match.group("paragraph")
@@ -106,15 +132,27 @@ def parse_citation(text: str) -> Citation:
             kanji = _kanji_to_int(article_raw)
             article_no = str(kanji) if kanji is not None else article_raw
 
-    return Citation(
+    citation = Citation(
         law_name=law_name,
         article_no=article_no,
         paragraph_no=paragraph_no,
         item_no=item_no,
     )
+    residual_query = " ".join(
+        part.strip() for part in (residual_prefix, normalized[match.end() :]) if part.strip()
+    )
+    return ParsedCitation(
+        citation=citation,
+        matched_text=normalized[match.start() : match.end()].strip(),
+        residual_query=residual_query,
+    )
 
 
-def citation_key(citation: Citation) -> Optional[str]:
+def parse_citation(text: str) -> Citation:
+    return parse_citation_query(text).citation
+
+
+def citation_key(citation: Citation) -> str | None:
     if not citation.law_name or not citation.article_no:
         return None
     parts = [citation.law_name.strip(), f"{citation.article_no}条"]
