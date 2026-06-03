@@ -13,7 +13,7 @@ INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned validate-index golden health-smoke api-smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned validate-index golden health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -76,7 +76,11 @@ restart-backend:
 	$(COMPOSE) restart backend
 
 api-smoke:
-	curl -sS http://localhost:8000/api/search -X POST \
-	  -H 'Content-Type: application/json' \
-	  -d '{"q": "民法 709条", "mode": "literal", "filters": {"law": "民法"}, "size": 5, "page": 1}' | \
-	  python -c "import json,sys; d=json.load(sys.stdin); h=d.get('hits', []); print(json.dumps(h[0], ensure_ascii=False, indent=2) if h else 'no hits')"
+	python scripts/smoke_search.py api-smoke http://localhost:8000
+
+frontend-smoke:
+	@echo "frontend (5173) -> /api/search proxy -> backend reachability"
+	python scripts/smoke_search.py frontend-smoke http://localhost:5173
+
+smoke: health-smoke api-smoke frontend-smoke
+	@echo "smoke OK: healthz/readyz/metrics + backend /api/search + frontend proxy"

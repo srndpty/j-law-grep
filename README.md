@@ -29,6 +29,15 @@ make reindex
 
 `make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入し、`manifest.json` を生成します。
 
+### frontend と backend の接続
+
+frontend は `/api/search` への相対パスで検索 API を呼びます。backend への到達は Vite の proxy が担います。
+
+- 開発 (`npm run dev`, port 5173): `vite.config.ts` の `server.proxy` が `/api` を `VITE_BACKEND_URL` (既定 `http://backend:8000`) に転送します。Docker を使わずローカルで backend を起動している場合は `VITE_BACKEND_URL=http://localhost:8000` を指定してください。
+- Docker / preview (`vite preview`, container 4173 → host 5173): `vite.config.ts` の `preview.proxy` が同じく `/api` を backend に転送します。`vite preview` は `server.proxy` を参照しないため `preview.proxy` が必須です。
+
+docker-compose では frontend コンテナに `VITE_BACKEND_URL=http://backend:8000` を渡し、`5173:4173` を公開しています。ブラウザは `http://localhost:5173` を開けば、proxy 経由で backend に届きます。
+
 ### 開発用ツールのセットアップ
 
 品質ゲート用に backend は Ruff / mypy / pytest-cov / pre-commit、frontend は ESLint / Prettier / TypeScript / Vitest を使います。
@@ -89,7 +98,13 @@ OpenSearch はフルコーパス向けに既定 4 shards / 2GB heap です。既
 make api-smoke
 ```
 
-`/api/search` に対して "民法 709条" を検索し、最初のヒットを表示します。
+`/api/search` に対して全文キーワード "損害" を検索し、最初のヒットと総件数を表示します。リクエスト本文は `scripts/smoke_search.py` 内で組み立てて送信するため、Windows のコンソール codepage (cp932) による日本語クエリの文字化けを受けません。
+
+`make frontend-smoke` は frontend の `http://localhost:5173/api/search` 経由で同じ検索を行い、proxy → backend の到達を確認します。`make smoke` は `health-smoke` → `api-smoke` → `frontend-smoke` をまとめて実行し、`make up` 後にブラウザ検索が確実に動く構成かを一発で確認できます。
+
+```powershell
+make smoke
+```
 
 ## Golden query
 
@@ -141,5 +156,5 @@ make health-smoke
 
 1. `make up` でコンテナを起動し、OpenSearch のヘルスチェックが通るまで待つ。
 2. 別ターミナルで `make reindex` を実行し、"Indexed 2 records" のログを確認する。
-3. `make api-smoke` を実行して `/api/search` から "民法 709条" にヒットすることを確認する。
+3. `make smoke` を実行し、`/healthz` `/readyz` `/metrics`、backend の `/api/search`、frontend proxy 経由の `/api/search` がすべて通ることを確認する。
 4. ブラウザで `http://localhost:5173` を開き、検索 UI から "過失" や "不法行為" を検索してハイライト付きで結果が表示されることを確認する。
