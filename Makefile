@@ -3,13 +3,15 @@ COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 POWERSHELL := powershell.exe -NoProfile -ExecutionPolicy Bypass -Command
 PYTHON ?= python scripts/precommit-python.py
 
+-include .env
+
 export MSYS2_ARG_CONV_EXCL = *
 
 INDEX_INPUT ?= indexer/sample_corpus
 PROGRESS ?= 1
 BULK_CHUNK ?= 1000
 BULK_MAX_MB ?= 40
-INDEX_ALIAS ?= jlaw-current
+INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 

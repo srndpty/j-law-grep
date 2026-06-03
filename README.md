@@ -27,7 +27,7 @@ make up
 make reindex
 ```
 
-`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法 1/2/90/709/710/711条) を投入する**標準導線**です。新しい versioned index を作成し、schema 検証と golden query を新 index に対して通してから `jlaw-current` alias を切り替えます。いずれかの検証が失敗した場合は alias を切り替えず、作りかけの index を削除して既存 index を生かしたままにします (安全なロールバック)。`manifest.json` も生成します。
+`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法 1/2/90/709/710/711条) を投入する**標準導線**です。新しい versioned index を作成し、schema 検証と golden query を新 index に対して通してから `.env` の `OPENSEARCH_INDEX` alias (既定 `jlaw-current`) を切り替えます。いずれかの検証が失敗した場合は alias を切り替えず、作りかけの index を削除して既存 index を生かしたままにします (安全なロールバック)。`manifest.json` も生成します。
 
 > 補足: 上書き型 (非 versioned) の高速 reindex は開発専用として `make reindex-dev` に残しています。alias 切替も世代管理も行わず、削除済み文書が index に残り得るため本番運用には使いません。
 
@@ -85,10 +85,10 @@ make frontend-check
 `make reindex` は常に versioned index を作って alias を切り替えます。mapping や analyzer を変えた場合もこの導線で安全に入れ替えられます。
 
 ```powershell
-make reindex INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-current
+make reindex INDEX_INPUT=indexer/sample_corpus
 ```
 
-このターゲットは `jlaw-current-vYYYYMMDDHHMMSS` のような index を作成し、次を順に検証してから `jlaw-current` alias を切り替えます。
+このターゲットは `<alias>-vYYYYMMDDHHMMSS` のような index を作成し、次を順に検証してから alias を切り替えます。alias は既定で `.env` の `OPENSEARCH_INDEX` を使います。`INDEX_ALIAS=...` を指定すると一時的に上書きできます。
 
 1. 投入件数 == manifest 件数
 2. OpenSearch 件数 == manifest 件数
@@ -100,7 +100,7 @@ make reindex INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-current
 フルコーパスを検索したい場合は、sample ではなく次を実行します。
 
 ```powershell
-make reindex INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current GOLDEN_FILE=
+make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=
 ```
 
 `indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
@@ -201,6 +201,6 @@ content の ngram analyzer は `max_gram=15` です。空白を含まない 15 �
 ## 動作確認
 
 1. `make up` でコンテナを起動し、OpenSearch のヘルスチェックが通るまで待つ。
-2. 別ターミナルで `make reindex` を実行し、"Indexed 8 records" → "Golden gate passed" → "Switched alias jlaw-current -> ..." のログを確認する。
+2. 別ターミナルで `make reindex` を実行し、"Indexed 8 records" → "Golden gate passed" → "Switched alias <OPENSEARCH_INDEX> -> ..." のログを確認する。
 3. `make smoke` を実行し、`/healthz` `/readyz` `/metrics`、backend の `/api/search`、frontend proxy 経由の `/api/search` がすべて通ることを確認する。
 4. ブラウザで `http://localhost:5173` を開き、検索 UI から "過失" や "不法行為" を検索してハイライト付きで結果が表示されることを確認する。
