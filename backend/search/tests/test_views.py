@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from search.service import SearchParams
-from search.views import LawsView, SearchView
+from search.views import LawDocumentView, LawsView, SearchView
 
 django.setup()
 
@@ -44,6 +44,20 @@ class SuccessfulLawsService:
         return ["刑法", "民法"]
 
 
+class SuccessfulLawDocumentService:
+    def law_document(self, law_id: str):
+        return {
+            "law_id": law_id,
+            "law_name": "民法",
+            "sections": [{"article_no": "1", "text": "本文"}],
+        }
+
+
+class MissingLawDocumentService:
+    def law_document(self, law_id: str):
+        return None
+
+
 class ConnectionErrorLawsService:
     def list_laws(self):
         raise OpenSearchConnectionError("connection failed")
@@ -65,6 +79,13 @@ def get_laws(service_class):
     request = APIRequestFactory().get("/api/laws")
     request.request_id = "req-test"
     return view(request)
+
+
+def get_law_document(service_class, law_id="minpo"):
+    view = LawDocumentView.as_view(service_class=service_class)
+    request = APIRequestFactory().get(f"/api/laws/{law_id}")
+    request.request_id = "req-test"
+    return view(request, law_id=law_id)
 
 
 def test_search_view_returns_success_payload():
@@ -115,3 +136,17 @@ def test_laws_view_connection_error_returns_503_with_request_id():
 
     assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
     assert response.data["request_id"] == "req-test"
+
+
+def test_law_document_view_returns_document():
+    response = get_law_document(SuccessfulLawDocumentService)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["law_id"] == "minpo"
+    assert response.data["sections"][0]["text"] == "本文"
+
+
+def test_law_document_view_returns_404_when_missing():
+    response = get_law_document(MissingLawDocumentService)
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND

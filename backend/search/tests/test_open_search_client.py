@@ -82,6 +82,35 @@ class DummyLawNamesClient:
         return self.responses.pop(0)
 
 
+class DummyLawDocumentClient:
+    def __init__(self):
+        self.calls = []
+        self.indices = DummyIndices()
+        self.responses = [
+            {
+                "hits": {
+                    "total": {"value": 3, "relation": "eq"},
+                    "hits": [
+                        {"_id": "1", "_source": {"article_no": "1"}, "sort": ["1", "", "", "a"]},
+                        {"_id": "2", "_source": {"article_no": "2"}, "sort": ["2", "", "", "b"]},
+                    ],
+                }
+            },
+            {
+                "hits": {
+                    "total": {"value": 3, "relation": "eq"},
+                    "hits": [
+                        {"_id": "3", "_source": {"article_no": "3"}, "sort": ["3", "", "", "c"]},
+                    ],
+                }
+            },
+        ]
+
+    def search(self, index, body, size, request_timeout):
+        self.calls.append((index, body, size, request_timeout))
+        return self.responses.pop(0)
+
+
 def test_law_names_pages_composite_aggregation(monkeypatch):
     monkeypatch.setattr(
         open_search_client,
@@ -102,6 +131,28 @@ def test_law_names_pages_composite_aggregation(monkeypatch):
     ]
     assert "after" not in first_body["aggs"]["laws"]["composite"]
     assert second_body["aggs"]["laws"]["composite"]["after"] == {"law": "刑法"}
+
+
+def test_law_document_pages_with_search_after(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_REQUEST_TIMEOUT_SECONDS=10),
+    )
+    client = DummyLawDocumentClient()
+    backend = OpenSearchBackend(client=client, index="laws")
+
+    response = backend.law_document("minpo", page_size=2)
+
+    assert [hit["_id"] for hit in response["hits"]["hits"]] == ["1", "2", "3"]
+    assert response["hits"]["total"] == {"value": 3, "relation": "eq"}
+    first_body = client.calls[0][1]
+    second_body = client.calls[1][1]
+    assert first_body["query"] == {"term": {"law_id": "minpo"}}
+    assert first_body["track_total_hits"] is True
+    assert "search_after" not in first_body
+    assert second_body["search_after"] == ["2", "", "", "b"]
+    assert client.calls[0][2] == 2
 
 
 def test_bulk_raises_on_partial_failure(monkeypatch):

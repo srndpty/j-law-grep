@@ -17,6 +17,42 @@ class DummyBackend:
         self.last_body = body
         return {"hits": {"hits": [], "total": {"value": 0}}, "took": 1}
 
+    def law_document(self, law_id):
+        return {
+            "hits": {
+                "hits": [
+                    {
+                        "_id": "minpo-10",
+                        "_source": {
+                            "law_id": law_id,
+                            "law_name": "民法",
+                            "article_no": "10",
+                            "paragraph_no": None,
+                            "item_no": None,
+                            "content_plain": "第十条の本文",
+                            "blocks": [],
+                            "url": "/l/minpo/a/10",
+                            "path": "民法/10",
+                        },
+                    },
+                    {
+                        "_id": "minpo-2",
+                        "_source": {
+                            "law_id": law_id,
+                            "law_name": "民法",
+                            "article_no": "2",
+                            "paragraph_no": None,
+                            "item_no": None,
+                            "content_plain": "第二条の本文",
+                            "blocks": [],
+                            "url": "/l/minpo/a/2",
+                            "path": "民法/2",
+                        },
+                    },
+                ]
+            }
+        }
+
 
 def test_build_literal_query_uses_match_phrase(monkeypatch):
     backend = DummyBackend()
@@ -99,6 +135,16 @@ def test_search_response_includes_query_and_index_metadata():
     assert result["index"]["name"] == "jlaw-current"
 
 
+def test_law_document_returns_sections_in_natural_article_order():
+    service = SearchService(backend=DummyBackend())
+
+    document = service.law_document("minpo")
+
+    assert document is not None
+    assert document["law_name"] == "民法"
+    assert [section["article_no"] for section in document["sections"]] == ["2", "10"]
+
+
 def test_build_boolean_query_uses_required_optional_and_excluded_terms():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -166,6 +212,7 @@ def test_convert_hit_includes_article_metadata():
     hit = {
         "_id": "doc1",
         "_source": {
+            "law_id": "minpo",
             "law_name": "民法",
             "article_no": "709",
             "paragraph_no": None,
@@ -180,6 +227,7 @@ def test_convert_hit_includes_article_metadata():
     }
     result = service._convert_hit(hit, query="損害")
     assert result["law_name"] == "民法"
+    assert result["law_id"] == "minpo"
     assert result["article_no"] == "709"
     assert result["path"] == "民法/709"
     assert result["snippet"] == "不法行為による損害の賠償"

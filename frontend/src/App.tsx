@@ -2,28 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { isEditableTarget } from "./highlight-ranges";
+import { openLawDocument } from "./search-hit-text";
 import { useSearchSettings } from "./hooks/useSearchSettings";
 import { useSearch } from "./hooks/useSearch";
-import { useLaws } from "./hooks/useLaws";
 import { SearchBar } from "./components/SearchBar";
 import { SearchModeTabs } from "./components/SearchModeTabs";
-import { FilterPanel } from "./components/FilterPanel";
-import { SettingsPanel } from "./components/SettingsPanel";
-import { DebugPanel } from "./components/DebugPanel";
 import { SearchResultList } from "./components/SearchResultList";
 
 export default function App() {
-  const {
-    query,
-    setQuery,
-    mode,
-    setMode,
-    lawFilter,
-    setLawFilter,
-    yearFilter,
-    setYearFilter,
-    requestBody,
-  } = useSearchSettings();
+  const { query, setQuery, mode, setMode, requestBody } = useSearchSettings();
   const [isComposing, setIsComposing] = useState(false);
   const { results, isLoading, error, requestId, search } = useSearch({
     requestBody,
@@ -31,10 +18,8 @@ export default function App() {
     mode,
     isComposing,
   });
-  const { laws, error: lawsError, isLoading: lawsIsLoading } = useLaws();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [showDebug, setShowDebug] = useState(false);
   const resultRefs = useRef<Array<HTMLElement | null>>([]);
 
   // Reset selection whenever the result set changes.
@@ -57,9 +42,7 @@ export default function App() {
       if (event.key === "Enter") {
         if (isEditableTarget(event.target) || event.isComposing) return;
         const selected = results.hits[selectedIndex];
-        if (selected?.url) {
-          window.location.href = selected.url;
-        }
+        if (selected) void openLawDocument(selected);
       }
     }
     window.addEventListener("keydown", handleKeyDown);
@@ -92,13 +75,6 @@ export default function App() {
                   setQuery(value);
                 }}
               />
-              <FilterPanel
-                laws={laws}
-                lawFilter={lawFilter}
-                onLawChange={setLawFilter}
-                yearFilter={yearFilter}
-                onYearChange={setYearFilter}
-              />
               <SearchModeTabs mode={mode} onChange={setMode} />
               <Button type="submit">検索</Button>
             </form>
@@ -106,21 +82,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-6 md:grid-cols-[260px_1fr]">
-        <aside className="space-y-4">
-          <SettingsPanel
-            effectiveMode={results.query?.effective_mode ?? mode}
-            indexName={results.index?.name}
-            lawsError={lawsError}
-            lawsIsLoading={lawsIsLoading}
-            requestId={requestId}
-            onToggleDebug={() => setShowDebug((value) => !value)}
-          />
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-gray-700">施行年</h2>
-            <p className="mt-2 text-xs text-gray-500">空欄で全ての年を対象にします。</p>
-          </div>
-        </aside>
+      <main className="mx-auto max-w-7xl px-6 py-6">
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -138,14 +100,6 @@ export default function App() {
                 </span>
               )}
             </p>
-          )}
-          {showDebug && (
-            <DebugPanel
-              requestBody={requestBody}
-              requestId={requestId}
-              query={results.query}
-              index={results.index}
-            />
           )}
           <SearchResultList
             hits={results.hits}
