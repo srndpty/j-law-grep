@@ -51,6 +51,21 @@ const MODES = [
 const DEFAULT_QUERY = "民法 709条";
 const STORAGE_KEY = "j-law-grep.settings.v1";
 
+function extractErrorMessage(body: unknown, status: number): string {
+  if (body && typeof body === "object") {
+    const obj = body as Record<string, unknown>;
+    if (typeof obj.detail === "string") return obj.detail;
+    const parts: string[] = [];
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === "request_id") continue;
+      if (Array.isArray(value)) parts.push(`${key}: ${value.join(", ")}`);
+      else if (typeof value === "string") parts.push(`${key}: ${value}`);
+    }
+    if (parts.length) return parts.join(" / ");
+  }
+  return `検索に失敗しました (${status})`;
+}
+
 function loadInitialSettings() {
   const params = new URLSearchParams(window.location.search);
   const saved = (() => {
@@ -78,6 +93,7 @@ export default function App() {
   const [isComposing, setIsComposing] = useState(false);
   const [results, setResults] = useState<SearchResponse>({ hits: [], total: 0, took_ms: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -174,8 +190,18 @@ export default function App() {
         body: JSON.stringify(body),
         signal: controller.signal,
       });
+      const responseId = response.headers.get("X-Request-ID");
+      if (requestSeqRef.current === requestSeq) {
+        setRequestId(responseId);
+      }
       if (!response.ok) {
-        throw new Error(`検索に失敗しました (${response.status})`);
+        let errorBody: unknown = null;
+        try {
+          errorBody = await response.json();
+        } catch {
+          errorBody = null;
+        }
+        throw new Error(extractErrorMessage(errorBody, response.status));
       }
       const data = (await response.json()) as SearchResponse;
       if (requestSeqRef.current === requestSeq) {
@@ -339,6 +365,12 @@ export default function App() {
                   {results.index?.name ?? "-"}
                 </dd>
               </div>
+              <div className="flex justify-between gap-3">
+                <dt>request_id</dt>
+                <dd className="truncate font-mono" title={requestId ?? undefined}>
+                  {requestId ?? "-"}
+                </dd>
+              </div>
             </dl>
             <button
               type="button"
@@ -364,12 +396,22 @@ export default function App() {
           {error && (
             <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
               {error}
+              {requestId && (
+                <span className="ml-2 font-mono text-xs text-red-500">
+                  (request_id: {requestId})
+                </span>
+              )}
             </p>
           )}
           {showDebug && (
             <pre className="max-h-64 overflow-auto rounded-md border border-gray-300 bg-white p-3 text-xs text-gray-700">
               {JSON.stringify(
-                { request: requestBody, query: results.query, index: results.index },
+                {
+                  request: requestBody,
+                  request_id: requestId,
+                  query: results.query,
+                  index: results.index,
+                },
                 null,
                 2
               )}

@@ -156,6 +156,17 @@ make health-smoke
 - `citation`: `民法709条` のような条文位置検索
 - `regex`: 制限付き正規表現検索。自動検索では実行しません。OpenSearch の term-level regexp を使うため、grep の行単位 regex と完全に同じ挙動ではありません。
 
+## API の制限とエラー
+
+`POST /api/search` には以下の防御を入れています。
+
+- `size`: 1〜100 (既定 20)。
+- `page`: 1〜10000。さらに `(page-1)*size + size`（深さ）が `10000`（OpenSearch の `index.max_result_window`）を超える場合は `400` で拒否します。深いページングは将来 `search_after` / cursor に置き換える前提です。
+- `q`: 最大 500 文字 (regex モードは 120 文字)。
+- OpenSearch への接続不能・タイムアウト (`opensearchpy.ConnectionError`) は `500` ではなく `503` を返し、body に `detail` と `request_id` を含めます。
+- バリデーションエラーは DRF 形式の JSON (`{"<field>": ["..."]}` または `{"detail": "..."}`) を返します。frontend はこの detail を解析して表示します。
+- すべての response に `X-Request-ID` ヘッダが付きます。frontend は検索設定パネルと Debug パネルに `request_id` を表示するので、エラー報告時に紐付けられます。
+
 ## 将来拡張メモ
 
 - OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。compose は現時点では 2.9.0 を維持しています。3.x 系へ上げる場合は analyzer / highlight / alias switch の integration test を先に通してください。

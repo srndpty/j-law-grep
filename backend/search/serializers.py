@@ -4,7 +4,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from .service import MAX_REGEX_LENGTH, SearchService
+from .service import MAX_REGEX_LENGTH, MAX_RESULT_WINDOW, SearchService
 
 
 class SearchFiltersField(serializers.DictField):
@@ -22,7 +22,8 @@ class SearchRequestSerializer(serializers.Serializer):
     )
     filters = SearchFiltersField(required=False, default=dict)
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
-    page = serializers.IntegerField(min_value=1, default=1)
+    # Absolute cap; the precise `from + size` window is enforced in validate().
+    page = serializers.IntegerField(min_value=1, max_value=MAX_RESULT_WINDOW, default=1)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs.get("mode") == "regex":
@@ -36,6 +37,10 @@ class SearchRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {"q": f"Regex query must be {MAX_REGEX_LENGTH} characters or fewer."}
             )
+        try:
+            SearchService.validate_pagination(attrs.get("page", 1), attrs.get("size", 20))
+        except ValueError as exc:
+            raise serializers.ValidationError({"page": str(exc)}) from exc
         return attrs
 
 

@@ -9,6 +9,10 @@ from .citation import Citation, citation_key, parse_citation_query
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
+# OpenSearch refuses `from + size` beyond index.max_result_window (default 10000).
+# Cap deep pagination here so a request like page=999999 fails fast with a clear
+# 400 instead of hitting OpenSearch with a huge `from` (slow / 5xx).
+MAX_RESULT_WINDOW = 10000
 DANGEROUS_REGEX_PATTERNS = (
     r"\.\*.*\.\*",
     r"\(\.\+\)\+",
@@ -194,6 +198,15 @@ class SearchService:
             "query": self.classify_query(params.q, params.mode),
             "index": {"name": self.backend.index},
         }
+
+    @staticmethod
+    def validate_pagination(page: int, size: int) -> None:
+        window = (page - 1) * size + size
+        if window > MAX_RESULT_WINDOW:
+            raise ValueError(
+                f"Pagination beyond {MAX_RESULT_WINDOW} results is not supported "
+                "(narrow the query or reduce page/size)."
+            )
 
     @staticmethod
     def validate_regex(pattern: str) -> None:

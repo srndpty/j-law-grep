@@ -1,6 +1,8 @@
 from typing import Any
 
-from search.service import SearchParams, SearchService
+import pytest
+
+from search.service import MAX_RESULT_WINDOW, SearchParams, SearchService
 
 
 class DummyBackend:
@@ -215,6 +217,21 @@ def test_convert_hit_derives_article_from_url_when_missing():
     result = service._convert_hit(hit, query="")
     assert result["article_no"] == "23"
     assert result["paragraph_no"] == "4"
+
+
+def test_validate_pagination_allows_window_boundary():
+    # from + size exactly at the window must pass.
+    SearchService.validate_pagination(page=MAX_RESULT_WINDOW // 20, size=20)
+
+
+def test_validate_pagination_rejects_deep_paging():
+    with pytest.raises(ValueError, match=f"beyond {MAX_RESULT_WINDOW}"):
+        SearchService.validate_pagination(page=999999, size=20)
+
+
+def test_validate_pagination_rejects_window_overflow_by_one():
+    with pytest.raises(ValueError):
+        SearchService.validate_pagination(page=(MAX_RESULT_WINDOW // 20) + 1, size=20)
 
 
 def test_regex_query_rejects_expensive_patterns():
