@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from datetime import datetime, timezone
@@ -32,6 +33,34 @@ def versioned_index_name(alias: str) -> str:
     return f"{safe_alias}-v{stamp}"
 
 
+def run_golden_gate(golden_file: Path, index: str, size: int = 10) -> None:
+    """Run golden queries against a concrete index before it is promoted.
+
+    Raises RuntimeError if any case fails so the caller can abort the alias
+    switch and delete the half-built index.
+    """
+    from search.open_search_client import OpenSearchBackend  # noqa: PLC0415
+    from search.service import SearchService  # noqa: PLC0415
+
+    from .golden import run_case  # noqa: PLC0415
+
+    with golden_file.open("r", encoding="utf-8") as fh:
+        cases = json.load(fh)
+
+    service = SearchService(backend=OpenSearchBackend(index=index))
+    failures: list[str] = []
+    for case in cases:
+        failures.extend(run_case(service, case, size))
+
+    if failures:
+        for failure in failures:
+            print(f"FAIL {failure}", file=sys.stderr)
+        raise RuntimeError(
+            f"Golden gate failed for {index}: {len(failures)} failure(s); alias not switched."
+        )
+    print(f"Golden gate passed for {index}: {len(cases)} cases")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Index sample Japanese law corpus")
     parser.add_argument("--input", type=Path, default=PROJECT_ROOT / "indexer" / "sample_corpus")
@@ -47,6 +76,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--index", help="Concrete index to write. Defaults to OPENSEARCH_INDEX.")
     parser.add_argument("--alias", help="Alias to switch after a successful versioned build.")
+    parser.add_argument(
+        "--golden",
+        type=Path,
+        help="Golden query file to run against the new index before the alias switch. "
+        "If any case fails, the alias is not switched and the new index is deleted.",
+    )
     parser.add_argument(
         "--versioned",
         action="store_true",
@@ -110,6 +145,12 @@ def main() -> None:
             )
 
         if args.versioned:
+            # Gate the promotion: schema must match and (optionally) golden
+            # queries must pass against the freshly built index. switch_alias
+            # re-checks existence and schema as a final safety net.
+            backend.validate_schema(backend.index)
+            if args.golden:
+                run_golden_gate(args.golden, backend.index)
             backend.switch_alias(args.alias, backend.index)
             print(f"Switched alias {args.alias} -> {backend.index}")
     except Exception:

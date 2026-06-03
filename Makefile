@@ -13,7 +13,7 @@ INDEX_ALIAS ?= jlaw-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned validate-index golden health-smoke api-smoke frontend-smoke smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned reindex-dev validate-index golden health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -39,20 +39,30 @@ frontend-check:
 
 check: lint typecheck test frontend-check
 
+# Standard reindex: build a fresh versioned index, validate schema + golden
+# queries against it, then atomically switch the alias. The old index stays
+# live (and the new one is deleted) if any gate fails.
+# Set GOLDEN_FILE= (empty) to skip the golden gate, e.g. for the full corpus
+# until tests/golden_queries has corpus-appropriate cases.
 reindex:
+	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
+		$(COMPOSE) build backend; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
+	else \
+		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
+	fi
+
+# Backward-compatible alias for the standard versioned reindex.
+reindex-versioned: reindex
+
+# Dev-only fast path: index in place without versioning or alias switch.
+# Deleted documents from the previous build may linger; not for production.
+reindex-dev:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
 		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	else \
 		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
-	fi
-
-reindex-versioned:
-	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
-		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
-	else \
-		OPENSEARCH_HOST=http://localhost:9200 python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS); \
 	fi
 
 golden: build-backend

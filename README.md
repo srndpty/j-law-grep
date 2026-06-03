@@ -27,7 +27,9 @@ make up
 make reindex
 ```
 
-`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を OpenSearch に投入し、`manifest.json` を生成します。
+`make up` は OpenSearch / Backend / Frontend を起動します。`make reindex` はサンプルコーパス (民法709条/710条) を投入する**標準導線**です。新しい versioned index を作成し、schema 検証と golden query を新 index に対して通してから `jlaw-current` alias を切り替えます。いずれかの検証が失敗した場合は alias を切り替えず、作りかけの index を削除して既存 index を生かしたままにします (安全なロールバック)。`manifest.json` も生成します。
+
+> 補足: 上書き型 (非 versioned) の高速 reindex は開発専用として `make reindex-dev` に残しています。alias 切替も世代管理も行わず、削除済み文書が index に残り得るため本番運用には使いません。
 
 ### frontend と backend の接続
 
@@ -71,21 +73,29 @@ make frontend-check
 
 1. e-Gov から法令 XML をダウンロードし、任意のディレクトリ (例: `data/egov-xml`) に展開する。
 2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。変換後に `indexer/data/manifest.json` も生成されます。
-3. `make reindex INDEX_INPUT=indexer/data` で変換済み JSON を OpenSearch に投入する。
+3. `make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=` でフルコーパスを投入する。`GOLDEN_FILE=` を空にしているのは、現状の golden (`tests/golden_queries/sample.json`) がサンプルコーパス前提で、フルコーパスでは通らないためです。フルコーパス向けの golden を整備したら `GOLDEN_FILE` に指定してゲートを有効化できます。
 
-### 世代付きインデックスと alias 切替
+### 世代付きインデックスと alias 切替 (標準導線)
 
-mapping や analyzer を変えた場合は、既存 index に上書きせず versioned index を作って alias を切り替えます。
+`make reindex` は常に versioned index を作って alias を切り替えます。mapping や analyzer を変えた場合もこの導線で安全に入れ替えられます。
 
 ```powershell
-make reindex-versioned INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-current
+make reindex INDEX_INPUT=indexer/sample_corpus INDEX_ALIAS=jlaw-current
 ```
 
-このターゲットは `jlaw-current-vYYYYMMDDHHMMSS` のような index を作成し、投入件数と OpenSearch 件数を検証してから `jlaw-current` alias を切り替えます。
+このターゲットは `jlaw-current-vYYYYMMDDHHMMSS` のような index を作成し、次を順に検証してから `jlaw-current` alias を切り替えます。
+
+1. 投入件数 == manifest 件数
+2. OpenSearch 件数 == manifest 件数
+3. 新 index の mapping schema version 一致
+4. golden query (新 index に対して実行。`GOLDEN_FILE=` で無効化可能)
+
+いずれかが失敗すると alias は切り替わらず、作りかけの index は削除されます。`switch_alias()` 自体も切替直前に target index の存在と schema を再確認します。`reindex-versioned` は後方互換のため `reindex` の別名として残しています。
+
 フルコーパスを検索したい場合は、sample ではなく次を実行します。
 
 ```powershell
-make reindex-versioned INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current
+make reindex INDEX_INPUT=indexer/data INDEX_ALIAS=jlaw-current GOLDEN_FILE=
 ```
 
 `indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
@@ -150,11 +160,11 @@ make health-smoke
 
 - OpenSearch のアナライザ設定を `search/open_search_client.py` で一元管理しているため、`analysis-kuromoji` プラグインへの切替が容易です。compose は現時点では 2.9.0 を維持しています。3.x 系へ上げる場合は analyzer / highlight / alias switch の integration test を先に通してください。
 - コーパスは `manifest.json` の digest と件数で追跡し、法令本文は必要に応じて外部ディレクトリへ切り離します。
-- analyzer や mapping を変える場合は `make reindex-versioned` で alias 切替を使います。
+- analyzer や mapping を変える場合は標準導線の `make reindex` (versioned + golden ゲート + alias 切替) を使います。
 
 ## 動作確認
 
 1. `make up` でコンテナを起動し、OpenSearch のヘルスチェックが通るまで待つ。
-2. 別ターミナルで `make reindex` を実行し、"Indexed 2 records" のログを確認する。
+2. 別ターミナルで `make reindex` を実行し、"Indexed 2 records" → "Golden gate passed" → "Switched alias jlaw-current -> ..." のログを確認する。
 3. `make smoke` を実行し、`/healthz` `/readyz` `/metrics`、backend の `/api/search`、frontend proxy 経由の `/api/search` がすべて通ることを確認する。
 4. ブラウザで `http://localhost:5173` を開き、検索 UI から "過失" や "不法行為" を検索してハイライト付きで結果が表示されることを確認する。

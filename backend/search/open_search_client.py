@@ -204,6 +204,13 @@ class OpenSearchBackend:
         return self.client.cluster.health()
 
     def switch_alias(self, alias: str, target_index: str) -> None:
+        if not self.client.indices.exists(index=target_index):
+            raise RuntimeError(
+                f"Cannot switch alias {alias}: target index does not exist: {target_index}"
+            )
+        # Refuse to promote an index whose mapping schema does not match the
+        # backend expectation, so a stale or half-built index never becomes live.
+        self.validate_schema(target_index)
         actions: list[dict[str, Any]] = []
         for old_index in self.indices_for_alias(alias):
             actions.append({"remove": {"index": old_index, "alias": alias}})
