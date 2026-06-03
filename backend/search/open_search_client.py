@@ -274,36 +274,56 @@ class OpenSearchBackend:
             request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
         )
 
-    def law_document(self, law_id: str, size: int = 10000) -> dict[str, Any]:
-        body = {
-            "query": {"term": {"law_id": law_id}},
-            "_source": [
-                "law_id",
-                "law_name",
-                "article_no",
-                "paragraph_no",
-                "item_no",
-                "heading",
-                "content_plain",
-                "content",
-                "blocks",
-                "url",
-                "path",
-            ],
-            "sort": [
-                {"article_no": "asc"},
-                {"paragraph_no": "asc"},
-                {"item_no": "asc"},
-                {"_id": "asc"},
-            ],
-        }
-        return self.client.search(
-            index=self.index,
-            body=body,
-            size=size,
-            from_=0,
-            request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
-        )
+    def law_document(self, law_id: str, page_size: int = 1000) -> dict[str, Any]:
+        hits: list[dict[str, Any]] = []
+        total: dict[str, Any] | int = {"value": 0, "relation": "eq"}
+        search_after: list[Any] | None = None
+        sort = [
+            {"article_no": {"order": "asc", "missing": "_first"}},
+            {"paragraph_no": {"order": "asc", "missing": "_first"}},
+            {"item_no": {"order": "asc", "missing": "_first"}},
+            {"url": {"order": "asc", "missing": "_last"}},
+        ]
+
+        while True:
+            body: dict[str, Any] = {
+                "query": {"term": {"law_id": law_id}},
+                "_source": [
+                    "law_id",
+                    "law_name",
+                    "article_no",
+                    "paragraph_no",
+                    "item_no",
+                    "heading",
+                    "content_plain",
+                    "content",
+                    "blocks",
+                    "url",
+                    "path",
+                ],
+                "sort": sort,
+                "track_total_hits": True,
+            }
+            if search_after:
+                body["search_after"] = search_after
+
+            response = self.client.search(
+                index=self.index,
+                body=body,
+                size=page_size,
+                request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+            )
+            page_hits = response.get("hits", {}).get("hits", [])
+            total = response.get("hits", {}).get("total", total)
+            hits.extend(page_hits)
+            if len(page_hits) < page_size:
+                break
+            next_search_after = page_hits[-1].get("sort")
+            if not next_search_after:
+                break
+            search_after = next_search_after
+
+        return {"hits": {"hits": hits, "total": total}}
 
     @staticmethod
     def _estimated_bulk_action_bytes(action: dict[str, Any]) -> int:
