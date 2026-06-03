@@ -85,12 +85,3 @@ export async function postSearch(body: SearchRequest, signal: AbortSignal): Prom
   const data = (await response.json()) as SearchResponse;
   return { data, requestId };
 }
-
-export async function fetchLaws(signal?: AbortSignal): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/laws`, { signal });
-  if (!response.ok) {
-    throw new Error(`法令一覧の取得に失敗しました (${response.status})`);
-  }
-  const data = (await response.json()) as { laws?: string[] };
-  return data.laws ?? [];
-}

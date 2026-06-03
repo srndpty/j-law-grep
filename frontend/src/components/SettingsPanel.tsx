@@ -1,20 +1,11 @@
 interface Props {
   effectiveMode: string;
   indexName: string | undefined;
-  lawsError: string | null;
-  lawsIsLoading: boolean;
   requestId: string | null;
   onToggleDebug: () => void;
 }
 
-export function SettingsPanel({
-  effectiveMode,
-  indexName,
-  lawsError,
-  lawsIsLoading,
-  requestId,
-  onToggleDebug,
-}: Props) {
+export function SettingsPanel({ effectiveMode, indexName, requestId, onToggleDebug }: Props) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold text-gray-700">検索設定</h2>
@@ -36,8 +27,6 @@ export function SettingsPanel({
           </dd>
         </div>
       </dl>
-      {lawsIsLoading && <p className="mt-3 text-xs text-gray-500">法令一覧を取得中です。</p>}
-      {lawsError && <p className="mt-3 text-xs text-amber-600">{lawsError}</p>}
       <button
         type="button"
         className="mt-3 rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-100"

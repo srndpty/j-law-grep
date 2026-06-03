@@ -4,7 +4,6 @@ import { Button } from "./components/ui/button";
 import { isEditableTarget } from "./highlight-ranges";
 import { useSearchSettings } from "./hooks/useSearchSettings";
 import { useSearch } from "./hooks/useSearch";
-import { useLaws } from "./hooks/useLaws";
 import { SearchBar } from "./components/SearchBar";
 import { SearchModeTabs } from "./components/SearchModeTabs";
 import { FilterPanel } from "./components/FilterPanel";
@@ -13,17 +12,8 @@ import { DebugPanel } from "./components/DebugPanel";
 import { SearchResultList } from "./components/SearchResultList";
 
 export default function App() {
-  const {
-    query,
-    setQuery,
-    mode,
-    setMode,
-    lawFilter,
-    setLawFilter,
-    yearFilter,
-    setYearFilter,
-    requestBody,
-  } = useSearchSettings();
+  const { query, setQuery, mode, setMode, yearFilter, setYearFilter, requestBody } =
+    useSearchSettings();
   const [isComposing, setIsComposing] = useState(false);
   const { results, isLoading, error, requestId, search } = useSearch({
     requestBody,
@@ -31,7 +21,6 @@ export default function App() {
     mode,
     isComposing,
   });
-  const { laws, error: lawsError, isLoading: lawsIsLoading } = useLaws();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
@@ -92,13 +81,7 @@ export default function App() {
                   setQuery(value);
                 }}
               />
-              <FilterPanel
-                laws={laws}
-                lawFilter={lawFilter}
-                onLawChange={setLawFilter}
-                yearFilter={yearFilter}
-                onYearChange={setYearFilter}
-              />
+              <FilterPanel yearFilter={yearFilter} onYearChange={setYearFilter} />
               <SearchModeTabs mode={mode} onChange={setMode} />
               <Button type="submit">検索</Button>
             </form>
@@ -111,8 +94,6 @@ export default function App() {
           <SettingsPanel
             effectiveMode={results.query?.effective_mode ?? mode}
             indexName={results.index?.name}
-            lawsError={lawsError}
-            lawsIsLoading={lawsIsLoading}
             requestId={requestId}
             onToggleDebug={() => setShowDebug((value) => !value)}
           />

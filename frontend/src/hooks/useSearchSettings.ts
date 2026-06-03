@@ -6,7 +6,6 @@ const STORAGE_KEY = "j-law-grep.settings.v1";
 export interface SearchSettings {
   query: string;
   mode: string;
-  lawFilter: string;
   yearFilter: string;
 }
 
@@ -22,7 +21,6 @@ function loadInitialSettings(): SearchSettings {
   return {
     query: params.get("q") ?? saved.query ?? DEFAULT_QUERY,
     mode: params.get("mode") ?? saved.mode ?? "auto",
-    lawFilter: params.get("law") ?? saved.lawFilter ?? "",
     yearFilter: params.get("year") ?? saved.yearFilter ?? "",
   };
 }
@@ -31,32 +29,29 @@ export function useSearchSettings() {
   const initial = useMemo(() => loadInitialSettings(), []);
   const [query, setQuery] = useState(initial.query);
   const [mode, setMode] = useState<string>(initial.mode);
-  const [lawFilter, setLawFilter] = useState(initial.lawFilter);
   const [yearFilter, setYearFilter] = useState(initial.yearFilter);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, mode, lawFilter, yearFilter }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, mode, yearFilter }));
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (mode !== "auto") params.set("mode", mode);
-    if (lawFilter) params.set("law", lawFilter);
     if (yearFilter) params.set("year", yearFilter);
     const next = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState(null, "", next);
-  }, [lawFilter, mode, query, yearFilter]);
+  }, [mode, query, yearFilter]);
 
   const requestBody = useMemo(
     () => ({
       q: query,
       mode,
       filters: {
-        ...(lawFilter ? { law: lawFilter } : {}),
         ...(yearFilter ? { year: yearFilter } : {}),
       },
       size: 20,
       page: 1,
     }),
-    [lawFilter, mode, query, yearFilter]
+    [mode, query, yearFilter]
   );
 
   return {
@@ -64,8 +59,6 @@ export function useSearchSettings() {
     setQuery,
     mode,
     setMode,
-    lawFilter,
-    setLawFilter,
     yearFilter,
     setYearFilter,
     requestBody,
