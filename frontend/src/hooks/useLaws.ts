@@ -1,21 +1,36 @@
 import { useEffect, useState } from "react";
 import { fetchLaws } from "../api/search";
 
-// Fetches the distinct law names so the filter dropdown is data-driven instead
-// of hardcoded. Failures fall back to an empty list (the "all laws" option
-// still works).
-export function useLaws(): string[] {
+interface UseLawsResult {
+  laws: string[];
+  error: string | null;
+  isLoading: boolean;
+}
+
+// Fetches the distinct law names so the filter dropdown is data-driven.
+// Failures are non-fatal because the "all laws" option still works.
+export function useLaws(): UseLawsResult {
   const [laws, setLaws] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsLoading(true);
     fetchLaws(controller.signal)
-      .then(setLaws)
-      .catch(() => {
-        /* non-fatal: keep the empty list */
+      .then((items) => {
+        setLaws(items);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "法令一覧を取得できませんでした。");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
   }, []);
 
-  return laws;
+  return { laws, error, isLoading };
 }

@@ -226,18 +226,43 @@ class OpenSearchBackend:
             raise
         return sorted(response.keys())
 
-    def law_names(self, size: int = 2000) -> list[str]:
-        body = {
-            "size": 0,
-            "aggs": {"laws": {"terms": {"field": "law_name", "size": size}}},
-        }
-        response = self.client.search(
-            index=self.index,
-            body=body,
-            request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
-        )
-        buckets = response.get("aggregations", {}).get("laws", {}).get("buckets", [])
-        return [bucket["key"] for bucket in buckets if bucket.get("key")]
+    def law_names(self, page_size: int = 1000) -> list[str]:
+        names: list[str] = []
+        after: dict[str, Any] | None = None
+        while True:
+            composite: dict[str, Any] = {
+                "size": page_size,
+                "sources": [
+                    {
+                        "law": {
+                            "terms": {
+                                "field": "law_name",
+                                "order": "asc",
+                            }
+                        }
+                    }
+                ],
+            }
+            if after:
+                composite["after"] = after
+            body = {
+                "size": 0,
+                "aggs": {"laws": {"composite": composite}},
+            }
+            response = self.client.search(
+                index=self.index,
+                body=body,
+                request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+            )
+            aggregation = response.get("aggregations", {}).get("laws", {})
+            buckets = aggregation.get("buckets", [])
+            names.extend(
+                bucket["key"]["law"] for bucket in buckets if bucket.get("key", {}).get("law")
+            )
+            after = aggregation.get("after_key")
+            if not after:
+                break
+        return names
 
     def search(self, body: dict[str, Any], size: int, from_: int) -> dict[str, Any]:
         return self.client.search(

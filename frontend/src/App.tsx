@@ -31,7 +31,7 @@ export default function App() {
     mode,
     isComposing,
   });
-  const laws = useLaws();
+  const { laws, error: lawsError, isLoading: lawsIsLoading } = useLaws();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
@@ -54,10 +54,17 @@ export default function App() {
         event.preventDefault();
         setSelectedIndex((current) => Math.max(current - 1, 0));
       }
+      if (event.key === "Enter") {
+        if (isEditableTarget(event.target) || event.isComposing) return;
+        const selected = results.hits[selectedIndex];
+        if (selected?.url) {
+          window.location.href = selected.url;
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [results.hits.length]);
+  }, [results.hits, selectedIndex]);
 
   useEffect(() => {
     resultRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
@@ -104,6 +111,8 @@ export default function App() {
           <SettingsPanel
             effectiveMode={results.query?.effective_mode ?? mode}
             indexName={results.index?.name}
+            lawsError={lawsError}
+            lawsIsLoading={lawsIsLoading}
             requestId={requestId}
             onToggleDebug={() => setShowDebug((value) => !value)}
           />

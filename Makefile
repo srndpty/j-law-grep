@@ -45,6 +45,10 @@ check: lint typecheck test frontend-check
 # Set GOLDEN_FILE= (empty) to skip the golden gate, e.g. for the full corpus
 # until tests/golden_queries has corpus-appropriate cases.
 reindex:
+	@if [ "$(INDEX_INPUT)" != "indexer/sample_corpus" ] && [ "$(GOLDEN_FILE)" = "tests/golden_queries/sample.json" ]; then \
+		echo "ERROR: sample golden is only for indexer/sample_corpus. Use GOLDEN_FILE= or a corpus-specific golden file."; \
+		exit 2; \
+	fi
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
 		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
