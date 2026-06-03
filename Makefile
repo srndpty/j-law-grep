@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 COMPOSE := docker compose -f deploy/docker-compose.yml --env-file .env
 POWERSHELL := powershell.exe -NoProfile -ExecutionPolicy Bypass -Command
-PYTHON ?= python
+PYTHON ?= python scripts/precommit-python.py
 
 export MSYS2_ARG_CONV_EXCL = *
 

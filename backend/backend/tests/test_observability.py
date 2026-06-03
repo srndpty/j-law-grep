@@ -44,3 +44,30 @@ def test_request_id_middleware_sets_response_header():
 
     assert response["X-Request-ID"] == "req-1"
     assert request.request_id == "req-1"
+
+
+def test_request_id_middleware_records_exception_as_500(monkeypatch):
+    metrics = RequestMetrics()
+    monkeypatch.setattr(observability, "request_metrics", metrics)
+
+    def get_response(request):
+        raise RuntimeError("boom")
+
+    request = SimpleNamespace(
+        headers={"X-Request-ID": "req-error"},
+        method="GET",
+        path="/explode",
+    )
+    middleware = RequestIdMiddleware(get_response)
+
+    try:
+        middleware(request)
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("Expected middleware to re-raise view exception")
+
+    snapshot = metrics.snapshot()
+    assert snapshot.total == 1
+    assert snapshot.errors == 1
+    assert request.request_id == "req-error"

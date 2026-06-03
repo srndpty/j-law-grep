@@ -129,7 +129,7 @@ make health-smoke
 - `literal`: 入力文字列をフレーズとして検索
 - `boolean`: `A B`, `A | B`, `-C`, `"..."` を解釈
 - `citation`: `民法709条` のような条文位置検索
-- `regex`: 制限付き正規表現検索。自動検索では実行しません。
+- `regex`: 制限付き正規表現検索。自動検索では実行しません。OpenSearch の term-level regexp を使うため、grep の行単位 regex と完全に同じ挙動ではありません。
 
 ## 将来拡張メモ
 

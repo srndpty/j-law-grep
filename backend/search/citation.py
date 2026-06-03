@@ -36,6 +36,8 @@ KANJI_UNITS = {
     "百": 100,
     "千": 1000,
 }
+LAW_SUFFIX_TOKENS = {"法", "令", "規則", "条例", "省令", "府令", "庁令"}
+LAW_SUFFIXES = tuple(LAW_SUFFIX_TOKENS)
 
 
 @dataclass
@@ -103,8 +105,16 @@ def parse_citation_query(text: str) -> ParsedCitation:
         law_name = law_name.strip()
         law_parts = law_name.split()
         if len(law_parts) > 1:
-            residual_prefix = " ".join(part for part in [residual_prefix, *law_parts[:-1]] if part)
-            law_name = law_parts[-1]
+            last_part = law_parts[-1]
+            if last_part in LAW_SUFFIX_TOKENS or (
+                len(last_part) > 2 and last_part.endswith(LAW_SUFFIXES)
+            ):
+                law_name = "".join(law_parts)
+            else:
+                residual_prefix = " ".join(
+                    part for part in [residual_prefix, *law_parts[:-1]] if part
+                )
+                law_name = last_part
 
     article_raw = match.group("article")
     paragraph_raw = match.group("paragraph")

@@ -52,21 +52,31 @@ class RequestIdMiddleware:
         request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
         request.request_id = request_id
         started = time.perf_counter()
-        response = self.get_response(request)
+        try:
+            response = self.get_response(request)
+        except Exception:
+            latency_ms = (time.perf_counter() - started) * 1000
+            request_metrics.record(500, latency_ms)
+            logger.exception(
+                self._log_payload(request, request_id, 500, latency_ms),
+            )
+            raise
         latency_ms = (time.perf_counter() - started) * 1000
         response["X-Request-ID"] = request_id
         request_metrics.record(response.status_code, latency_ms)
-        logger.info(
-            json.dumps(
-                {
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.path,
-                    "status": response.status_code,
-                    "latency_ms": round(latency_ms, 2),
-                },
-                ensure_ascii=False,
-                separators=(",", ":"),
-            )
-        )
+        logger.info(self._log_payload(request, request_id, response.status_code, latency_ms))
         return response
+
+    @staticmethod
+    def _log_payload(request, request_id: str, status_code: int, latency_ms: float) -> str:
+        return json.dumps(
+            {
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.path,
+                "status": status_code,
+                "latency_ms": round(latency_ms, 2),
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
