@@ -13,6 +13,7 @@ from opensearchpy import OpenSearch, TransportError
 @dataclass
 class SearchHit:
     file_id: str
+    law_id: str
     law_name: str
     article_no: str
     paragraph_no: str | None
@@ -270,6 +271,37 @@ class OpenSearchBackend:
             body=body,
             size=size,
             from_=from_,
+            request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
+        )
+
+    def law_document(self, law_id: str, size: int = 10000) -> dict[str, Any]:
+        body = {
+            "query": {"term": {"law_id": law_id}},
+            "_source": [
+                "law_id",
+                "law_name",
+                "article_no",
+                "paragraph_no",
+                "item_no",
+                "heading",
+                "content_plain",
+                "content",
+                "blocks",
+                "url",
+                "path",
+            ],
+            "sort": [
+                {"article_no": "asc"},
+                {"paragraph_no": "asc"},
+                {"item_no": "asc"},
+                {"_id": "asc"},
+            ],
+        }
+        return self.client.search(
+            index=self.index,
+            body=body,
+            size=size,
+            from_=0,
             request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
         )
 

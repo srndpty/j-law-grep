@@ -40,6 +40,20 @@ class SearchService:
     def list_laws(self) -> list[str]:
         return sorted(self.backend.law_names())
 
+    def law_document(self, law_id: str) -> dict[str, Any] | None:
+        response = self.backend.law_document(law_id)
+        hits = response.get("hits", {}).get("hits", [])
+        sections = [self._convert_law_section(hit) for hit in hits]
+        sections = [section for section in sections if section["text"]]
+        if not sections:
+            return None
+        sections.sort(key=self._section_sort_key)
+        return {
+            "law_id": law_id,
+            "law_name": sections[0]["law_name"],
+            "sections": sections,
+        }
+
     def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
         parsed_citation = parse_citation_query(raw_query)
@@ -269,6 +283,7 @@ class SearchService:
             path = f"{law_name}/{article_no}" if article_no else law_name
         data = SearchHit(
             file_id=str(hit.get("_id", "")),
+            law_id=source.get("law_id", "") or "",
             law_name=law_name,
             article_no=article_no,
             paragraph_no=paragraph_no,
@@ -283,6 +298,7 @@ class SearchService:
         )
         return {
             "file_id": data.file_id,
+            "law_id": data.law_id,
             "law_name": data.law_name,
             "article_no": data.article_no,
             "paragraph_no": data.paragraph_no,
@@ -295,6 +311,49 @@ class SearchService:
             "url": data.url,
             "blocks": data.blocks,
         }
+
+    @staticmethod
+    def _convert_law_section(hit: dict[str, Any]) -> dict[str, Any]:
+        source = hit.get("_source", {})
+        blocks = source.get("blocks", [])
+        text = source.get("content_plain") or source.get("content") or ""
+        if not text and isinstance(blocks, list):
+            block_texts = [
+                block.get("text") or block.get("html") or block.get("content") or ""
+                for block in blocks
+                if isinstance(block, dict)
+            ]
+            text = "\n\n".join(item for item in block_texts if item)
+        return {
+            "id": str(hit.get("_id", "")),
+            "law_id": source.get("law_id", "") or "",
+            "law_name": source.get("law_name", "") or "",
+            "article_no": source.get("article_no", "") or "",
+            "paragraph_no": source.get("paragraph_no"),
+            "item_no": source.get("item_no"),
+            "heading": source.get("heading", "") or "",
+            "text": text,
+            "url": source.get("url", "") or "",
+            "path": source.get("path", "") or "",
+        }
+
+    @staticmethod
+    def _section_sort_key(
+        section: dict[str, Any],
+    ) -> tuple[list[int | str], list[int | str], list[int | str], str]:
+        return (
+            SearchService._natural_label_key(section.get("article_no")),
+            SearchService._natural_label_key(section.get("paragraph_no")),
+            SearchService._natural_label_key(section.get("item_no")),
+            str(section.get("id", "")),
+        )
+
+    @staticmethod
+    def _natural_label_key(value: Any) -> list[int | str]:
+        if value is None or value == "":
+            return []
+        parts = re.split(r"(\d+)", str(value))
+        return [int(part) if part.isdigit() else part for part in parts if part]
 
     @staticmethod
     def _extract_article_from_url(url: str) -> str:

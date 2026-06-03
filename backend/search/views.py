@@ -5,7 +5,7 @@ from opensearchpy import ConnectionError as OpenSearchConnectionError
 from opensearchpy import ConnectionTimeout as OpenSearchConnectionTimeout
 from opensearchpy import NotFoundError as OpenSearchNotFoundError
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -71,6 +71,26 @@ class LawsView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
         return Response({"laws": laws})
+
+
+class LawDocumentView(APIView):
+    service_class = SearchService
+
+    def get(self, request, law_id: str) -> Response:
+        service = self.service_class()
+        try:
+            document = service.law_document(law_id)
+        except OPENSEARCH_UNAVAILABLE_EXCEPTIONS:
+            return Response(
+                {
+                    "detail": "検索バックエンドに接続できませんでした。時間をおいて再試行してください。",
+                    "request_id": getattr(request, "request_id", None),
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        if document is None:
+            raise NotFound("指定された法令が見つかりません。")
+        return Response(document)
 
 
 class EnsureIndexView(APIView):

@@ -46,6 +46,7 @@ class SearchRequestSerializer(serializers.Serializer):
 
 class SearchHitSerializer(serializers.Serializer):
     file_id = serializers.CharField()
+    law_id = serializers.CharField(allow_blank=True, default="")
     law_name = serializers.CharField(allow_blank=True, default="")
     article_no = serializers.CharField(allow_blank=True, default="")
     paragraph_no = serializers.CharField(required=False, allow_null=True, allow_blank=True)

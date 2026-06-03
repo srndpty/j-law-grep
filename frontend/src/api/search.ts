@@ -5,6 +5,7 @@ export interface HighlightRange {
 
 export interface SearchHit {
   file_id: string;
+  law_id: string;
   law_name: string;
   article_no: string;
   paragraph_no: number | string | null;
@@ -46,6 +47,25 @@ export interface SearchResult {
   requestId: string | null;
 }
 
+export interface LawSection {
+  id: string;
+  law_id: string;
+  law_name: string;
+  article_no: string;
+  paragraph_no: number | string | null;
+  item_no: number | string | null;
+  heading: string;
+  text: string;
+  url: string;
+  path: string;
+}
+
+export interface LawDocument {
+  law_id: string;
+  law_name: string;
+  sections: LawSection[];
+}
+
 const API_BASE = "/api";
 
 export function extractErrorMessage(body: unknown, status: number): string {
@@ -84,4 +104,18 @@ export async function postSearch(body: SearchRequest, signal: AbortSignal): Prom
   }
   const data = (await response.json()) as SearchResponse;
   return { data, requestId };
+}
+
+export async function fetchLawDocument(lawId: string): Promise<LawDocument> {
+  const response = await fetch(`${API_BASE}/laws/${encodeURIComponent(lawId)}`);
+  if (!response.ok) {
+    let errorBody: unknown = null;
+    try {
+      errorBody = await response.json();
+    } catch {
+      errorBody = null;
+    }
+    throw new Error(extractErrorMessage(errorBody, response.status));
+  }
+  return (await response.json()) as LawDocument;
 }
