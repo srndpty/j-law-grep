@@ -72,7 +72,12 @@ make frontend-check
 ### e-Gov XML からの取り込みと再インデックス
 
 1. e-Gov から法令 XML をダウンロードし、任意のディレクトリ (例: `data/egov-xml`) に展開する。
-2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。変換後に `indexer/data/manifest.json` も生成されます。
+2. `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` で XML を `indexer/data/*.json` に変換する。変換後に `indexer/data/manifest.json` と `indexer/data/import_warnings.jsonl` を生成します。
+
+   - 条番号は `Article` の `Num` 属性から取得します。枝番条文 (`Num="2_2"` = 第2条の2) は `2の2` に正規化します。`Num` を見ていなかった旧実装では article_no が空になり citation 検索が当たらない原因になっていました。
+   - 変換後の各法令は `indexer/schema.py` の `validate_law_document` で構造検証し、問題を warning として JSONL 1 行ずつ出力します (変換は中断しません)。warning コード: `empty_law_id` / `empty_law_name` / `empty_law` / `missing_article_no` / `short_content` / `unsupported_item_no` / `lost_table` / `appendix_skipped`。
+   - 別表 (`AppdxTable` 等) と、条ではなく項だけで構成された附則 (`SupplProvision`) は現状そのままでは検索対象に変換されないため、それぞれ `lost_table` / `appendix_skipped` として記録します。
+   - 変換後はコード別の集計が標準エラーに出ます (例: `Wrote 2 parse warnings -> ... (appendix_skipped=1, lost_table=1)`)。フルコーパス投入前に `import_warnings.jsonl` を確認すると「入ったつもりで入っていない」事故を防げます。
 3. `make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=` でフルコーパスを投入する。`GOLDEN_FILE=` を空にしているのは、現状の golden (`tests/golden_queries/sample.json`) がサンプルコーパス前提で、フルコーパスでは通らないためです。フルコーパス向けの golden を整備したら `GOLDEN_FILE` に指定してゲートを有効化できます。
 
 ### 世代付きインデックスと alias 切替 (標準導線)
