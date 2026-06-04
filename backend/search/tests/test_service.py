@@ -2,7 +2,12 @@ from typing import Any
 
 import pytest
 
-from search.service import MAX_RESULT_WINDOW, SearchParams, SearchService
+from search.service import (
+    MAX_LONG_LITERAL_WILDCARD_LENGTH,
+    MAX_RESULT_WINDOW,
+    SearchParams,
+    SearchService,
+)
 
 
 class DummyBackend:
@@ -92,6 +97,37 @@ def test_long_literal_wildcard_escapes_user_wildcards():
 
     wildcard = backend.last_body["query"]["bool"]["must"][0]["bool"]["should"][1]["wildcard"]
     assert wildcard["content_long"]["value"] == "*長い検索語\\*を\\?含むテキストです*"
+
+
+def test_very_long_literal_skips_content_long_wildcard():
+    # A leading/trailing wildcard on content_long is a full substring scan; past
+    # MAX_LONG_LITERAL_WILDCARD_LENGTH we drop it and rely on the content phrase
+    # query only, to keep tail latency bounded on a full corpus.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    term = "あ" * (MAX_LONG_LITERAL_WILDCARD_LENGTH + 1)
+    params = SearchParams(q=term, mode="literal", filters={}, size=20, page=1)
+
+    service.search(params)
+
+    must = backend.last_body["query"]["bool"]["must"][0]
+    assert must["match_phrase"]["content"]["query"] == term
+    should = backend.last_body["query"]["bool"].get("should", [])
+    assert all("content_long" not in clause.get("wildcard", {}) for clause in should)
+
+
+def test_branch_number_citation_falls_into_article_filter():
+    # 枝番 citation (e.g. 民事訴訟法3条の2) must normalize to article_no "3の2"
+    # and land in the term filter so the citation actually constrains results.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民事訴訟法3条の2", mode="auto", filters={}, size=20, page=1)
+
+    service.search(params)
+
+    query = backend.last_body["query"]["bool"]
+    assert service._law_name_filter("民事訴訟法") in query["filter"]
+    assert {"term": {"article_no": "3の2"}} in query["filter"]
 
 
 def test_build_literal_citation_only_query_uses_citation_filters():

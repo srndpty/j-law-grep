@@ -12,6 +12,12 @@ from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
 LONG_LITERAL_THRESHOLD = 15
+# Leading/trailing wildcard on the `content_long` keyword field is a substring
+# scan over every candidate doc, so it gets expensive on a full corpus. Cap the
+# term length that earns a wildcard clause; longer literals fall back to the
+# `content` phrase query only (tail of very long items may be missed, which the
+# README documents). The 500-char `q` ceiling means 201..500 only phrase-match.
+MAX_LONG_LITERAL_WILDCARD_LENGTH = 200
 # OpenSearch refuses `from + size` beyond index.max_result_window (default 10000).
 # Cap deep pagination here so a request like page=999999 fails fast with a clear
 # 400 instead of hitting OpenSearch with a huge `from` (slow / 5xx).
@@ -215,7 +221,7 @@ class SearchService:
 
     @classmethod
     def _literal_content_clause(cls, term: str) -> dict[str, Any]:
-        if len(term) <= LONG_LITERAL_THRESHOLD:
+        if len(term) <= LONG_LITERAL_THRESHOLD or len(term) > MAX_LONG_LITERAL_WILDCARD_LENGTH:
             return cls._content_phrase_clause(term)
         return {
             "bool": {
@@ -270,7 +276,7 @@ class SearchService:
                     },
                 ]
             )
-            if len(term) > LONG_LITERAL_THRESHOLD:
+            if LONG_LITERAL_THRESHOLD < len(term) <= MAX_LONG_LITERAL_WILDCARD_LENGTH:
                 boosts.append(cls._content_long_wildcard_clause(term, boost=3.0))
         return boosts
 
@@ -311,11 +317,12 @@ class SearchService:
             return {}
         parsed = parse_citation_query(params.q.strip())
         citation_filter_key = citation_key(parsed.citation)
+        filters = params.filters or {}
         return {
             "debug": {
                 "ranking_signals": {
                     "citation_exact": bool(citation_filter_key),
-                    "law_name": bool(parsed.citation.law_name or params.filters.get("law")),
+                    "law_name": bool(parsed.citation.law_name or filters.get("law")),
                     "heading": bool(parsed.residual_query or params.q.strip()),
                     "content": bool(params.q.strip()),
                     "content_long": len(parsed.residual_query or params.q.strip())

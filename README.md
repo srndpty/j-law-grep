@@ -105,9 +105,17 @@ make reindex INDEX_INPUT=indexer/sample_corpus
 make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=
 ```
 
-`indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://127.0.0.1:9200` の OpenSearch に投入します。環境によって `localhost` が遅い/詰まることがあるため、Makefile の `HOST_OPENSEARCH` 既定も `127.0.0.1` にしています。
-フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。`BULK_CHUNK=20000` のように増やせますが、request size は既定 `BULK_MAX_MB=40` で自動分割します。
-OpenSearch はフルコーパス向けに既定 4 shards / 2GB heap です。既存コンテナに heap 変更を反映するには OpenSearch コンテナを再作成してください。
+`indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://127.0.0.1:9200` の OpenSearch に投入します。環境によって `localhost` が遅い/詰まることがあるため、indexer / validator 用の `HOST_OPENSEARCH` 既定も `127.0.0.1` にしています (`health-smoke` 等の backend 系 smoke は `localhost:8000` 固定で、この値の影響を受けません)。
+
+bulk 投入の既定は Windows ローカル開発での安定性を優先し、Makefile で `BULK_CHUNK=200` / `BULK_MAX_MB=2` にしています (request size は `BULK_MAX_MB` で自動分割)。OpenSearch の shards は既定 4 で、heap は `.env` の `OPENSEARCH_JAVA_OPTS` で決まります (`.env.example` は `-Xms2g -Xmx2g`。compose は `.env` が無い場合 1GB にフォールバック)。
+
+フルコーパスを高速に投入する場合は、環境に応じて次のように引き上げてください。
+
+```powershell
+make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=40
+```
+
+heap を増やす場合は `.env` の `OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g` などを設定し、既存コンテナに反映するには OpenSearch コンテナを再作成してください。
 
 ## API スモークテスト
 
@@ -184,6 +192,8 @@ make health-smoke
 ### literal フレーズ長の制限
 
 content の ngram analyzer は `max_gram=15` ですが、schema version 4 以降は長文 literal 用の `content_long` keyword field も併用します。空白を含まない 15 文字超の検索語は `content` の phrase query と `content_long` の wildcard query のどちらかに一致すれば候補になり、`content_long` 一致は ranking でも boost します。`content_long` は ngram を作らず、indexer が先頭 8KB に切り詰めるため、フルコーパス reindex 時の index 負荷と OpenSearch の keyword term サイズ制限を避けます。非常に長い項の後半にだけ現れる長文完全一致は、通常の `content` phrase 側に依存します。
+
+`content_long` の `*...*` は keyword field に対する substring scan のため、通常検索より重くなります。フルコーパスで tail latency を抑えるため、検索語長が `MAX_LONG_LITERAL_WILDCARD_LENGTH` (既定 200 文字) を超える場合は wildcard を組み立てず `content` phrase 側のみで検索します (この長さ帯では後半のみの完全一致は取りこぼし得ます)。
 
 ### frontend test on Windows sandbox
 
