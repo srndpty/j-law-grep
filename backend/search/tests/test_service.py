@@ -56,6 +56,20 @@ class DummyBackend:
                             "path": "民法/2",
                         },
                     },
+                    {
+                        "_id": "minpo-suppl-1",
+                        "_source": {
+                            "law_id": law_id,
+                            "law_name": "民法",
+                            "article_no": "附則1-1",
+                            "paragraph_no": None,
+                            "item_no": None,
+                            "content_plain": "附則第一条の本文",
+                            "blocks": [],
+                            "url": "/l/minpo/a/%E9%99%84%E5%89%871-1",
+                            "path": "民法/附則1-1",
+                        },
+                    },
                 ]
             }
         }
@@ -267,7 +281,7 @@ def test_law_document_returns_sections_in_natural_article_order():
 
     assert document is not None
     assert document["law_name"] == "民法"
-    assert [section["article_no"] for section in document["sections"]] == ["2", "10"]
+    assert [section["article_no"] for section in document["sections"]] == ["2", "10", "附則1-1"]
 
 
 def test_law_document_passes_article_filter_to_backend():

@@ -470,7 +470,12 @@ class SearchService:
     @staticmethod
     def _section_sort_key(
         section: dict[str, Any],
-    ) -> tuple[list[int | str], list[int | str], list[int | str], str]:
+    ) -> tuple[
+        list[tuple[int, int | str]],
+        list[tuple[int, int | str]],
+        list[tuple[int, int | str]],
+        str,
+    ]:
         return (
             SearchService._natural_label_key(section.get("article_no")),
             SearchService._natural_label_key(section.get("paragraph_no")),
@@ -494,11 +499,11 @@ class SearchService:
         return sections[start:end]
 
     @staticmethod
-    def _natural_label_key(value: Any) -> list[int | str]:
+    def _natural_label_key(value: Any) -> list[tuple[int, int | str]]:
         if value is None or value == "":
             return []
         parts = re.split(r"(\d+)", str(value))
-        return [int(part) if part.isdigit() else part for part in parts if part]
+        return [(0, int(part)) if part.isdigit() else (1, part) for part in parts if part]
 
     @staticmethod
     def _extract_article_from_url(url: str) -> str:
