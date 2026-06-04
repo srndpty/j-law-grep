@@ -116,6 +116,10 @@ class OpenSearchBackend:
                         "analyzer": "jp_ngram_analyzer",
                         "term_vector": "with_positions_offsets",
                     },
+                    "content_long": {
+                        "type": "keyword",
+                        "ignore_above": 8192,
+                    },
                     "content_plain": {"type": "text", "index": False},
                     "year_enforced": {"type": "keyword"},
                     "path": {"type": "keyword"},

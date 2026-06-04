@@ -53,6 +53,12 @@ export default function App() {
     resultRefs.current[selectedIndex]?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
+  const effectiveMode = results.query?.effective_mode;
+  const modeLabel =
+    effectiveMode && results.query?.mode
+      ? `${results.query.mode} -> ${effectiveMode}`
+      : effectiveMode;
+
   return (
     <div className="min-h-screen bg-muted text-foreground">
       <header className="border-b border-gray-800 bg-[#111418]">
@@ -87,7 +93,11 @@ export default function App() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold">検索結果 {results.total} 件</h2>
-              <p className="text-xs text-gray-500">処理時間 {results.took_ms} ms</p>
+              <p className="text-xs text-gray-500">
+                処理時間 {results.took_ms} ms
+                {modeLabel ? ` / mode ${modeLabel}` : ""}
+                {results.index?.name ? ` / index ${results.index.name}` : ""}
+              </p>
             </div>
             {isLoading && <Loader2 className="h-5 w-5 animate-spin text-gray-500" />}
           </div>

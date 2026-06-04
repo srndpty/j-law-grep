@@ -63,6 +63,37 @@ def test_build_literal_query_uses_match_phrase(monkeypatch):
     assert content["query"] == "損害賠償"
 
 
+def test_build_long_literal_query_uses_long_content_field():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="これは十五文字を超える長い完全一致検索です",
+        mode="literal",
+        filters={},
+        size=20,
+        page=1,
+    )
+    service.search(params)
+    literal_clause = backend.last_body["query"]["bool"]["must"][0]["bool"]
+
+    assert literal_clause["minimum_should_match"] == 1
+    assert literal_clause["should"][0]["match_phrase"]["content"]["query"] == params.q
+    assert literal_clause["should"][1]["wildcard"]["content_long"]["value"] == f"*{params.q}*"
+
+
+def test_long_literal_wildcard_escapes_user_wildcards():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="長い検索語*を?含むテキストです", mode="literal", filters={}, size=20, page=1
+    )
+
+    service.search(params)
+
+    wildcard = backend.last_body["query"]["bool"]["must"][0]["bool"]["should"][1]["wildcard"]
+    assert wildcard["content_long"]["value"] == "*長い検索語\\*を\\?含むテキストです*"
+
+
 def test_build_literal_citation_only_query_uses_citation_filters():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -111,6 +142,18 @@ def test_citation_prefix_should_is_boost_only():
     assert "minimum_should_match" not in query
 
 
+def test_ranking_boosts_are_should_only():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条 損害", mode="auto", filters={}, size=20, page=1)
+    service.search(params)
+    query = backend.last_body["query"]["bool"]
+
+    assert {"term": {"citation_key": {"value": "民法 709条", "boost": 12.0}}} in query["should"]
+    assert any("heading" in clause.get("match_phrase", {}) for clause in query["should"])
+    assert "minimum_should_match" not in query
+
+
 def test_citation_mode_rejects_non_citation_query():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -133,6 +176,18 @@ def test_search_response_includes_query_and_index_metadata():
     assert result["query"]["effective_mode"] == "citation"
     assert result["query"]["parsed"]["law_name"] == "民法"
     assert result["index"]["name"] == "jlaw-current"
+
+
+def test_search_response_includes_debug_ranking_signals_when_debug(monkeypatch):
+    monkeypatch.setattr("search.service.settings.DEBUG", True)
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条 損害", mode="auto", filters={}, size=20, page=1)
+
+    result = service.search(params)
+
+    assert result["debug"]["ranking_signals"]["citation_exact"] is True
+    assert result["debug"]["ranking_signals"]["law_name"] is True
 
 
 def test_law_document_returns_sections_in_natural_article_order():

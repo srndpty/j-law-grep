@@ -78,7 +78,7 @@ make frontend-check
    - 変換後の各法令は `indexer/schema.py` の `validate_law_document` で構造検証し、問題を warning として JSONL 1 行ずつ出力します (変換は中断しません)。warning コード: `empty_law_id` / `empty_law_name` / `empty_law` / `missing_article_no` / `short_content` / `unsupported_item_no` / `lost_table` / `appendix_skipped`。
    - 別表 (`AppdxTable` 等) と、条ではなく項だけで構成された附則 (`SupplProvision`) は現状そのままでは検索対象に変換されないため、それぞれ `lost_table` / `appendix_skipped` として記録します。
    - 変換後はコード別の集計が標準エラーに出ます (例: `Wrote 2 parse warnings -> ... (appendix_skipped=1, lost_table=1)`)。フルコーパス投入前に `import_warnings.jsonl` を確認すると「入ったつもりで入っていない」事故を防げます。
-3. `make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=` でフルコーパスを投入する。`GOLDEN_FILE=` を空にしているのは、現状の golden (`tests/golden_queries/sample.json`) がサンプルコーパス前提で、フルコーパスでは通らないためです。フルコーパス向けの golden を整備したら `GOLDEN_FILE` に指定してゲートを有効化できます。
+3. `make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=tests/golden_queries/full_corpus.json` でフルコーパスを投入する。`tests/golden_queries/sample.json` はサンプルコーパス専用です。フルコーパスが一部法令だけの検証環境では、対象コーパスに合わせた golden file を指定するか、一時的に `GOLDEN_FILE=` で gate を外してください。
 
 ### 世代付きインデックスと alias 切替 (標準導線)
 
@@ -97,13 +97,15 @@ make reindex INDEX_INPUT=indexer/sample_corpus
 
 いずれかが失敗すると alias は切り替わらず、作りかけの index は削除されます。`switch_alias()` 自体も切替直前に target index の存在と schema を再確認します。`reindex-versioned` は後方互換のため `reindex` の別名として残しています。
 
+`OPENSEARCH_SCHEMA_VERSION=4` では長文 literal 用の `content_long` keyword field を追加しています。schema version 3 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
+
 フルコーパスを検索したい場合は、sample ではなく次を実行します。
 
 ```powershell
 make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=
 ```
 
-`indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://localhost:9200` の OpenSearch に投入します。
+`indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` で Docker image から除外し、`.gitignore` でも Git 管理外にしています。この場合はホスト側 Python から `http://127.0.0.1:9200` の OpenSearch に投入します。環境によって `localhost` が遅い/詰まることがあるため、Makefile の `HOST_OPENSEARCH` 既定も `127.0.0.1` にしています。
 フルコーパス投入時は Docker image build をスキップし、bulk chunk は既定で `1000` 件です。`BULK_CHUNK=20000` のように増やせますが、request size は既定 `BULK_MAX_MB=40` で自動分割します。
 OpenSearch はフルコーパス向けに既定 4 shards / 2GB heap です。既存コンテナに heap 変更を反映するには OpenSearch コンテナを再作成してください。
 
@@ -141,6 +143,8 @@ make golden
 
 `make golden` は live alias に対して実行します。標準導線の `make reindex` は alias 切替前に新 index へ同じ golden を流すため、analyzer や mapping を壊す変更は alias が切り替わる前に検出できます。
 
+フルコーパス向けには `tests/golden_queries/full_corpus.json` を用意しています。枝番条文 (`民事訴訟法3条の2`)、長文 literal、代表法令の citation、boolean 除外条件を含みます。ローカルの投入対象がフルコーパスでない場合は、その corpus に対応する別ファイルを `GOLDEN_FILE=...` で指定してください。
+
 ## Index validation
 
 alias が指す index の件数が manifest と一致するかを確認します。
@@ -170,7 +174,7 @@ make health-smoke
 - `auto`: 引用だけ (`民法709条`) なら citation、引用 + 残余語 (`民法709条 損害`) なら citation filter 付き全文検索、引用がなければ通常の全文フレーズ検索。
 - `literal`: 入力文字列を 1 つのフレーズとして検索。引用だけの入力 (`民法90条`) は citation として解決します。
 - `boolean`: `A B` (AND)、`A | B` / `A OR B` (OR グループ)、`-C` (除外)、`"..."` (フレーズ) を解釈。
-- `citation`: `民法709条` のような条文位置検索。漢数字 (`第七百九条`) と全角数字 (`７０９`) を正規化します。枝番条文 (`第2条の2`) のクエリ解析は未対応です。
+- `citation`: `民法709条` のような条文位置検索。漢数字 (`第七百九条`) と全角数字 (`７０９`) を正規化します。枝番条文 (`第2条の2` / `2の2条` / `2_2条`) も `2の2` として解決します。
 - `regex`: 制限付き正規表現検索。自動検索では実行しません。OpenSearch の term-level regexp を使うため、grep の行単位 regex と完全に同じ挙動ではありません。
 
 ### 法令名と別名 (alias)
@@ -179,7 +183,11 @@ make health-smoke
 
 ### literal フレーズ長の制限
 
-content の ngram analyzer は `max_gram=15` です。空白を含まない 15 文字超の完全一致フレーズは現状の literal では当たりにくいので、長文は分割するか keyword 寄りの検索を使ってください (multi-field 化は今後の課題)。
+content の ngram analyzer は `max_gram=15` ですが、schema version 4 以降は長文 literal 用の `content_long` keyword field も併用します。空白を含まない 15 文字超の検索語は `content` の phrase query と `content_long` の wildcard query のどちらかに一致すれば候補になり、`content_long` 一致は ranking でも boost します。`content_long` は ngram を作らず、indexer が先頭 8KB に切り詰めるため、フルコーパス reindex 時の index 負荷と OpenSearch の keyword term サイズ制限を避けます。非常に長い項の後半にだけ現れる長文完全一致は、通常の `content` phrase 側に依存します。
+
+### frontend test on Windows sandbox
+
+Windows の制限付き sandbox では Vite/Vitest の config load 時に `spawn EPERM` が出る場合があります。その場合は権限付きの PowerShell で `Set-Location frontend; npm run test` または `npm run check` を実行してください。
 
 ## API の制限とエラー
 

@@ -1,7 +1,7 @@
 import json
 
 from indexer.manifest import build_manifest, write_manifest
-from indexer.pipeline import collect_records, to_index_actions
+from indexer.pipeline import CONTENT_LONG_MAX_BYTES, collect_records, to_index_actions
 
 
 def test_manifest_counts_and_pipeline_ignores_manifest(tmp_path):
@@ -32,6 +32,30 @@ def test_manifest_counts_and_pipeline_ignores_manifest(tmp_path):
     records = collect_records(tmp_path)
     assert len(records) == 1
     assert records[0].law_name == "民法"
+    action = list(to_index_actions(records))[0]
+    assert action["_source"]["content_long"] == action["_source"]["content"]
+
+
+def test_content_long_is_truncated_to_keyword_safe_bytes(tmp_path):
+    long_text = "法令本文" * 4000
+    law = {
+        "law_id": "long",
+        "law_name": "長文法",
+        "articles": [
+            {
+                "article_no": "1",
+                "paragraphs": [{"paragraph_no": 1, "items": [{"text": long_text}]}],
+            }
+        ],
+    }
+    (tmp_path / "long.json").write_text(json.dumps(law, ensure_ascii=False), encoding="utf-8")
+
+    action = list(to_index_actions(collect_records(tmp_path)))[0]
+    content_long = action["_source"]["content_long"]
+
+    assert len(content_long.encode("utf-8")) <= CONTENT_LONG_MAX_BYTES
+    assert long_text.startswith(content_long)
+    assert action["_source"]["content"] == long_text
 
 
 def test_non_numeric_item_number_is_indexed_as_label(tmp_path):

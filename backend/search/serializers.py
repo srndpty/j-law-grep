@@ -66,3 +66,4 @@ class SearchResponseSerializer(serializers.Serializer):
     took_ms = serializers.IntegerField()
     query = serializers.DictField(required=False)
     index = serializers.DictField(required=False)
+    debug = serializers.DictField(required=False)

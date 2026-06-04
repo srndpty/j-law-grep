@@ -4,18 +4,14 @@ services:
     environment:
       discovery.type: single-node
       DISABLE_SECURITY_PLUGIN: "true"
-      bootstrap.memory_lock: "true"
-      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms2g -Xmx2g}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      bootstrap.memory_lock: "false"
+      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms1g -Xmx1g}
     volumes:
       - opensearch-data:/usr/share/opensearch/data
     ports:
       - "9200:9200"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9200"]
       interval: 10s
       timeout: 5s
       retries: 10

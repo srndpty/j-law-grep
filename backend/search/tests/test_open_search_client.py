@@ -230,22 +230,26 @@ def test_position_fields_are_keywords(monkeypatch):
     monkeypatch.setattr(
         open_search_client,
         "settings",
-        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=2, OPENSEARCH_NUMBER_OF_SHARDS=4),
+        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=4, OPENSEARCH_NUMBER_OF_SHARDS=4),
     )
     backend = OpenSearchBackend(
         client=DummyBulkClient({"errors": False, "items": []}), index="laws"
     )
-    assert backend.get_index_definition()["settings"]["index"]["number_of_shards"] == 4
-    properties = backend.get_index_definition()["mappings"]["properties"]
+    definition = backend.get_index_definition()
+    assert definition["settings"]["index"]["number_of_shards"] == 4
+    assert definition["settings"]["index"]["max_ngram_diff"] == 20
+    assert definition["mappings"]["_meta"]["schema_version"] == 4
+    properties = definition["mappings"]["properties"]
     assert properties["paragraph_no"]["type"] == "keyword"
     assert properties["item_no"]["type"] == "keyword"
+    assert properties["content_long"] == {"type": "keyword", "ignore_above": 8192}
 
 
 def test_large_source_only_fields_are_not_indexed(monkeypatch):
     monkeypatch.setattr(
         open_search_client,
         "settings",
-        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=2, OPENSEARCH_NUMBER_OF_SHARDS=4),
+        SimpleNamespace(OPENSEARCH_SCHEMA_VERSION=4, OPENSEARCH_NUMBER_OF_SHARDS=4),
     )
     backend = OpenSearchBackend(
         client=DummyBulkClient({"errors": False, "items": []}), index="laws"

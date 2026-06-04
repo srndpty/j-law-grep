@@ -1,7 +1,13 @@
 import { Fragment } from "react";
 import { clsx } from "clsx";
 import { mergeHighlightRanges } from "../highlight-ranges";
-import { formatLocation, hitText, openLawDocument } from "../search-hit-text";
+import {
+  deriveArticleNo,
+  deriveParagraphNo,
+  formatLocation,
+  hitText,
+  openLawDocument,
+} from "../search-hit-text";
 import type { SearchHit } from "../api/search";
 
 function renderSnippet(hit: SearchHit): JSX.Element[] | string {
@@ -24,6 +30,10 @@ function renderSnippet(hit: SearchHit): JSX.Element[] | string {
   return nodes;
 }
 
+function articleLabel(articleNo: string): string {
+  return articleNo.includes("条") ? articleNo : `第${articleNo}条`;
+}
+
 interface Props {
   hit: SearchHit;
   selected: boolean;
@@ -33,6 +43,8 @@ interface Props {
 
 export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
   const previewText = hitText(hit);
+  const articleNo = deriveArticleNo(hit);
+  const paragraphNo = deriveParagraphNo(hit);
 
   return (
     <article
@@ -47,7 +59,20 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
       )}
       tabIndex={0}
     >
-      <div className="text-xs uppercase tracking-wide text-gray-500">{formatLocation(hit)}</div>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+        <span className="font-semibold text-gray-700">{hit.law_name || hit.path}</span>
+        {articleNo && (
+          <span className="rounded border border-gray-200 px-1.5 py-0.5">
+            {articleLabel(articleNo)}
+          </span>
+        )}
+        {paragraphNo && (
+          <span className="rounded border border-gray-200 px-1.5 py-0.5">{paragraphNo}項</span>
+        )}
+        {hit.item_no && (
+          <span className="rounded border border-gray-200 px-1.5 py-0.5">{hit.item_no}号</span>
+        )}
+      </div>
       <div className="mt-2 text-sm leading-relaxed text-gray-900">{renderSnippet(hit)}</div>
       <div className="pointer-events-none absolute right-3 top-3 z-20 hidden w-96 max-w-[calc(100vw-3rem)] rounded-md border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 shadow-lg group-hover:block group-focus:block">
         <div className="mb-2 border-b border-gray-200 pb-2 font-semibold text-gray-700">

@@ -38,6 +38,7 @@ KANJI_UNITS = {
 }
 LAW_SUFFIX_TOKENS = {"法", "令", "規則", "条例", "省令", "府令", "庁令"}
 LAW_SUFFIXES = tuple(LAW_SUFFIX_TOKENS)
+NUMBER_TOKEN = r"[0-9一二三四五六七八九十百千〇零]+"
 
 
 @dataclass
@@ -87,13 +88,34 @@ def _normalize_number(value: str | None) -> int | None:
     return kanji_value
 
 
+def _normalize_article_no(article_raw: str | None, branch_raw: str | None = None) -> str | None:
+    if not article_raw:
+        return None
+    normalized = article_raw.translate(FULLWIDTH_DIGITS)
+    parts = [part for part in re.split(r"[_:の]", normalized) if part]
+    if branch_raw:
+        parts.extend(
+            part for part in re.split(r"[_:の]", branch_raw.translate(FULLWIDTH_DIGITS)) if part
+        )
+
+    normalized_parts: list[str] = []
+    for part in parts:
+        if part.isdigit():
+            normalized_parts.append(part)
+            continue
+        kanji = _kanji_to_int(part)
+        normalized_parts.append(str(kanji) if kanji is not None else part)
+    return "の".join(normalized_parts)
+
+
 def parse_citation_query(text: str) -> ParsedCitation:
     normalized = text.translate(FULLWIDTH_DIGITS)
     pattern = re.compile(
         r"(?:(?P<law>[\w\-・（）()\u3000\s\u4e00-\u9fff々〆]+?)\s*)?"
-        r"(?:第)?(?P<article>[0-9一二三四五六七八九十百千〇零]+)条"
-        r"(?:\s*(?P<paragraph>[0-9一二三四五六七八九十百千〇零]+)項)?"
-        r"(?:\s*(?P<item>[0-9一二三四五六七八九十百千〇零]+)号)?"
+        rf"(?:第)?(?P<article>{NUMBER_TOKEN}(?:[_:の]{NUMBER_TOKEN})*)条"
+        rf"(?:の(?P<branch_after>{NUMBER_TOKEN}))?"
+        rf"(?:\s*(?P<paragraph>{NUMBER_TOKEN})項)?"
+        rf"(?:\s*(?P<item>{NUMBER_TOKEN})号)?"
     )
     match = pattern.search(normalized)
     if not match:
@@ -117,20 +139,14 @@ def parse_citation_query(text: str) -> ParsedCitation:
                 law_name = last_part
 
     article_raw = match.group("article")
+    branch_after_raw = match.group("branch_after")
     paragraph_raw = match.group("paragraph")
     item_raw = match.group("item")
 
     paragraph_no = _normalize_number(paragraph_raw)
     item_no = _normalize_number(item_raw)
 
-    article_no = article_raw
-    if article_raw:
-        article_no = article_raw.translate(FULLWIDTH_DIGITS)
-        if article_no.isdigit():
-            article_no = article_no
-        else:
-            kanji = _kanji_to_int(article_raw)
-            article_no = str(kanji) if kanji is not None else article_raw
+    article_no = _normalize_article_no(article_raw, branch_after_raw)
 
     citation = Citation(
         law_name=law_name,

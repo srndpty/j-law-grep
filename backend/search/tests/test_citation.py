@@ -17,6 +17,30 @@ def test_parse_with_paragraph_item():
     assert result.item_no == 2
 
 
+def test_parse_branch_article_after_article_marker():
+    result = parse_citation("民法第2条の2")
+    assert result.law_name == "民法"
+    assert result.article_no == "2の2"
+
+
+def test_parse_branch_article_before_article_marker():
+    result = parse_citation("民法2の2条")
+    assert result.law_name == "民法"
+    assert result.article_no == "2の2"
+
+
+def test_parse_branch_article_from_egov_style_number():
+    result = parse_citation("民法2_2条")
+    assert result.law_name == "民法"
+    assert result.article_no == "2の2"
+
+
+def test_parse_branch_article_with_kanji_number():
+    result = parse_citation("民法第二条の二")
+    assert result.law_name == "民法"
+    assert result.article_no == "2の2"
+
+
 def test_citation_key():
     key = citation_key(parse_citation("民法 95条 1項 1号"))
     assert key == "民法 95条 1項 1号"
