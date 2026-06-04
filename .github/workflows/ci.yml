@@ -47,18 +47,19 @@ jobs:
     runs-on: ubuntu-latest
     services:
       opensearch:
-        image: opensearchproject/opensearch:2.14.0
+        image: opensearchproject/opensearch:2.9.0
         ports:
           - 9200:9200
         env:
           discovery.type: single-node
-          plugins.security.disabled: "true"
+          DISABLE_SECURITY_PLUGIN: "true"
+          bootstrap.memory_lock: "false"
           OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
         options: >-
-          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-cmd "curl -f http://127.0.0.1:9200 || exit 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 20
+          --health-retries 30
     steps:
       - uses: actions/checkout@v4
 
