@@ -95,6 +95,20 @@ def test_build_keyword_query_uses_multi_match():
     assert "content.keywordish" in multi_match["fields"]
 
 
+def test_keyword_citation_only_query_uses_citation_filters():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条", mode="keyword", filters={}, size=20, page=1)
+
+    result = service.search(params)
+
+    query = backend.last_body["query"]["bool"]
+    assert query["must"] == [{"match_all": {}}]
+    assert service._law_name_filter("民法") in query["filter"]
+    assert {"term": {"article_no": "709"}} in query["filter"]
+    assert result["query"]["effective_mode"] == "citation"
+
+
 def test_blank_build_query_uses_match_none():
     backend = DummyBackend()
     service = SearchService(backend=backend)

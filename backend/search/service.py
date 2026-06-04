@@ -106,7 +106,9 @@ class SearchService:
             if not citation.article_no:
                 raise ValueError("Citation query must include an article number.")
             must.append({"match_all": {}})
-        elif params.mode in {"auto", "literal"} and citation.article_no and citation_only:
+        elif (
+            params.mode in {"auto", "literal", "keyword"} and citation.article_no and citation_only
+        ):
             must.append({"match_all": {}})
         elif params.mode == "boolean":
             boolean = parse_boolean_query(raw_query)
@@ -191,7 +193,7 @@ class SearchService:
         effective_mode = mode
         if mode == "auto":
             effective_mode = "citation" if citation.article_no and citation_only else "literal"
-        elif mode == "literal" and citation.article_no and citation_only:
+        elif mode in {"literal", "keyword"} and citation.article_no and citation_only:
             effective_mode = "citation"
         return {
             "raw": raw_query,
