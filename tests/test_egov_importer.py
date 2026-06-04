@@ -92,6 +92,29 @@ def test_multiple_suppl_provisions_get_unique_article_numbers():
     assert "附則2-1" in articles
 
 
+def test_nested_suppl_articles_are_prefixed_and_not_indexed_as_main_articles():
+    root = ET.fromstring(
+        """
+        <Law>
+          <LawNum>令和元年法律第一号</LawNum>
+          <LawBody>
+            <Article Num="1"><Paragraph Num="1"><ParagraphSentence><Sentence>本則第一条。</Sentence></ParagraphSentence></Paragraph></Article>
+            <SupplProvision>
+              <Chapter>
+                <Article Num="1"><Paragraph Num="1"><ParagraphSentence><Sentence>附則第一条。</Sentence></ParagraphSentence></Paragraph></Article>
+              </Chapter>
+            </SupplProvision>
+          </LawBody>
+        </Law>
+        """
+    )
+
+    law = parse_law_tree(root, "nested_suppl")
+    article_nos = [article["article_no"] for article in law["articles"]]
+
+    assert article_nos == ["1", "附則1-1"]
+
+
 def test_clean_fixture_has_no_structural_warnings():
     root = ET.parse(FIXTURES / "branch_article.xml").getroot()
     law = parse_law_tree(root, "branch_article")

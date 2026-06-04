@@ -177,7 +177,8 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
     for provision_index, provision in enumerate(
         (node for node in root.iter() if local_name(node.tag) == "SupplProvision"), start=1
     ):
-        for article_index, article_elem in enumerate(provision.findall("./{*}Article"), start=1):
+        article_elems = [node for node in provision.iter() if local_name(node.tag) == "Article"]
+        for article_index, article_elem in enumerate(article_elems, start=1):
             article = parse_article(article_elem)
             if article:
                 article_no = article["article_no"] or str(article_index)
@@ -202,9 +203,7 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
                     "paragraphs": [paragraph],
                 }
             )
-        if not direct_paragraphs and not any(
-            local_name(child.tag) == "Article" for child in provision
-        ):
+        if not direct_paragraphs and not article_elems:
             text = extract_sentence_texts([provision])
             if text:
                 articles.append(
@@ -271,7 +270,8 @@ def parse_law_tree(root: ET.Element, fallback_stem: str) -> dict:
         id(article_elem)
         for provision in root.iter()
         if local_name(provision.tag) == "SupplProvision"
-        for article_elem in provision.findall("./{*}Article")
+        for article_elem in provision.iter()
+        if local_name(article_elem.tag) == "Article"
     }
     for article_elem in root.findall(".//{*}Article"):
         if id(article_elem) in suppl_article_ids:
