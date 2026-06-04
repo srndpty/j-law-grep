@@ -15,6 +15,8 @@ except ImportError:  # pragma: no cover - optional dependency
 from indexer.manifest import iter_corpus_json_paths
 from indexer.utils import normalize_text
 
+CONTENT_LONG_MAX_BYTES = 8192
+
 
 @dataclass
 class IndexRecord:
@@ -65,6 +67,13 @@ def iter_records(input_dir: Path, show_progress: bool = False) -> Iterator[Index
 
 def collect_records(input_dir: Path, show_progress: bool = False) -> list[IndexRecord]:
     return list(iter_records(input_dir, show_progress=show_progress))
+
+
+def truncate_utf8(value: str, max_bytes: int = CONTENT_LONG_MAX_BYTES) -> str:
+    encoded = value.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return value
+    return encoded[:max_bytes].decode("utf-8", errors="ignore")
 
 
 def records_from_document(doc: dict) -> Iterator[IndexRecord]:
@@ -157,6 +166,7 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
             "citation_key": citation,
             "heading": record.heading,
             "content": record.content,
+            "content_long": truncate_utf8(record.content),
             "content_plain": record.content_plain,
             "year_enforced": record.year_enforced,
             "path": record.path,

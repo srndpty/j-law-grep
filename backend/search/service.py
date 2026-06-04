@@ -4,11 +4,20 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from django.conf import settings
+
 from .boolean_query import parse_boolean_query
 from .citation import Citation, citation_key, parse_citation_query
 from .open_search_client import OpenSearchBackend, SearchHit, highlight_config
 
 MAX_REGEX_LENGTH = 120
+LONG_LITERAL_THRESHOLD = 15
+# Leading/trailing wildcard on the `content_long` keyword field is a substring
+# scan over every candidate doc, so it gets expensive on a full corpus. Cap the
+# term length that earns a wildcard clause; longer literals fall back to the
+# `content` phrase query only (tail of very long items may be missed, which the
+# README documents). The 500-char `q` ceiling means 201..500 only phrase-match.
+MAX_LONG_LITERAL_WILDCARD_LENGTH = 200
 # OpenSearch refuses `from + size` beyond index.max_result_window (default 10000).
 # Cap deep pagination here so a request like page=999999 fails fast with a clear
 # 400 instead of hitting OpenSearch with a huge `from` (slow / 5xx).
@@ -105,7 +114,7 @@ class SearchService:
                 must.append({"match_all": {}})
         else:
             # must.append({"match_phrase": {"content": params.q}})
-            must.append(self._content_phrase_clause(residual_query or raw_query))
+            must.append(self._literal_content_clause(residual_query or raw_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
 
@@ -130,6 +139,10 @@ class SearchService:
             boost_should.append(
                 {"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}}
             )
+
+        boost_should.extend(
+            self._ranking_boosts(params.mode, residual_query or raw_query, citation_filter_key)
+        )
 
         query: dict[str, Any] = {
             "bool": {
@@ -206,6 +219,67 @@ class SearchService:
             }
         }
 
+    @classmethod
+    def _literal_content_clause(cls, term: str) -> dict[str, Any]:
+        if len(term) <= LONG_LITERAL_THRESHOLD or len(term) > MAX_LONG_LITERAL_WILDCARD_LENGTH:
+            return cls._content_phrase_clause(term)
+        return {
+            "bool": {
+                "should": [
+                    cls._content_phrase_clause(term),
+                    cls._content_long_wildcard_clause(term),
+                ],
+                "minimum_should_match": 1,
+            }
+        }
+
+    @staticmethod
+    def _content_long_wildcard_clause(term: str, boost: float | None = None) -> dict[str, Any]:
+        escaped = term.replace("\\", "\\\\").replace("*", "\\*").replace("?", "\\?")
+        payload: dict[str, Any] = {
+            "value": f"*{escaped}*",
+            "case_insensitive": True,
+        }
+        if boost is not None:
+            payload["boost"] = boost
+        return {"wildcard": {"content_long": payload}}
+
+    @classmethod
+    def _ranking_boosts(
+        cls, mode: str, term: str, citation_filter_key: str | None
+    ) -> list[dict[str, Any]]:
+        if mode in {"boolean", "regex"}:
+            return []
+        boosts: list[dict[str, Any]] = []
+        if citation_filter_key:
+            boosts.append({"term": {"citation_key": {"value": citation_filter_key, "boost": 12.0}}})
+        if term:
+            boosts.extend(
+                [
+                    {
+                        "match_phrase": {
+                            "heading": {
+                                "query": term,
+                                "analyzer": "whitespace",
+                                "boost": 5.0,
+                            }
+                        }
+                    },
+                    {
+                        "match_phrase": {
+                            "content": {
+                                "query": term,
+                                "analyzer": "whitespace",
+                                "boost": 2.0,
+                            }
+                        }
+                    },
+                ]
+            )
+            if LONG_LITERAL_THRESHOLD < len(term) <= MAX_LONG_LITERAL_WILDCARD_LENGTH:
+                boosts.append(cls._content_long_wildcard_clause(term, boost=3.0))
+        return boosts
+
     @staticmethod
     def _is_citation_only_query(raw_query: str, citation_filter_key: str | None) -> bool:
         if not citation_filter_key:
@@ -235,6 +309,26 @@ class SearchService:
             "took_ms": response.get("took", 0),
             "query": self.classify_query(params.q, params.mode),
             "index": {"name": self.backend.index},
+        } | self._debug_payload(params)
+
+    @staticmethod
+    def _debug_payload(params: SearchParams) -> dict[str, Any]:
+        if not settings.DEBUG:
+            return {}
+        parsed = parse_citation_query(params.q.strip())
+        citation_filter_key = citation_key(parsed.citation)
+        filters = params.filters or {}
+        return {
+            "debug": {
+                "ranking_signals": {
+                    "citation_exact": bool(citation_filter_key),
+                    "law_name": bool(parsed.citation.law_name or filters.get("law")),
+                    "heading": bool(parsed.residual_query or params.q.strip()),
+                    "content": bool(params.q.strip()),
+                    "content_long": len(parsed.residual_query or params.q.strip())
+                    > LONG_LITERAL_THRESHOLD,
+                }
+            }
         }
 
     @staticmethod

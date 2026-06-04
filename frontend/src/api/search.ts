@@ -32,6 +32,9 @@ export interface SearchResponse {
   index?: {
     name: string;
   };
+  debug?: {
+    ranking_signals?: Record<string, boolean>;
+  };
 }
 
 export interface SearchRequest {

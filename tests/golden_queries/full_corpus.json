@@ -1,0 +1,23 @@
+[
+  { "query": "民法709条", "mode": "auto", "expected_top": [{ "law_name": "民法", "article_no": "709" }] },
+  {
+    "query": "故意又は過失によって他人の権利又は法律上保護される利益を侵害した者",
+    "mode": "literal",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "law_name": "民法", "article_no": "709" }]
+  },
+  { "query": "刑法199条", "mode": "auto", "expected_contains": [{ "law_name": "刑法", "article_no": "199" }] },
+  { "query": "会社法2条", "mode": "auto", "expected_contains": [{ "law_name": "会社法", "article_no": "2" }] },
+  {
+    "query": "民事訴訟法3条の2",
+    "mode": "auto",
+    "expected_contains": [{ "law_name": "民事訴訟法", "article_no": "3の2" }]
+  },
+  {
+    "query": "損害 -過失",
+    "mode": "boolean",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "law_name": "民法" }],
+    "not_expected_contains": [{ "article_no": "709" }]
+  }
+]
