@@ -64,10 +64,32 @@ def test_converted_appendix_nodes_do_not_emit_structural_warnings():
 def test_appendix_table_and_suppl_paragraphs_are_searchable_pseudo_articles():
     law = _law("appendix.xml")
     articles = _article_map(law)
-    assert "附則-1" in articles
+    assert "附則1-1" in articles
     assert "別表1" in articles
-    assert articles["附則-1"]["heading"] == "附則"
+    assert articles["附則1-1"]["heading"] == "附則"
     assert articles["別表1"]["paragraphs"][0]["items"][0]["text"]
+
+
+def test_multiple_suppl_provisions_get_unique_article_numbers():
+    root = ET.fromstring(
+        """
+        <Law>
+          <LawNum>令和元年法律第一号</LawNum>
+          <LawBody>
+            <SupplProvision>
+              <Article Num="1"><Paragraph Num="1"><ParagraphSentence><Sentence>第一附則。</Sentence></ParagraphSentence></Paragraph></Article>
+            </SupplProvision>
+            <SupplProvision>
+              <Article Num="1"><Paragraph Num="1"><ParagraphSentence><Sentence>第二附則。</Sentence></ParagraphSentence></Paragraph></Article>
+            </SupplProvision>
+          </LawBody>
+        </Law>
+        """
+    )
+    law = parse_law_tree(root, "suppl")
+    articles = _article_map(law)
+    assert "附則1-1" in articles
+    assert "附則2-1" in articles
 
 
 def test_clean_fixture_has_no_structural_warnings():

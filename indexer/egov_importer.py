@@ -180,7 +180,8 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
         for article_elem in provision.findall("./{*}Article"):
             article = parse_article(article_elem)
             if article:
-                article["article_no"] = f"附則-{article['article_no'] or len(articles) + 1}"
+                article_no = article["article_no"] or str(len(articles) + 1)
+                article["article_no"] = f"附則{provision_index}-{article_no}"
                 article["heading"] = article.get("heading") or "附則"
                 articles.append(article)
 
@@ -196,7 +197,7 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
             ) or str(paragraph_index)
             articles.append(
                 {
-                    "article_no": f"附則-{article_no}",
+                    "article_no": f"附則{provision_index}-{article_no}",
                     "heading": "附則",
                     "paragraphs": [paragraph],
                 }
@@ -208,7 +209,7 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
             if text:
                 articles.append(
                     {
-                        "article_no": f"附則-{provision_index}",
+                        "article_no": f"附則{provision_index}-1",
                         "heading": "附則",
                         "paragraphs": [
                             {"paragraph_no": None, "items": [{"item_no": None, "text": text}]}

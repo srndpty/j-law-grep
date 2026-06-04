@@ -177,6 +177,16 @@ def test_law_document_view_accepts_article_filter():
     assert response.data["sections"][0]["article_no"] == "709"
 
 
+def test_law_document_view_rejects_context_out_of_range():
+    view = LawDocumentView.as_view(service_class=SuccessfulLawDocumentService)
+    request = APIRequestFactory().get("/api/laws/minpo?article=709&context=-1")
+    request.request_id = "req-test"
+    response = view(request, law_id="minpo")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "context" in response.data
+
+
 def test_law_document_view_returns_404_when_missing():
     response = get_law_document(MissingLawDocumentService)
 

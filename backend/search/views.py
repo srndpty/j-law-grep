@@ -19,6 +19,7 @@ OPENSEARCH_UNAVAILABLE_EXCEPTIONS = (
     # reindex/alias promotion has not completed, but the client request is valid.
     OpenSearchNotFoundError,
 )
+MAX_LAW_DOCUMENT_CONTEXT = 50
 
 
 class SearchView(APIView):
@@ -110,6 +111,10 @@ class LawDocumentView(APIView):
                 context = int(context_raw)
             except ValueError as exc:
                 raise ValidationError({"context": "context must be an integer."}) from exc
+            if context < 0 or context > MAX_LAW_DOCUMENT_CONTEXT:
+                raise ValidationError(
+                    {"context": f"context must be between 0 and {MAX_LAW_DOCUMENT_CONTEXT}."}
+                )
         try:
             document = service.law_document(law_id, article=article, context=context)
         except OPENSEARCH_UNAVAILABLE_EXCEPTIONS:

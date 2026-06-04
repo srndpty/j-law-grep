@@ -22,9 +22,11 @@ from search.open_search_client import OpenSearchBackend  # noqa: E402
 
 
 def cleanup(alias: str, keep: int, force: bool) -> list[str]:
+    if keep < 0:
+        raise ValueError("--keep must be >= 0")
     backend = OpenSearchBackend(index=alias)
     live = set(backend.indices_for_alias(alias))
-    generations = [index for index in backend.all_indices(f"{alias}-v*") if index not in live]
+    generations = sorted(index for index in backend.all_indices(f"{alias}-v*") if index not in live)
     delete_candidates = generations[: max(len(generations) - keep, 0)]
     for index in delete_candidates:
         action = "DELETE" if force else "DRY-RUN delete"

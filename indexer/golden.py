@@ -114,6 +114,10 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
             fh.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 
+def md_cell(value: object) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
 def write_markdown(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     ok = sum(1 for row in rows if row["ok"])
@@ -130,7 +134,8 @@ def write_markdown(path: Path, rows: list[dict[str, Any]]) -> None:
             )
             fh.write(
                 f"| {'yes' if row['ok'] else 'no'} | {row['wall_ms']} | {row['took_ms']} | "
-                f"{row['total']} | {row['mode']} | {row['query']} | {top_label} |\n"
+                f"{row['total']} | {md_cell(row['mode'])} | {md_cell(row['query'])} | "
+                f"{md_cell(top_label)} |\n"
             )
 
 

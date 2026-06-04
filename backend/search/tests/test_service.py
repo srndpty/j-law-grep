@@ -81,6 +81,13 @@ def test_build_keyword_query_uses_multi_match():
     assert "content.keywordish" in multi_match["fields"]
 
 
+def test_blank_build_query_uses_match_none():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    body = service.build_query(SearchParams(q="", mode="keyword", filters={}, size=20, page=1))
+    assert body["query"] == {"match_none": {}}
+
+
 def test_build_long_literal_query_uses_long_content_field():
     backend = DummyBackend()
     service = SearchService(backend=backend)

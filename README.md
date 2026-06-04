@@ -88,7 +88,7 @@ make frontend-check
 
    - 条番号は `Article` の `Num` 属性から取得します。枝番条文 (`Num="2_2"` = 第2条の2) は `2の2` に正規化します。`Num` を見ていなかった旧実装では article_no が空になり citation 検索が当たらない原因になっていました。
    - 変換後の各法令は `indexer/schema.py` の `validate_law_document` で構造検証し、問題を warning として JSONL 1 行ずつ出力します (変換は中断しません)。warning コード: `empty_law_id` / `empty_law_name` / `empty_law` / `missing_article_no` / `short_content` / `unsupported_item_no` / `lost_table` / `appendix_skipped`。
-   - 条ではなく項だけで構成された附則 (`SupplProvision`) は `附則-1` のような pseudo article として変換します。別表 (`AppdxTable` 等) も `別表1` のように本文を flatten して検索対象に入れます。様式・図など未変換領域は `appendix_skipped` として記録します。
+   - 条ではなく項だけで構成された附則 (`SupplProvision`) は `附則1-1` のような pseudo article として変換します。複数の `SupplProvision` がある場合も `附則2-1` のように区別します。別表 (`AppdxTable` 等) も `別表1` のように本文を flatten して検索対象に入れます。様式・図など未変換領域は `appendix_skipped` として記録します。
    - 変換後はコード別の集計が標準エラーに出ます。フルコーパス投入前に `make warning-summary` を実行すると `import_warnings.jsonl` のコード別件数と影響法令を確認できます。
 3. `make reindex INDEX_INPUT=indexer/data GOLDEN_FILE=tests/golden_queries/full_corpus.json` でフルコーパスを投入する。`tests/golden_queries/sample.json` はサンプルコーパス専用です。フルコーパスが一部法令だけの検証環境では、対象コーパスに合わせた golden file を指定するか、一時的に `GOLDEN_FILE=` で gate を外してください。
 
@@ -240,6 +240,8 @@ Windows の制限付き sandbox では Vite/Vitest の config load 時に `spawn
 - OpenSearch への接続不能・タイムアウト (`opensearchpy.ConnectionError`) は `500` ではなく `503` を返し、body に `detail` と `request_id` を含めます。
 - バリデーションエラーは DRF 形式の JSON (`{"<field>": ["..."]}` または `{"detail": "..."}`) を返します。frontend はこの detail を解析して表示します。
 - すべての response に `X-Request-ID` ヘッダが付きます。frontend は検索設定パネルと Debug パネルに `request_id` を表示するので、エラー報告時に紐付けられます。
+
+`GET /api/laws/{law_id}` は法令全体、`GET /api/laws/{law_id}?article=709` は該当条だけを返します。`context` を指定する場合は `0〜50` に制限しています。
 
 ## 将来拡張メモ
 

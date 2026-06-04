@@ -71,6 +71,11 @@ class SearchService:
 
     def build_query(self, params: SearchParams) -> dict[str, Any]:
         raw_query = params.q.strip()
+        if not raw_query:
+            return {
+                "query": {"match_none": {}},
+                "highlight": highlight_config(),
+            }
         parsed_citation = parse_citation_query(raw_query)
         citation = parsed_citation.citation
         citation_filter_key = citation_key(citation)
@@ -475,8 +480,6 @@ class SearchService:
     def _context_sections(
         sections: list[dict[str, Any]], article: str, context: int
     ) -> list[dict[str, Any]]:
-        if context < 0:
-            return sections
         positions = [
             index
             for index, section in enumerate(sections)
