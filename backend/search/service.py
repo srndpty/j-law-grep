@@ -63,6 +63,8 @@ class SearchService:
         sections.sort(key=self._section_sort_key)
         if article and context is not None:
             sections = self._context_sections(sections, article, context)
+            if not sections:
+                return None
         return {
             "law_id": law_id,
             "law_name": sections[0]["law_name"],
@@ -486,7 +488,7 @@ class SearchService:
             if str(section.get("article_no")) == article
         ]
         if not positions:
-            return sections
+            return []
         start = max(min(positions) - context, 0)
         end = min(max(positions) + context + 1, len(sections))
         return sections[start:end]

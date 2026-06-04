@@ -287,6 +287,14 @@ def test_law_document_context_filters_after_fetching_sections():
     assert [section["article_no"] for section in document["sections"]] == ["10"]
 
 
+def test_law_document_context_missing_article_returns_none():
+    service = SearchService(backend=DummyBackend())
+
+    document = service.law_document("minpo", article="999", context=0)
+
+    assert document is None
+
+
 def test_build_boolean_query_uses_required_optional_and_excluded_terms():
     backend = DummyBackend()
     service = SearchService(backend=backend)
