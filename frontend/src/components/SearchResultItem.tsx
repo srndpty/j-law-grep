@@ -52,8 +52,9 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
       onClick={() => {
         onSelect();
       }}
+      aria-selected={selected}
       className={clsx(
-        "group relative cursor-pointer rounded-lg border bg-white p-4 shadow-sm transition hover:border-blue-400 hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-500",
+        "group relative cursor-default rounded-lg border bg-white p-4 shadow-sm transition hover:border-blue-400 hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-500",
         selected ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
       )}
       tabIndex={0}

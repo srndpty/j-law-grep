@@ -88,6 +88,20 @@ def test_blank_build_query_uses_match_none():
     assert body["query"] == {"match_none": {}}
 
 
+def test_blank_search_returns_empty_hits_with_metadata():
+    backend = DummyBackend()
+    backend.index = "jlaw-current"
+    service = SearchService(backend=backend)
+
+    result = service.search(SearchParams(q="  ", mode="keyword", filters={}, size=20, page=1))
+
+    assert result["hits"] == []
+    assert result["total"] == 0
+    assert result["query"]["raw"] == "  "
+    assert result["query"]["effective_mode"] == "keyword"
+    assert result["index"]["name"] == "jlaw-current"
+
+
 def test_build_long_literal_query_uses_long_content_field():
     backend = DummyBackend()
     service = SearchService(backend=backend)

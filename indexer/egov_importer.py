@@ -177,10 +177,10 @@ def parse_suppl_provisions(root: ET.Element) -> list[dict]:
     for provision_index, provision in enumerate(
         (node for node in root.iter() if local_name(node.tag) == "SupplProvision"), start=1
     ):
-        for article_elem in provision.findall("./{*}Article"):
+        for article_index, article_elem in enumerate(provision.findall("./{*}Article"), start=1):
             article = parse_article(article_elem)
             if article:
-                article_no = article["article_no"] or str(len(articles) + 1)
+                article_no = article["article_no"] or str(article_index)
                 article["article_no"] = f"附則{provision_index}-{article_no}"
                 article["heading"] = article.get("heading") or "附則"
                 articles.append(article)
