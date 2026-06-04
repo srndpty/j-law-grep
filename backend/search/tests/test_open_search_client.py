@@ -148,7 +148,7 @@ def test_law_document_pages_with_search_after(monkeypatch):
     assert response["hits"]["total"] == {"value": 3, "relation": "eq"}
     first_body = client.calls[0][1]
     second_body = client.calls[1][1]
-    assert first_body["query"] == {"term": {"law_id": "minpo"}}
+    assert first_body["query"] == {"bool": {"filter": [{"term": {"law_id": "minpo"}}]}}
     assert first_body["track_total_hits"] is True
     assert "search_after" not in first_body
     assert second_body["search_after"] == ["2", "", "", "b"]

@@ -19,6 +19,7 @@ OPENSEARCH_UNAVAILABLE_EXCEPTIONS = (
     # reindex/alias promotion has not completed, but the client request is valid.
     OpenSearchNotFoundError,
 )
+MAX_LAW_DOCUMENT_CONTEXT = 50
 
 
 class SearchView(APIView):
@@ -55,6 +56,30 @@ class SearchView(APIView):
         return Response(response_serializer.data)
 
 
+class SearchDebugView(APIView):
+    service_class = SearchService
+
+    def post(self, request) -> Response:
+        if not settings.DEBUG:
+            raise PermissionDenied("Search debug is only available when DEBUG is enabled.")
+        serializer = SearchRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        service = self.service_class()
+        params = SearchParams(
+            q=data["q"],
+            mode=data.get("mode", "literal"),
+            filters=data.get("filters", {}),
+            size=data.get("size", 20),
+            page=data.get("page", 1),
+        )
+        try:
+            result = service.debug_query(params)
+        except ValueError as exc:
+            raise ValidationError({"q": str(exc)}) from exc
+        return Response(result)
+
+
 class LawsView(APIView):
     service_class = SearchService
 
@@ -78,8 +103,20 @@ class LawDocumentView(APIView):
 
     def get(self, request, law_id: str) -> Response:
         service = self.service_class()
+        article = request.query_params.get("article") or None
+        context_raw = request.query_params.get("context")
+        context = None
+        if context_raw not in (None, ""):
+            try:
+                context = int(context_raw)
+            except ValueError as exc:
+                raise ValidationError({"context": "context must be an integer."}) from exc
+            if context < 0 or context > MAX_LAW_DOCUMENT_CONTEXT:
+                raise ValidationError(
+                    {"context": f"context must be between 0 and {MAX_LAW_DOCUMENT_CONTEXT}."}
+                )
         try:
-            document = service.law_document(law_id)
+            document = service.law_document(law_id, article=article, context=context)
         except OPENSEARCH_UNAVAILABLE_EXCEPTIONS:
             return Response(
                 {

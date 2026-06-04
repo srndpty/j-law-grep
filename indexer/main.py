@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,7 +34,9 @@ def versioned_index_name(alias: str) -> str:
     return f"{safe_alias}-v{stamp}"
 
 
-def run_golden_gate(golden_file: Path, index: str, size: int = 10) -> None:
+def run_golden_gate(
+    golden_file: Path, index: str, size: int = 10, report_path: Path | None = None
+) -> None:
     """Run golden queries against a concrete index before it is promoted.
 
     Raises RuntimeError if any case fails so the caller can abort the alias
@@ -42,15 +45,22 @@ def run_golden_gate(golden_file: Path, index: str, size: int = 10) -> None:
     from search.open_search_client import OpenSearchBackend  # noqa: PLC0415
     from search.service import SearchService  # noqa: PLC0415
 
-    from .golden import run_case  # noqa: PLC0415
+    from .golden import run_case, write_jsonl, write_markdown  # noqa: PLC0415
 
     with golden_file.open("r", encoding="utf-8") as fh:
         cases = json.load(fh)
 
     service = SearchService(backend=OpenSearchBackend(index=index))
     failures: list[str] = []
+    reports: list[dict] = []
     for case in cases:
-        failures.extend(run_case(service, case, size))
+        case_failures, report = run_case(service, case, size)
+        failures.extend(case_failures)
+        reports.append(report)
+
+    if report_path:
+        write_jsonl(report_path, reports)
+        write_markdown(report_path.with_suffix(".md"), reports)
 
     if failures:
         for failure in failures:
@@ -93,15 +103,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--forcemerge", action="store_true", help="Force merge the new index before alias switch."
     )
+    parser.add_argument(
+        "--report-dir",
+        type=Path,
+        help="Directory for reindex manifest, golden report, index stats, and warnings summary.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
 
+    report_dir = args.report_dir
+    if report_dir:
+        report_dir.mkdir(parents=True, exist_ok=True)
+
     if args.write_manifest:
         manifest_path = write_manifest(args.input, source="indexer")
         print(f"Wrote corpus manifest: {manifest_path}")
+        if report_dir:
+            shutil.copyfile(manifest_path, report_dir / "manifest.json")
 
     manifest = build_manifest(args.input, source="indexer")
     expected_records = int(manifest["counts"]["records"])
@@ -119,6 +140,7 @@ def main() -> None:
     else:
         backend.ensure_index()
 
+    promoted = False
     try:
         records = iter_records(args.input, show_progress=args.progress)
         actions = to_index_actions(records)
@@ -150,11 +172,22 @@ def main() -> None:
             # re-checks existence and schema as a final safety net.
             backend.validate_schema(backend.index)
             if args.golden:
-                run_golden_gate(args.golden, backend.index)
+                run_golden_gate(
+                    args.golden,
+                    backend.index,
+                    report_path=report_dir / "golden_report.jsonl" if report_dir else None,
+                )
+            if report_dir:
+                with (report_dir / "index_stats.json").open("w", encoding="utf-8") as fh:
+                    json.dump(backend.index_stats(backend.index), fh, ensure_ascii=False, indent=2)
             backend.switch_alias(args.alias, backend.index)
+            promoted = True
             print(f"Switched alias {args.alias} -> {backend.index}")
+        elif report_dir:
+            with (report_dir / "index_stats.json").open("w", encoding="utf-8") as fh:
+                json.dump(backend.index_stats(backend.index), fh, ensure_ascii=False, indent=2)
     except Exception:
-        if args.versioned:
+        if args.versioned and not promoted:
             backend.delete_index(backend.index)
             print(f"Deleted failed versioned index: {backend.index}", file=sys.stderr)
         raise

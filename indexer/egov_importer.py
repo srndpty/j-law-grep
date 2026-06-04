@@ -17,7 +17,6 @@ except ImportError:  # pragma: no cover - optional
 from indexer.manifest import write_manifest
 from indexer.schema import (
     WARN_APPENDIX_SKIPPED,
-    WARN_LOST_TABLE,
     ParseWarning,
     validate_law_document,
     write_warnings_jsonl,
@@ -173,6 +172,71 @@ def parse_article(article_elem: ET.Element) -> dict | None:
     }
 
 
+def parse_suppl_provisions(root: ET.Element) -> list[dict]:
+    articles: list[dict] = []
+    for provision_index, provision in enumerate(
+        (node for node in root.iter() if local_name(node.tag) == "SupplProvision"), start=1
+    ):
+        article_elems = [node for node in provision.iter() if local_name(node.tag) == "Article"]
+        for article_index, article_elem in enumerate(article_elems, start=1):
+            article = parse_article(article_elem)
+            if article:
+                article_no = article["article_no"] or str(article_index)
+                article["article_no"] = f"附則{provision_index}-{article_no}"
+                article["heading"] = article.get("heading") or "附則"
+                articles.append(article)
+
+        direct_paragraphs = [child for child in provision if local_name(child.tag) == "Paragraph"]
+        for paragraph_index, paragraph_elem in enumerate(direct_paragraphs, start=1):
+            paragraph = parse_paragraph(paragraph_elem)
+            if not paragraph:
+                continue
+            article_no = normalize_text(
+                paragraph_elem.attrib.get("Num")
+                or find_first_text(paragraph_elem, "ParagraphNum")
+                or ""
+            ) or str(paragraph_index)
+            articles.append(
+                {
+                    "article_no": f"附則{provision_index}-{article_no}",
+                    "heading": "附則",
+                    "paragraphs": [paragraph],
+                }
+            )
+        if not direct_paragraphs and not article_elems:
+            text = extract_sentence_texts([provision])
+            if text:
+                articles.append(
+                    {
+                        "article_no": f"附則{provision_index}-1",
+                        "heading": "附則",
+                        "paragraphs": [
+                            {"paragraph_no": None, "items": [{"item_no": None, "text": text}]}
+                        ],
+                    }
+                )
+    return articles
+
+
+def parse_appendix_tables(root: ET.Element) -> list[dict]:
+    articles: list[dict] = []
+    for index, node in enumerate(
+        (elem for elem in root.iter() if local_name(elem.tag) in APPENDIX_TABLE_TAGS), start=1
+    ):
+        text = normalize_text(_joined_text(node))
+        if not text:
+            continue
+        title = normalize_text(find_first_text(node, "AppdxTableTitle", "RelatedArticleNum") or "")
+        articles.append(
+            {
+                "article_no": f"別表{index}",
+                "heading": title or f"別表{index}",
+                "paragraphs": [{"paragraph_no": None, "items": [{"item_no": None, "text": text}]}],
+            }
+        )
+    return articles
+
+
 def collect_structural_warnings(root: ET.Element, law_id: str) -> list[ParseWarning]:
     """Flag content the converter drops: appendix tables, figures, and
     supplementary provisions whose body is paragraphs (not articles)."""
@@ -180,20 +244,13 @@ def collect_structural_warnings(root: ET.Element, law_id: str) -> list[ParseWarn
     for node in root.iter():
         name = local_name(node.tag)
         if name in APPENDIX_TABLE_TAGS:
-            warnings.append(ParseWarning(WARN_LOST_TABLE, law_id, f"{name} not converted"))
+            continue
         elif name in APPENDIX_OTHER_TAGS:
             warnings.append(ParseWarning(WARN_APPENDIX_SKIPPED, law_id, f"{name} not converted"))
     for node in root.iter():
         if local_name(node.tag) != "SupplProvision":
             continue
-        has_article = any(local_name(child.tag) == "Article" for child in node.iter())
-        has_paragraph = any(local_name(child.tag) == "Paragraph" for child in node.iter())
-        if has_paragraph and not has_article:
-            warnings.append(
-                ParseWarning(
-                    WARN_APPENDIX_SKIPPED, law_id, "SupplProvision paragraphs not converted"
-                )
-            )
+        continue
     return warnings
 
 
@@ -209,10 +266,22 @@ def parse_law_tree(root: ET.Element, fallback_stem: str) -> dict:
     year_enforced = enforce_date[:4] if enforce_date and len(enforce_date) >= 4 else None
 
     articles: list[dict] = []
+    suppl_article_ids = {
+        id(article_elem)
+        for provision in root.iter()
+        if local_name(provision.tag) == "SupplProvision"
+        for article_elem in provision.iter()
+        if local_name(article_elem.tag) == "Article"
+    }
     for article_elem in root.findall(".//{*}Article"):
+        if id(article_elem) in suppl_article_ids:
+            continue
         article = parse_article(article_elem)
         if article:
             articles.append(article)
+
+    articles.extend(parse_suppl_provisions(root))
+    articles.extend(parse_appendix_tables(root))
 
     # Fallback: some early-era or appendix-only laws have no Article nodes.
     # Convert top-level paragraphs into pseudo articles so the corpus is not empty.

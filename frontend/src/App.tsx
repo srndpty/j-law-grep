@@ -9,6 +9,11 @@ import { SearchBar } from "./components/SearchBar";
 import { SearchModeTabs } from "./components/SearchModeTabs";
 import { SearchResultList } from "./components/SearchResultList";
 
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("button,a,input,textarea,select,[contenteditable='true']"));
+}
+
 export default function App() {
   const { query, setQuery, mode, setMode, requestBody } = useSearchSettings();
   const [isComposing, setIsComposing] = useState(false);
@@ -40,7 +45,12 @@ export default function App() {
         setSelectedIndex((current) => Math.max(current - 1, 0));
       }
       if (event.key === "Enter") {
-        if (isEditableTarget(event.target) || event.isComposing) return;
+        if (
+          isEditableTarget(event.target) ||
+          isInteractiveTarget(event.target) ||
+          event.isComposing
+        )
+          return;
         const selected = results.hits[selectedIndex];
         if (selected) void openLawDocument(selected);
       }

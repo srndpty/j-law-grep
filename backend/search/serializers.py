@@ -18,7 +18,7 @@ class SearchFiltersField(serializers.DictField):
 class SearchRequestSerializer(serializers.Serializer):
     q = serializers.CharField(allow_blank=True, trim_whitespace=True)
     mode = serializers.ChoiceField(
-        choices=["auto", "literal", "boolean", "citation", "regex"], default="literal"
+        choices=["auto", "literal", "keyword", "boolean", "citation", "regex"], default="literal"
     )
     filters = SearchFiltersField(required=False, default=dict)
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)

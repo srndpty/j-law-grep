@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from search.service import SearchParams
-from search.views import LawDocumentView, LawsView, SearchView
+from search.views import LawDocumentView, LawsView, SearchDebugView, SearchView
 
 django.setup()
 
@@ -22,6 +22,9 @@ class SuccessfulSearchService:
             "query": {"raw": params.q, "mode": params.mode, "effective_mode": params.mode},
             "index": {"name": "laws"},
         }
+
+    def debug_query(self, params: SearchParams):
+        return {"query_dsl": {"query": {"match_all": {}}}, "effective_mode": params.mode}
 
 
 class ConnectionErrorSearchService:
@@ -45,16 +48,16 @@ class SuccessfulLawsService:
 
 
 class SuccessfulLawDocumentService:
-    def law_document(self, law_id: str):
+    def law_document(self, law_id: str, article=None, context=None):
         return {
             "law_id": law_id,
             "law_name": "民法",
-            "sections": [{"article_no": "1", "text": "本文"}],
+            "sections": [{"article_no": article or "1", "text": "本文"}],
         }
 
 
 class MissingLawDocumentService:
-    def law_document(self, law_id: str):
+    def law_document(self, law_id: str, article=None, context=None):
         return None
 
 
@@ -88,12 +91,30 @@ def get_law_document(service_class, law_id="minpo"):
     return view(request, law_id=law_id)
 
 
+def post_search_debug(service_class):
+    view = SearchDebugView.as_view(service_class=service_class)
+    request = APIRequestFactory().post(
+        "/api/search-debug",
+        {"q": "損害", "mode": "keyword", "filters": {}, "size": 20, "page": 1},
+        format="json",
+    )
+    return view(request)
+
+
 def test_search_view_returns_success_payload():
     response = post_search(SuccessfulSearchService)
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data["hits"] == []
     assert response.data["index"]["name"] == "laws"
+
+
+def test_search_debug_view_returns_query_dsl_when_debug(monkeypatch):
+    monkeypatch.setattr("search.views.settings.DEBUG", True)
+    response = post_search_debug(SuccessfulSearchService)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert "query_dsl" in response.data
 
 
 def test_search_view_connection_error_returns_503_with_request_id():
@@ -144,6 +165,26 @@ def test_law_document_view_returns_document():
     assert response.status_code == status.HTTP_200_OK
     assert response.data["law_id"] == "minpo"
     assert response.data["sections"][0]["text"] == "本文"
+
+
+def test_law_document_view_accepts_article_filter():
+    view = LawDocumentView.as_view(service_class=SuccessfulLawDocumentService)
+    request = APIRequestFactory().get("/api/laws/minpo?article=709&context=1")
+    request.request_id = "req-test"
+    response = view(request, law_id="minpo")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["sections"][0]["article_no"] == "709"
+
+
+def test_law_document_view_rejects_context_out_of_range():
+    view = LawDocumentView.as_view(service_class=SuccessfulLawDocumentService)
+    request = APIRequestFactory().get("/api/laws/minpo?article=709&context=-1")
+    request.request_id = "req-test"
+    response = view(request, law_id="minpo")
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "context" in response.data
 
 
 def test_law_document_view_returns_404_when_missing():
