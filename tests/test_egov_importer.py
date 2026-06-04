@@ -7,7 +7,6 @@ from indexer.egov_importer import (
     parse_law,
     parse_law_tree,
 )
-from indexer.schema import WARN_APPENDIX_SKIPPED, WARN_LOST_TABLE
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "egov"
 
@@ -53,14 +52,22 @@ def test_items_are_preserved():
     assert any("イ号の内容" in text for text in texts)
 
 
-def test_appendix_and_suppl_paragraphs_emit_warnings():
+def test_converted_appendix_nodes_do_not_emit_structural_warnings():
     root = ET.parse(FIXTURES / "appendix.xml").getroot()
     law = parse_law_tree(root, "appendix")
     codes = {w.code for w in collect_structural_warnings(root, law["law_id"])}
-    assert WARN_LOST_TABLE in codes
-    assert WARN_APPENDIX_SKIPPED in codes
+    assert codes == set()
     # The main provision article is still converted.
     assert "1" in _article_map(law)
+
+
+def test_appendix_table_and_suppl_paragraphs_are_searchable_pseudo_articles():
+    law = _law("appendix.xml")
+    articles = _article_map(law)
+    assert "附則-1" in articles
+    assert "別表1" in articles
+    assert articles["附則-1"]["heading"] == "附則"
+    assert articles["別表1"]["paragraphs"][0]["items"][0]["text"]
 
 
 def test_clean_fixture_has_no_structural_warnings():

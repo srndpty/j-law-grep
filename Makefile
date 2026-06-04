@@ -15,8 +15,9 @@ INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
+REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check check reindex reindex-versioned reindex-dev validate-index golden health-smoke api-smoke frontend-smoke smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-check frontend-check-win check setup-dev setup-dev-uv reindex reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -38,9 +39,20 @@ coverage:
 	$(PYTHON) -m pytest --cov=backend --cov=indexer --cov-report=term-missing
 
 frontend-check:
+	cd frontend && npm run check
+
+frontend-check-win:
 	$(POWERSHELL) "Set-Location frontend; npm run check"
 
 check: lint typecheck test frontend-check
+
+setup-dev:
+	$(PYTHON) -m pip install -r requirements-dev.txt
+	cd frontend && npm ci
+
+setup-dev-uv:
+	uv pip install -r requirements-dev.txt
+	cd frontend && npm ci
 
 # Standard reindex: build a fresh versioned index, validate schema + golden
 # queries against it, then atomically switch the alias. The old index stays
@@ -54,9 +66,9 @@ reindex:
 	fi
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir /app/$(REPORT_DIR) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
 	else \
-		OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
+		OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir $(REPORT_DIR) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
 	fi
 
 # Backward-compatible alias for the standard versioned reindex.
@@ -75,8 +87,27 @@ reindex-dev:
 golden: build-backend
 	$(COMPOSE) run --rm backend python -m indexer.golden --file /app/$(GOLDEN_FILE)
 
+golden-full:
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.golden --file tests/golden_queries/full_corpus.json --size 20
+
+bench-search:
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.golden --file $(GOLDEN_FILE) --size 20 --report tmp/search_bench.jsonl --markdown tmp/search_bench.md
+
+warning-summary:
+	python -m indexer.warning_summary indexer/data/import_warnings.jsonl --json-out tmp/warnings_summary.json
+
 validate-index:
 	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.validate_index --manifest $(MANIFEST) --index $(INDEX_ALIAS)
+
+index-report:
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.index_report --alias $(INDEX_ALIAS) --json-out tmp/index_report.json
+
+cleanup-indices:
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.cleanup_indices --alias $(INDEX_ALIAS) --keep 3
+
+rollback-index:
+	@test -n "$(TO_INDEX)" || (echo "Set TO_INDEX=<concrete-index>"; exit 2)
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.rollback_index --alias $(INDEX_ALIAS) --to $(TO_INDEX)
 
 health-smoke:
 	curl -sS http://localhost:8000/healthz

@@ -198,7 +198,7 @@ export async function openLawDocument(hit: SearchHit) {
   writeLoading(tab, hit);
   try {
     if (!hit.law_id) throw new Error("検索結果に law_id が含まれていません。");
-    const document = await fetchLawDocument(hit.law_id);
+    const document = await fetchLawDocument(hit.law_id, deriveArticleNo(hit));
     tab.document.open();
     tab.document.write(renderLawDocument(document, hit));
     tab.document.close();

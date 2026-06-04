@@ -115,6 +115,9 @@ class OpenSearchBackend:
                         "type": "text",
                         "analyzer": "jp_ngram_analyzer",
                         "term_vector": "with_positions_offsets",
+                        "fields": {
+                            "keywordish": {"type": "text", "analyzer": "whitespace"},
+                        },
                     },
                     "content_long": {
                         "type": "keyword",
@@ -145,6 +148,14 @@ class OpenSearchBackend:
     def delete_index(self, index: str) -> None:
         if self.client.indices.exists(index=index):
             self.client.indices.delete(index=index)
+
+    def index_stats(self, index: str | None = None) -> dict[str, Any]:
+        target = index or self.index
+        return {
+            "health": self.client.cluster.health(index=target),
+            "stats": self.client.indices.stats(index=target, metric=["docs", "store"]),
+            "mapping": self.client.indices.get_mapping(index=target),
+        }
 
     def prepare_for_search(self, index: str | None = None, forcemerge: bool = False) -> None:
         target = index or self.index
@@ -231,6 +242,15 @@ class OpenSearchBackend:
             raise
         return sorted(response.keys())
 
+    def all_indices(self, pattern: str) -> list[str]:
+        try:
+            response = self.client.indices.get(index=pattern)
+        except TransportError as exc:
+            if exc.status_code == 404:
+                return []
+            raise
+        return sorted(response.keys())
+
     def law_names(self, page_size: int = 1000) -> list[str]:
         names: list[str] = []
         after: dict[str, Any] | None = None
@@ -278,7 +298,9 @@ class OpenSearchBackend:
             request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
         )
 
-    def law_document(self, law_id: str, page_size: int = 1000) -> dict[str, Any]:
+    def law_document(
+        self, law_id: str, article: str | None = None, page_size: int = 1000
+    ) -> dict[str, Any]:
         hits: list[dict[str, Any]] = []
         total: dict[str, Any] | int = {"value": 0, "relation": "eq"}
         search_after: list[Any] | None = None
@@ -291,7 +313,14 @@ class OpenSearchBackend:
 
         while True:
             body: dict[str, Any] = {
-                "query": {"term": {"law_id": law_id}},
+                "query": {
+                    "bool": {
+                        "filter": [
+                            {"term": {"law_id": law_id}},
+                            *([{"term": {"article_no": article}}] if article else []),
+                        ]
+                    }
+                },
                 "_source": [
                     "law_id",
                     "law_name",

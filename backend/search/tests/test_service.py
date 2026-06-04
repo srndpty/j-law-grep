@@ -22,7 +22,9 @@ class DummyBackend:
         self.last_body = body
         return {"hits": {"hits": [], "total": {"value": 0}}, "took": 1}
 
-    def law_document(self, law_id):
+    def law_document(self, law_id, article=None):
+        if article:
+            assert article == "10"
         return {
             "hits": {
                 "hits": [
@@ -66,6 +68,17 @@ def test_build_literal_query_uses_match_phrase(monkeypatch):
     service.search(params)
     content = backend.last_body["query"]["bool"]["must"][0]["match_phrase"]["content"]
     assert content["query"] == "損害賠償"
+
+
+def test_build_keyword_query_uses_multi_match():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="不法行為 損害", mode="keyword", filters={}, size=20, page=1)
+    service.search(params)
+    multi_match = backend.last_body["query"]["bool"]["must"][0]["multi_match"]
+    assert multi_match["query"] == "不法行為 損害"
+    assert multi_match["operator"] == "and"
+    assert "content.keywordish" in multi_match["fields"]
 
 
 def test_build_long_literal_query_uses_long_content_field():
@@ -234,6 +247,23 @@ def test_law_document_returns_sections_in_natural_article_order():
     assert document is not None
     assert document["law_name"] == "民法"
     assert [section["article_no"] for section in document["sections"]] == ["2", "10"]
+
+
+def test_law_document_passes_article_filter_to_backend():
+    service = SearchService(backend=DummyBackend())
+
+    document = service.law_document("minpo", article="10")
+
+    assert document is not None
+
+
+def test_law_document_context_filters_after_fetching_sections():
+    service = SearchService(backend=DummyBackend())
+
+    document = service.law_document("minpo", article="10", context=0)
+
+    assert document is not None
+    assert [section["article_no"] for section in document["sections"]] == ["10"]
 
 
 def test_build_boolean_query_uses_required_optional_and_excluded_terms():

@@ -51,7 +51,13 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
       ref={setRef}
       onClick={() => {
         onSelect();
-        void openLawDocument(hit);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          void openLawDocument(hit);
+        }
       }}
       className={clsx(
         "group relative cursor-pointer rounded-lg border bg-white p-4 shadow-sm transition hover:border-blue-400 hover:bg-blue-50/30 focus:outline-none focus:ring-2 focus:ring-blue-500",
@@ -74,6 +80,17 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
         )}
       </div>
       <div className="mt-2 text-sm leading-relaxed text-gray-900">{renderSnippet(hit)}</div>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect();
+          void openLawDocument(hit);
+        }}
+        className="mt-3 rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-blue-400 hover:text-blue-700"
+      >
+        全文を開く
+      </button>
       <div className="pointer-events-none absolute right-3 top-3 z-20 hidden w-96 max-w-[calc(100vw-3rem)] rounded-md border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 shadow-lg group-hover:block group-focus:block">
         <div className="mb-2 border-b border-gray-200 pb-2 font-semibold text-gray-700">
           {formatLocation(hit)}

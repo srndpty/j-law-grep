@@ -109,8 +109,11 @@ export async function postSearch(body: SearchRequest, signal: AbortSignal): Prom
   return { data, requestId };
 }
 
-export async function fetchLawDocument(lawId: string): Promise<LawDocument> {
-  const response = await fetch(`${API_BASE}/laws/${encodeURIComponent(lawId)}`);
+export async function fetchLawDocument(lawId: string, article?: string): Promise<LawDocument> {
+  const params = new URLSearchParams();
+  if (article) params.set("article", article);
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const response = await fetch(`${API_BASE}/laws/${encodeURIComponent(lawId)}${suffix}`);
   if (!response.ok) {
     let errorBody: unknown = null;
     try {

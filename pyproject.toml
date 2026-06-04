@@ -16,7 +16,10 @@ known-first-party = ["backend", "search", "indexer"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/search/tests", "backend/backend/tests", "tests"]
-addopts = "-q"
+addopts = "-q -m 'not integration'"
+markers = [
+  "integration: requires a live OpenSearch service",
+]
 
 [tool.coverage.run]
 branch = true

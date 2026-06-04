@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 const MODES = [
   { value: "auto", label: "自動" },
   { value: "literal", label: "リテラル" },
+  { value: "keyword", label: "キーワード" },
   { value: "boolean", label: "Boolean" },
   { value: "citation", label: "引用" },
   { value: "regex", label: "正規表現" },

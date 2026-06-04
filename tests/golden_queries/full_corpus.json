@@ -1,15 +1,41 @@
 [
   { "query": "民法709条", "mode": "auto", "expected_top": [{ "law_name": "民法", "article_no": "709" }] },
+  { "query": "民法第七百九条", "mode": "auto", "expected_contains": [{ "law_name": "民法", "article_no": "709" }] },
+  { "query": "民法７０９条", "mode": "auto", "expected_contains": [{ "law_name": "民法", "article_no": "709" }] },
+  { "query": "民法709条1項", "mode": "auto", "expected_contains": [{ "law_name": "民法", "article_no": "709", "paragraph_no": "1" }] },
   {
     "query": "故意又は過失によって他人の権利又は法律上保護される利益を侵害した者",
     "mode": "literal",
     "filters": { "law": "民法" },
     "expected_contains": [{ "law_name": "民法", "article_no": "709" }]
   },
+  {
+    "query": "法律上保護される利益 損害",
+    "mode": "keyword",
+    "filters": { "law": "民法" },
+    "expected_top_any": [
+      { "law_name": "民法", "article_no": "709" },
+      { "law_name": "民法", "article_no": "710" }
+    ],
+    "min_total": 1,
+    "max_wall_ms": 1000
+  },
+  {
+    "query": "法律上保護される利益",
+    "mode": "literal",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "law_name": "民法", "article_no": "709" }]
+  },
   { "query": "刑法199条", "mode": "auto", "expected_contains": [{ "law_name": "刑法", "article_no": "199" }] },
+  { "query": "刑法第百九十九条", "mode": "auto", "expected_contains": [{ "law_name": "刑法", "article_no": "199" }] },
   { "query": "会社法2条", "mode": "auto", "expected_contains": [{ "law_name": "会社法", "article_no": "2" }] },
   {
     "query": "民事訴訟法3条の2",
+    "mode": "auto",
+    "expected_contains": [{ "law_name": "民事訴訟法", "article_no": "3の2" }]
+  },
+  {
+    "query": "民事訴訟法第3条の2",
     "mode": "auto",
     "expected_contains": [{ "law_name": "民事訴訟法", "article_no": "3の2" }]
   },
@@ -19,5 +45,28 @@
     "filters": { "law": "民法" },
     "expected_contains": [{ "law_name": "民法" }],
     "not_expected_contains": [{ "article_no": "709" }]
+  },
+  {
+    "query": "故意 | 過失",
+    "mode": "boolean",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "law_name": "民法", "article_no": "709" }]
+  },
+  {
+    "query": "\"法律上保護される利益\" 損害",
+    "mode": "boolean",
+    "filters": { "law": "民法" },
+    "expected_contains": [{ "law_name": "民法", "article_no": "709" }]
+  },
+  {
+    "query": "当面の",
+    "mode": "literal",
+    "not_expected_contains": [{ "law_name": "民法", "article_no": "709" }]
+  },
+  {
+    "query": "附則",
+    "mode": "keyword",
+    "min_total": 1,
+    "max_wall_ms": 1000
   }
 ]

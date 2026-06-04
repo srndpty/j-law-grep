@@ -49,14 +49,20 @@ class SearchService:
     def list_laws(self) -> list[str]:
         return sorted(self.backend.law_names())
 
-    def law_document(self, law_id: str) -> dict[str, Any] | None:
-        response = self.backend.law_document(law_id)
+    def law_document(
+        self, law_id: str, article: str | None = None, context: int | None = None
+    ) -> dict[str, Any] | None:
+        response = self.backend.law_document(
+            law_id, article=article if article and context is None else None
+        )
         hits = response.get("hits", {}).get("hits", [])
         sections = [self._convert_law_section(hit) for hit in hits]
         sections = [section for section in sections if section["text"]]
         if not sections:
             return None
         sections.sort(key=self._section_sort_key)
+        if article and context is not None:
+            sections = self._context_sections(sections, article, context)
         return {
             "law_id": law_id,
             "law_name": sections[0]["law_name"],
@@ -112,6 +118,16 @@ class SearchService:
                 must_not.append(self._content_phrase_clause(term))
             if not must and not must_not:
                 must.append({"match_all": {}})
+        elif params.mode == "keyword":
+            must.append(
+                {
+                    "multi_match": {
+                        "query": residual_query or raw_query,
+                        "fields": ["content^2", "content.keywordish", "heading^3"],
+                        "operator": "and",
+                    }
+                }
+            )
         else:
             # must.append({"match_phrase": {"content": params.q}})
             must.append(self._literal_content_clause(residual_query or raw_query))
@@ -248,7 +264,7 @@ class SearchService:
     def _ranking_boosts(
         cls, mode: str, term: str, citation_filter_key: str | None
     ) -> list[dict[str, Any]]:
-        if mode in {"boolean", "regex"}:
+        if mode in {"boolean", "regex", "keyword"}:
             return []
         boosts: list[dict[str, Any]] = []
         if citation_filter_key:
@@ -310,6 +326,19 @@ class SearchService:
             "query": self.classify_query(params.q, params.mode),
             "index": {"name": self.backend.index},
         } | self._debug_payload(params)
+
+    def debug_query(self, params: SearchParams) -> dict[str, Any]:
+        body = self.build_query(params)
+        parsed = parse_citation_query(params.q.strip())
+        return {
+            "query_dsl": body,
+            "parsed_citation": self._citation_payload(parsed.citation),
+            "effective_mode": self.classify_query(params.q, params.mode)["effective_mode"],
+            "ranking_signals": self._debug_payload(params)
+            .get("debug", {})
+            .get("ranking_signals", {}),
+            "index": {"name": self.backend.index},
+        }
 
     @staticmethod
     def _debug_payload(params: SearchParams) -> dict[str, Any]:
@@ -441,6 +470,23 @@ class SearchService:
             SearchService._natural_label_key(section.get("item_no")),
             str(section.get("id", "")),
         )
+
+    @staticmethod
+    def _context_sections(
+        sections: list[dict[str, Any]], article: str, context: int
+    ) -> list[dict[str, Any]]:
+        if context < 0:
+            return sections
+        positions = [
+            index
+            for index, section in enumerate(sections)
+            if str(section.get("article_no")) == article
+        ]
+        if not positions:
+            return sections
+        start = max(min(positions) - context, 0)
+        end = min(max(positions) + context + 1, len(sections))
+        return sections[start:end]
 
     @staticmethod
     def _natural_label_key(value: Any) -> list[int | str]:
