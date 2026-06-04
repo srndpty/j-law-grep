@@ -140,6 +140,7 @@ def main() -> None:
     else:
         backend.ensure_index()
 
+    promoted = False
     try:
         records = iter_records(args.input, show_progress=args.progress)
         actions = to_index_actions(records)
@@ -176,13 +177,17 @@ def main() -> None:
                     backend.index,
                     report_path=report_dir / "golden_report.jsonl" if report_dir else None,
                 )
+            if report_dir:
+                with (report_dir / "index_stats.json").open("w", encoding="utf-8") as fh:
+                    json.dump(backend.index_stats(backend.index), fh, ensure_ascii=False, indent=2)
             backend.switch_alias(args.alias, backend.index)
+            promoted = True
             print(f"Switched alias {args.alias} -> {backend.index}")
-        if report_dir:
+        elif report_dir:
             with (report_dir / "index_stats.json").open("w", encoding="utf-8") as fh:
                 json.dump(backend.index_stats(backend.index), fh, ensure_ascii=False, indent=2)
     except Exception:
-        if args.versioned:
+        if args.versioned and not promoted:
             backend.delete_index(backend.index)
             print(f"Deleted failed versioned index: {backend.index}", file=sys.stderr)
         raise
