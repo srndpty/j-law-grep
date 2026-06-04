@@ -40,6 +40,28 @@ LAW_SUFFIX_TOKENS = {"法", "令", "規則", "条例", "省令", "府令", "庁�
 LAW_SUFFIXES = tuple(LAW_SUFFIX_TOKENS)
 NUMBER_TOKEN = r"[0-9一二三四五六七八九十百千〇零]+"
 
+# Characters that, on their own, never make a real law name. The optional law
+# group in the citation pattern is greedy and would otherwise swallow the 第
+# prefix or the leading digits of an article number (e.g. "第2条の2" -> law="第",
+# "709条" -> law="7" / article="09"). When the captured law consists solely of
+# these, we re-parse the citation as having no law name so the full article is
+# recovered and no bogus law filter is applied.
+_NUMERIC_LAW_CHARS = set("0123456789") | set(KANJI_DIGITS) | set(KANJI_UNITS) | set("第の_:ー 　")
+
+# Citation core without the law group, used to re-parse when the captured law is
+# numeric noise so the full article (and any leading 第) is recovered.
+_CITATION_PATTERN_NO_LAW = re.compile(
+    rf"(?:第)?(?P<article>{NUMBER_TOKEN}(?:[_:の]{NUMBER_TOKEN})*)条"
+    rf"(?:の(?P<branch_after>{NUMBER_TOKEN}))?"
+    rf"(?:\s*(?P<paragraph>{NUMBER_TOKEN})項)?"
+    rf"(?:\s*(?P<item>{NUMBER_TOKEN})号)?"
+)
+
+
+def _is_numeric_law(name: str) -> bool:
+    """True when the captured law name is only 第/digits/separators (not a real law)."""
+    return all(ch in _NUMERIC_LAW_CHARS for ch in name)
+
 
 @dataclass
 class Citation:
@@ -137,6 +159,17 @@ def parse_citation_query(text: str) -> ParsedCitation:
                     part for part in [residual_prefix, *law_parts[:-1]] if part
                 )
                 law_name = last_part
+
+    if law_name and _is_numeric_law(law_name):
+        # The greedy law group swallowed the 第 prefix or the article's leading
+        # digits (e.g. "第2条の2" -> law="第", "709条" -> law="7"). Re-parse the
+        # citation core only, so the full article is captured and no bogus law
+        # filter is fabricated; text before the citation stays in the residual.
+        no_law = _CITATION_PATTERN_NO_LAW.search(normalized)
+        if no_law is not None:
+            match = no_law
+            law_name = None
+            residual_prefix = normalized[: match.start()].strip()
 
     article_raw = match.group("article")
     branch_after_raw = match.group("branch_after")

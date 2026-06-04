@@ -41,6 +41,35 @@ def test_parse_branch_article_with_kanji_number():
     assert result.article_no == "2の2"
 
 
+def test_parse_branch_article_without_law_after_marker():
+    # No explicit law: the 第 prefix must not be captured as law_name="第",
+    # which would fabricate a bogus law filter and return no hits.
+    result = parse_citation("第2条の2")
+    assert result.law_name is None
+    assert result.article_no == "2の2"
+
+
+def test_parse_branch_article_without_law_before_marker():
+    for query in ("2の2条", "2_2条"):
+        result = parse_citation(query)
+        assert result.law_name is None, query
+        assert result.article_no == "2の2", query
+
+
+def test_parse_branch_article_without_law_kanji():
+    result = parse_citation("第二条の二")
+    assert result.law_name is None
+    assert result.article_no == "2の2"
+
+
+def test_parse_article_without_law_keeps_full_number():
+    # Leading digits must not be split into a numeric "law" (709条 -> 7 / 09).
+    for query in ("709条", "第709条", "七百九条", "第七百九条"):
+        result = parse_citation(query)
+        assert result.law_name is None, query
+        assert result.article_no == "709", query
+
+
 def test_citation_key():
     key = citation_key(parse_citation("民法 95条 1項 1号"))
     assert key == "民法 95条 1項 1号"
