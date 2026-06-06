@@ -48,7 +48,7 @@ export function hitText(hit: SearchHit): string {
   return hit.snippet_text ?? hit.snippet;
 }
 
-function itemLabel(itemNo: number | string | null): string {
+export function itemLabel(itemNo: number | string | null): string {
   if (itemNo === null || itemNo === undefined || itemNo === "") return "";
   const value = String(itemNo);
   const numeric = Number(value);
@@ -58,6 +58,11 @@ function itemLabel(itemNo: number | string | null): string {
   const tens = Math.floor(numeric / 10);
   const ones = numeric % 10;
   return `${tens === 1 ? "" : digits[tens]}十${digits[ones]}`;
+}
+
+function articleLabel(articleNo: string): string {
+  if (!articleNo) return "";
+  return articleNo.includes("条") ? articleNo : `第${articleNo}条`;
 }
 
 function escapeHtml(value: string): string {
@@ -83,6 +88,14 @@ function sectionId(section: Pick<LawSection, "article_no" | "paragraph_no" | "it
     .join("-");
 }
 
+function articleGroupKey(section: LawSection, fallbackIndex: number): string {
+  if (section.article_no) return `article:${section.article_no}`;
+  if (section.heading) return `heading:${section.heading}`;
+  if (section.path) return `path:${section.path}`;
+  if (section.url) return `url:${section.url}`;
+  return `section:${fallbackIndex}`;
+}
+
 interface ParagraphGroup {
   paragraphNo: number | string | null;
   sections: LawSection[];
@@ -100,11 +113,11 @@ function groupLawSections(sections: LawSection[]): ArticleGroup[] {
   const articleIndex = new Map<string, ArticleGroup>();
 
   for (const section of sections) {
-    const articleKey = section.article_no || "";
+    const articleKey = articleGroupKey(section, articles.length);
     let article = articleIndex.get(articleKey);
     if (!article) {
       article = {
-        articleNo: articleKey,
+        articleNo: section.article_no || "",
         caption: section.caption ?? "",
         heading: section.heading,
         paragraphs: [],
@@ -133,7 +146,7 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
   const activeId = targetId(hit);
   const articles = groupLawSections(document.sections)
     .map((article) => {
-      const articleTitle = article.heading || (article.articleNo ? `第${article.articleNo}条` : "");
+      const articleTitle = article.heading || articleLabel(article.articleNo);
       const paragraphs = article.paragraphs
         .map((paragraph, paragraphIndex) => {
           const rows = paragraph.sections
@@ -166,8 +179,10 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
               ? `<div class="article-caption">${escapeHtml(article.caption)}</div>`
               : ""
           }
-          <div class="article-title">${escapeHtml(articleTitle)}</div>
-          ${paragraphs}
+          <div class="article-body">
+            <div class="article-title">${escapeHtml(articleTitle)}</div>
+            <div class="article-content">${paragraphs}</div>
+          </div>
         </article>`;
     })
     .join("");
@@ -214,10 +229,18 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
       font-weight: 700;
       padding-left: 24px;
     }
+    .article-body {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 16px;
+      align-items: start;
+    }
     .article-title {
-      float: left;
-      margin-right: 16px;
       font-weight: 700;
+      white-space: nowrap;
+    }
+    .article-content {
+      min-width: 0;
     }
     .paragraph {
       margin: 0;
@@ -272,9 +295,10 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
         padding: 0 8px 40px;
       }
       .article-title {
-        display: block;
-        float: none;
         margin: 4px 0 0;
+      }
+      .article-body {
+        display: block;
       }
       .paragraph:first-of-type .law-row:first-child {
         grid-template-columns: 24px minmax(0, 1fr);

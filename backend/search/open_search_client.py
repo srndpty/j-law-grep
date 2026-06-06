@@ -434,6 +434,22 @@ class OpenSearchBackend:
 def highlight_config() -> dict[str, Any]:
     return {
         "fields": {
+            "caption": {
+                "type": "unified",
+                "number_of_fragments": 1,
+                "fragment_size": 120,
+                "no_match_size": 0,
+                "pre_tags": ["<mark>"],
+                "post_tags": ["</mark>"],
+            },
+            "heading": {
+                "type": "unified",
+                "number_of_fragments": 1,
+                "fragment_size": 120,
+                "no_match_size": 0,
+                "pre_tags": ["<mark>"],
+                "post_tags": ["</mark>"],
+            },
             "content": {
                 "type": "unified",
                 "number_of_fragments": 3,
@@ -441,6 +457,6 @@ def highlight_config() -> dict[str, Any]:
                 "no_match_size": 120,
                 "pre_tags": ["<mark>"],
                 "post_tags": ["</mark>"],
-            }
+            },
         }
     }

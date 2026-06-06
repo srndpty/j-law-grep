@@ -246,6 +246,14 @@ def test_position_fields_are_keywords(monkeypatch):
     assert properties["content_long"] == {"type": "keyword", "ignore_above": 8192}
 
 
+def test_highlight_config_includes_caption_and_heading():
+    fields = open_search_client.highlight_config()["fields"]
+
+    assert "caption" in fields
+    assert "heading" in fields
+    assert "content" in fields
+
+
 def test_large_source_only_fields_are_not_indexed(monkeypatch):
     monkeypatch.setattr(
         open_search_client,

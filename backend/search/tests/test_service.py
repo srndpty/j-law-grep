@@ -463,6 +463,32 @@ def test_convert_hit_turns_opensearch_mark_tags_into_ranges():
     assert result["highlights"] == [{"start": 7, "end": 9}]
 
 
+def test_convert_hit_uses_caption_highlight_when_content_is_not_highlighted():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    hit = {
+        "_id": "doc-caption-hit",
+        "_source": {
+            "law_name": "民法",
+            "article_no": "1",
+            "paragraph_no": None,
+            "item_no": None,
+            "path": "民法/1",
+            "line": 0,
+            "caption": "（基本原則）",
+            "content": "本文",
+            "url": "/l/minpo/a/1",
+            "blocks": [],
+        },
+        "highlight": {"caption": ["（<mark>基本</mark>原則）"]},
+    }
+
+    result = service._convert_hit(hit, query="基本")
+
+    assert result["snippet"] == "（基本原則）"
+    assert result["highlights"] == [{"start": 1, "end": 3}]
+
+
 def test_convert_hit_derives_article_from_url_when_missing():
     backend = DummyBackend()
     service = SearchService(backend=backend)

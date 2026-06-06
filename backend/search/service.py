@@ -403,9 +403,9 @@ class SearchService:
 
     def _convert_hit(self, hit: dict[str, Any], query: str) -> dict[str, Any]:
         source = hit.get("_source", {})
-        highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
+        highlight_snippet = self._best_highlight_snippet(hit.get("highlight", {}))
         snippet_text, highlights = self._snippet_with_ranges(
-            highlight_snippet or source.get("content", ""),
+            highlight_snippet or source.get("content", "") or source.get("caption", ""),
             query,
         )
         law_name = source.get("law_name") or ""
@@ -452,6 +452,14 @@ class SearchService:
             "url": data.url,
             "blocks": data.blocks,
         }
+
+    @staticmethod
+    def _best_highlight_snippet(highlight: dict[str, Any]) -> str:
+        for field in ("content", "caption", "heading"):
+            snippets = highlight.get(field, [])
+            if snippets:
+                return "".join(str(snippet) for snippet in snippets)
+        return ""
 
     @staticmethod
     def _convert_law_section(hit: dict[str, Any]) -> dict[str, Any]:
