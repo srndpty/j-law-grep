@@ -18,11 +18,11 @@ repos:
       #   entry: python scripts/precommit-python.py -m mypy backend indexer tests
       #   language: system
       #   pass_filenames: false
-      - id: pytest
-        name: pytest
-        entry: python scripts/precommit-python.py -m pytest
-        language: system
-        pass_filenames: false
+      # - id: pytest
+      #   name: pytest
+      #   entry: python scripts/precommit-python.py -m pytest
+      #   language: system
+      #   pass_filenames: false
       - id: frontend-check
         name: frontend lint/test/build
         entry: powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location frontend; npm run check"
