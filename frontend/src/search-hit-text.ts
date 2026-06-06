@@ -48,16 +48,21 @@ export function hitText(hit: SearchHit): string {
   return hit.snippet_text ?? hit.snippet;
 }
 
-function sectionLabel(section: LawSection): string {
-  const segments: string[] = [];
-  if (section.article_no) {
-    segments.push(
-      section.article_no.includes("条") ? section.article_no : `第${section.article_no}条`
-    );
-  }
-  if (section.paragraph_no) segments.push(`${section.paragraph_no}項`);
-  if (section.item_no) segments.push(`${section.item_no}号`);
-  return segments.join(" ");
+export function itemLabel(itemNo: number | string | null): string {
+  if (itemNo === null || itemNo === undefined || itemNo === "") return "";
+  const value = String(itemNo);
+  const numeric = Number(value);
+  const digits = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  if (!Number.isInteger(numeric) || numeric <= 0 || numeric >= 100) return value;
+  if (numeric < 10) return digits[numeric];
+  const tens = Math.floor(numeric / 10);
+  const ones = numeric % 10;
+  return `${tens === 1 ? "" : digits[tens]}十${digits[ones]}`;
+}
+
+function articleLabel(articleNo: string): string {
+  if (!articleNo) return "";
+  return articleNo.includes("条") ? articleNo : `第${articleNo}条`;
 }
 
 function escapeHtml(value: string): string {
@@ -83,21 +88,102 @@ function sectionId(section: Pick<LawSection, "article_no" | "paragraph_no" | "it
     .join("-");
 }
 
-function renderLawDocument(document: LawDocument, hit: SearchHit): string {
+function articleGroupKey(section: LawSection, fallbackIndex: number): string {
+  if (section.article_no) return `article:${section.article_no}`;
+  if (section.heading) return `heading:${section.heading}`;
+  if (section.path) return `path:${section.path}`;
+  if (section.url) return `url:${section.url}`;
+  return `section:${fallbackIndex}`;
+}
+
+interface ParagraphGroup {
+  paragraphNo: number | string | null;
+  sections: LawSection[];
+}
+
+interface ArticleGroup {
+  articleNo: string;
+  caption: string;
+  heading: string;
+  paragraphs: ParagraphGroup[];
+}
+
+function groupLawSections(sections: LawSection[]): ArticleGroup[] {
+  const articles: ArticleGroup[] = [];
+  const articleIndex = new Map<string, ArticleGroup>();
+
+  for (const section of sections) {
+    const articleKey = articleGroupKey(section, articles.length);
+    let article = articleIndex.get(articleKey);
+    if (!article) {
+      article = {
+        articleNo: section.article_no || "",
+        caption: section.caption ?? "",
+        heading: section.heading,
+        paragraphs: [],
+      };
+      articleIndex.set(articleKey, article);
+      articles.push(article);
+    }
+    if (!article.caption && section.caption) article.caption = section.caption;
+    if (!article.heading && section.heading) article.heading = section.heading;
+
+    const paragraphKey = section.paragraph_no ?? "";
+    let paragraph = article.paragraphs.find(
+      (candidate) => String(candidate.paragraphNo ?? "") === String(paragraphKey)
+    );
+    if (!paragraph) {
+      paragraph = { paragraphNo: section.paragraph_no, sections: [] };
+      article.paragraphs.push(paragraph);
+    }
+    paragraph.sections.push(section);
+  }
+
+  return articles;
+}
+
+export function renderLawDocument(document: LawDocument, hit: SearchHit): string {
   const activeId = targetId(hit);
-  const sections = document.sections
-    .map((section) => {
-      const id = sectionId(section);
-      const active = id === activeId;
-      const heading = section.heading
-        ? `<div class="heading">${escapeHtml(section.heading)}</div>`
-        : "";
+  const articles = groupLawSections(document.sections)
+    .map((article) => {
+      const articleTitle = article.heading || articleLabel(article.articleNo);
+      const paragraphs = article.paragraphs
+        .map((paragraph, paragraphIndex) => {
+          const rows = paragraph.sections
+            .map((section, sectionIndex) => {
+              const id = sectionId(section);
+              const active = id === activeId;
+              const isParagraphLead = !section.item_no;
+              const marker = isParagraphLead
+                ? paragraphIndex === 0 && sectionIndex === 0
+                  ? ""
+                  : escapeHtml(String(section.paragraph_no ?? ""))
+                : escapeHtml(itemLabel(section.item_no));
+              return `
+                <div id="${id}" class="law-row ${active ? "active" : ""} ${
+                  isParagraphLead ? "paragraph-lead" : "item-row"
+                }">
+                  <div class="marker">${marker}</div>
+                  <p>${escapeHtml(section.text).replace(/\n/g, "<br>")}</p>
+                </div>`;
+            })
+            .join("");
+          return `<div class="paragraph">${rows}</div>`;
+        })
+        .join("");
+
       return `
-        <section id="${id}" class="section ${active ? "active" : ""}">
-          <div class="label">${escapeHtml(sectionLabel(section))}</div>
-          ${heading}
-          <p>${escapeHtml(section.text).replace(/\n/g, "<br>")}</p>
-        </section>`;
+        <article class="article">
+          ${
+            article.caption
+              ? `<div class="article-caption">${escapeHtml(article.caption)}</div>`
+              : ""
+          }
+          <div class="article-body">
+            <div class="article-title">${escapeHtml(articleTitle)}</div>
+            <div class="article-content">${paragraphs}</div>
+          </div>
+        </article>`;
     })
     .join("");
 
@@ -109,61 +195,121 @@ function renderLawDocument(document: LawDocument, hit: SearchHit): string {
   <style>
     body {
       margin: 0;
-      background: #f5f6f8;
-      color: #171717;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.75;
+      background: #111516;
+      color: #f5f5f5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic UI",
+        "Meiryo", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
     }
     header {
       position: sticky;
       top: 0;
-      background: #111418;
-      color: white;
-      padding: 16px 28px;
-      border-bottom: 1px solid #2b3036;
+      background: #111516;
+      color: #f5f5f5;
+      padding: 8px 12px;
+      border-bottom: 1px solid #343a3d;
       z-index: 1;
     }
     h1 {
       margin: 0;
-      font-size: 20px;
+      font-size: 15px;
+      font-weight: 700;
       letter-spacing: 0;
     }
     main {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 24px 28px 56px;
+      max-width: none;
+      margin: 0;
+      padding: 0 12px 48px;
     }
-    .section {
-      scroll-margin-top: 88px;
-      border-left: 4px solid transparent;
-      border-bottom: 1px solid #ddd;
-      background: white;
-      padding: 16px 18px;
+    .article {
+      padding: 4px 0 10px;
     }
-    .section.active {
-      border-left-color: #2563eb;
-      background: #eff6ff;
-      box-shadow: inset 0 0 0 1px #93c5fd;
-    }
-    .label {
-      color: #4b5563;
-      font-size: 13px;
+    .article-caption {
       font-weight: 700;
-      margin-bottom: 6px;
+      padding-left: 24px;
     }
-    .heading {
+    .article-body {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      column-gap: 16px;
+      align-items: start;
+    }
+    .article-title {
       font-weight: 700;
-      margin-bottom: 6px;
+      white-space: nowrap;
+    }
+    .article-content {
+      min-width: 0;
+    }
+    .paragraph {
+      margin: 0;
+    }
+    .law-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      column-gap: 8px;
+      scroll-margin-top: 52px;
+      padding: 1px 4px;
+    }
+    .paragraph:first-of-type .law-row:first-child {
+      grid-template-columns: 0 minmax(0, 1fr);
+      column-gap: 0;
+    }
+    .paragraph:not(:first-child) .law-row:first-child {
+      grid-template-columns: 24px minmax(0, 1fr);
+      column-gap: 8px;
+    }
+    .law-row.active {
+      color: #111516;
+    }
+    .law-row.active p {
+      background: #f59e0b;
+      color: #111516;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    .marker {
+      color: #e8eef2;
+      font-weight: 700;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .law-row.active .marker {
+      color: #f5f5f5;
     }
     p {
       margin: 0;
+      min-width: 0;
       white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    @media (max-width: 640px) {
+      body {
+        font-size: 15px;
+      }
+      header {
+        padding: 8px 10px;
+      }
+      main {
+        padding: 0 8px 40px;
+      }
+      .article-title {
+        margin: 4px 0 0;
+      }
+      .article-body {
+        display: block;
+      }
+      .paragraph:first-of-type .law-row:first-child {
+        grid-template-columns: 24px minmax(0, 1fr);
+        column-gap: 8px;
+      }
     }
   </style>
 </head>
 <body>
   <header><h1>${escapeHtml(document.law_name || hit.law_name)}</h1></header>
-  <main>${sections}</main>
+  <main>${articles}</main>
   <script>
     document.getElementById(${JSON.stringify(activeId)})?.scrollIntoView({ block: "center" });
   </script>

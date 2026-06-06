@@ -149,6 +149,7 @@ def parse_article(article_elem: ET.Element) -> dict | None:
     article_no = normalize_article_no(article_elem.attrib.get("Num")) or normalize_text(
         find_first_text(article_elem, "ArticleNum", "ArticleTitle") or ""
     )
+    caption = normalize_text(find_first_text(article_elem, "ArticleCaption") or "")
     heading = normalize_text(find_first_text(article_elem, "ArticleTitle") or "")
 
     paragraphs: list[dict] = []
@@ -167,6 +168,7 @@ def parse_article(article_elem: ET.Element) -> dict | None:
 
     return {
         "article_no": normalize_text(article_no or ""),
+        "caption": caption,
         "heading": heading,
         "paragraphs": paragraphs,
     }

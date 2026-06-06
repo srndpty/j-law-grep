@@ -57,6 +57,7 @@ export interface LawSection {
   article_no: string;
   paragraph_no: number | string | null;
   item_no: number | string | null;
+  caption?: string;
   heading: string;
   text: string;
   url: string;

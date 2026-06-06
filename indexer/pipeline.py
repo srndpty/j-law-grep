@@ -26,6 +26,7 @@ class IndexRecord:
     article_no: str
     paragraph_no: str | None
     item_no: str | None
+    caption: str
     heading: str
     content: str
     content_plain: str
@@ -83,6 +84,7 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
     year_enforced = doc.get("year_enforced")
     for article in doc.get("articles", []):
         article_no = str(article["article_no"])
+        caption = normalize_text(article.get("caption", ""))
         heading = normalize_text(article.get("heading", ""))
         paragraphs = article.get("paragraphs", [])
         if not paragraphs:
@@ -141,6 +143,7 @@ def records_from_document(doc: dict) -> Iterator[IndexRecord]:
                     article_no=article_no,
                     paragraph_no=paragraph_label,
                     item_no=item_label,
+                    caption=caption,
                     heading=heading,
                     content=text,
                     content_plain=text,
@@ -164,6 +167,7 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
             "paragraph_no": record.paragraph_no,
             "item_no": record.item_no,
             "citation_key": citation,
+            "caption": record.caption,
             "heading": record.heading,
             "content": record.content,
             "content_long": truncate_utf8(record.content),

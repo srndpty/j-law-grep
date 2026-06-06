@@ -11,6 +11,7 @@ def test_manifest_counts_and_pipeline_ignores_manifest(tmp_path):
         "articles": [
             {
                 "article_no": "709",
+                "caption": "（不法行為による損害賠償）",
                 "paragraphs": [
                     {
                         "paragraph_no": 1,
@@ -32,7 +33,9 @@ def test_manifest_counts_and_pipeline_ignores_manifest(tmp_path):
     records = collect_records(tmp_path)
     assert len(records) == 1
     assert records[0].law_name == "民法"
+    assert records[0].caption == "（不法行為による損害賠償）"
     action = list(to_index_actions(records))[0]
+    assert action["_source"]["caption"] == "（不法行為による損害賠償）"
     assert action["_source"]["content_long"] == action["_source"]["content"]
 
 

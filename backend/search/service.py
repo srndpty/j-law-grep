@@ -132,7 +132,7 @@ class SearchService:
                 {
                     "multi_match": {
                         "query": residual_query or raw_query,
-                        "fields": ["content^2", "content.keywordish", "heading^3"],
+                        "fields": ["content^2", "content.keywordish", "caption^3", "heading^3"],
                         "operator": "and",
                     }
                 }
@@ -283,6 +283,15 @@ class SearchService:
                 [
                     {
                         "match_phrase": {
+                            "caption": {
+                                "query": term,
+                                "analyzer": "whitespace",
+                                "boost": 5.0,
+                            }
+                        }
+                    },
+                    {
+                        "match_phrase": {
                             "heading": {
                                 "query": term,
                                 "analyzer": "whitespace",
@@ -394,9 +403,9 @@ class SearchService:
 
     def _convert_hit(self, hit: dict[str, Any], query: str) -> dict[str, Any]:
         source = hit.get("_source", {})
-        highlight_snippet = "".join(hit.get("highlight", {}).get("content", []))
+        highlight_snippet = self._best_highlight_snippet(hit.get("highlight", {}))
         snippet_text, highlights = self._snippet_with_ranges(
-            highlight_snippet or source.get("content", ""),
+            highlight_snippet or source.get("content", "") or source.get("caption", ""),
             query,
         )
         law_name = source.get("law_name") or ""
@@ -445,6 +454,19 @@ class SearchService:
         }
 
     @staticmethod
+    def _best_highlight_snippet(highlight: dict[str, Any]) -> str:
+        for field in ("content", "caption", "heading"):
+            snippets = highlight.get(field, [])
+            marked = [str(snippet) for snippet in snippets if "<mark>" in str(snippet)]
+            if marked:
+                return "".join(marked)
+        for field in ("content", "caption", "heading"):
+            snippets = highlight.get(field, [])
+            if snippets:
+                return "".join(str(snippet) for snippet in snippets)
+        return ""
+
+    @staticmethod
     def _convert_law_section(hit: dict[str, Any]) -> dict[str, Any]:
         source = hit.get("_source", {})
         blocks = source.get("blocks", [])
@@ -463,6 +485,7 @@ class SearchService:
             "article_no": source.get("article_no", "") or "",
             "paragraph_no": source.get("paragraph_no"),
             "item_no": source.get("item_no"),
+            "caption": source.get("caption", "") or "",
             "heading": source.get("heading", "") or "",
             "text": text,
             "url": source.get("url", "") or "",

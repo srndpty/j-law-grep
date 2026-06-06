@@ -10,6 +10,7 @@ The e-Gov importer emits documents shaped like::
       "articles": [
         {
           "article_no": str,
+          "caption": str,
           "heading": str,
           "paragraphs": [
             {"paragraph_no": int | str | None,
