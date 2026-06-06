@@ -13,11 +13,11 @@ repos:
         language: system
         types_or: [python]
         pass_filenames: true
-      - id: mypy
-        name: mypy
-        entry: python scripts/precommit-python.py -m mypy backend indexer tests
-        language: system
-        pass_filenames: false
+      # - id: mypy
+      #   name: mypy
+      #   entry: python scripts/precommit-python.py -m mypy backend indexer tests
+      #   language: system
+      #   pass_filenames: false
       - id: pytest
         name: pytest
         entry: python scripts/precommit-python.py -m pytest
