@@ -33,9 +33,9 @@ npm-debug.log*
 .codex/
 
 # 法令コーパス (ローカル専用。indexer/data/.gitkeep のみ追跡)
-data/egov-xml/
-indexer/data/*
-!indexer/data/.gitkeep
+/data/egov-xml/
+/indexer/data/*
+!/indexer/data/.gitkeep
 
 # 一時出力 (reindex レポート, bench, smoke 結果など)
-tmp/
+/tmp/

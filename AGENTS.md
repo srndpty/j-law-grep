@@ -39,6 +39,7 @@ make check         # lint + typecheck + test + frontend-check (コミット前�
 - frontend: ESLint + Prettier + `tsc --noEmit` + Vitest。`make frontend-check` を通すこと。
 - pytest は既定で `integration` マーカーを除外 (`addopts = -m 'not integration'`)。
 - 周囲のコードのスタイル・命名・コメント密度に合わせる。
+- pre-commit は高速化のため軽量チェック (Ruff + frontend-check) のみ。mypy / pytest は含まないので、提出前・大きな変更後は必ず `make check` を実行する。フル品質ゲートは `make check` と CI (`.github/workflows/ci.yml`) で担保する。
 
 ## 変更時の注意 (契約)
 

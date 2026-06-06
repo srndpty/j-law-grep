@@ -13,16 +13,11 @@ repos:
         language: system
         types_or: [python]
         pass_filenames: true
-      # - id: mypy
-      #   name: mypy
-      #   entry: python scripts/precommit-python.py -m mypy backend indexer tests
-      #   language: system
-      #   pass_filenames: false
-      # - id: pytest
-      #   name: pytest
-      #   entry: python scripts/precommit-python.py -m pytest
-      #   language: system
-      #   pass_filenames: false
+      # コミットの軽量化のため、mypy / pytest は pre-commit に含めない。
+      # フル品質ゲートは `make check` (手動) と CI (.github/workflows/ci.yml) で担保する:
+      #   - mypy backend indexer tests
+      #   - pytest (unit + integration)
+      #   - frontend lint/test/build
       - id: frontend-check
         name: frontend lint/test/build
         entry: powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Location frontend; npm run check"

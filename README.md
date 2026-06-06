@@ -96,6 +96,21 @@ bulk 投入の既定は Windows ローカル開発での安定性を優先し `B
 
 OpenSearch の shards は既定 4、heap は `.env` の `OPENSEARCH_JAVA_OPTS` で決まります (`.env.example` は `-Xms2g -Xmx2g`、compose は `.env` が無い場合 1GB にフォールバック)。heap を変えた場合は OpenSearch コンテナを再作成して反映してください。
 
+#### 用途別の `.env` 推奨値
+
+`.env.example` は dev 既定値です。用途に応じて `.env` で次を変更します (`.env.example` のコメントにも記載)。変更後は OpenSearch コンテナを再作成して反映してください。
+
+| キー | dev (既定) | full-corpus | prod-like |
+| --- | --- | --- | --- |
+| `DJANGO_DEBUG` | `1` | `0` | `0` |
+| `OPENSEARCH_NUMBER_OF_SHARDS` | `1`〜`4` | `4` | `4` |
+| `OPENSEARCH_TIMEOUT_SECONDS` | `30` | `60` | `30` |
+| `OPENSEARCH_REQUEST_TIMEOUT_SECONDS` | `10` | `30` | `10` |
+| `OPENSEARCH_BULK_TIMEOUT_SECONDS` | `60` | `180` | `120` |
+| `OPENSEARCH_BULK_MAX_BYTES` | `41943040` | `41943040` | `41943040` |
+| `OPENSEARCH_JAVA_OPTS` | `-Xms1g -Xmx1g`〜`-Xms2g -Xmx2g` | `-Xms2g -Xmx2g` | `-Xms2g -Xmx2g` |
+| `REINDEX_TOKEN` | (空) | 要設定 | 要設定 |
+
 ### schema version
 
 `OPENSEARCH_SCHEMA_VERSION=6` では e-Gov の `ArticleCaption` を保持する `caption` field を追加しています。schema version 5 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
@@ -204,6 +219,8 @@ make rollback-index TO_INDEX=jlaw-current-v20260605000000
 
 品質ゲート用に backend は Ruff / mypy / pytest-cov / pre-commit、frontend は ESLint / Prettier / TypeScript / Vitest を使います。
 
+**フル品質ゲートは `make check` (手動) と CI で担保します。** pre-commit はコミット時間を短く保つため Ruff (lint/format) と frontend-check のみの軽量構成で、mypy / pytest は含みません。提出前や大きな変更後は必ず `make check` を実行してください。CI (`.github/workflows/ci.yml`) では backend (ruff / mypy / pytest)、OpenSearch integration、frontend (lint / typecheck / test / build) をすべて実行します。
+
 ```powershell
 make setup-dev        # pip install -r requirements-dev.txt + frontend npm ci
 make setup-dev-uv     # uv を使う場合
@@ -217,16 +234,21 @@ cd frontend; npm install; cd ..
 .\.venv\Scripts\python.exe -m pre_commit install
 ```
 
-確認はまとめて `make check`、個別には次を使います。
+確認はまとめて `make check` (フルゲート)、個別には次を使います。
 
 ```powershell
-make check            # lint + typecheck + test + frontend-check
+make check            # フルゲート: lint + typecheck + test + frontend-check
 make lint
 make typecheck
 make test
 make coverage
 make frontend-check
-.\.venv\Scripts\python.exe -m pre_commit run --all-files
+```
+
+pre-commit は軽量 hook (Ruff + frontend-check) のみです。`make check` の代わりにはならないので注意してください。
+
+```powershell
+.\.venv\Scripts\python.exe -m pre_commit run --all-files   # 軽量 hook のみ (mypy / pytest は含まない)
 ```
 
 ### frontend test on Windows sandbox
