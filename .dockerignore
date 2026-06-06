@@ -1,4 +1,38 @@
-indexer/data
-data
+# build context はリポジトリルート (deploy/docker-compose.yml の context: ..)。
+# image に不要なものを daemon へ送らない / image に混入させないための除外。
+
+# 依存・ビルド成果物 (image 内で npm ci / pip install するため不要。
+# 特に host(Windows) の node_modules を alpine image に持ち込まない)
+**/node_modules
+frontend/dist
+frontend/.vite
+.venv
+
+# Python キャッシュ
 **/__pycache__
 **/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+
+# 法令コーパス (ローカル専用。image には入れない)
+indexer/data
+data
+
+# 秘密情報・ローカル設定 (image に焼き込まない)
+.env
+*.local
+
+# VCS / エディタ / 一時出力
+.git
+.gitignore
+.vscode
+.codex
+tmp
+
+# DB / ログ
+*.sqlite3
+*.log
