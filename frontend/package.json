@@ -10,7 +10,8 @@
     "format": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run lint && npm run format && npm run typecheck && npm run test && npm run build"
+    "coverage": "vitest run --coverage",
+    "check": "npm run lint && npm run format && npm run typecheck && npm run coverage && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.0.6",
@@ -26,9 +27,11 @@
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.0.0",
+    "@types/node": "^20.19.42",
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.8",
     "autoprefixer": "^10.4.14",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
