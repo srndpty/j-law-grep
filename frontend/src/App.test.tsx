@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SearchHit, SearchRequest, SearchResponse } from "./api/search";
 
 const mocks = vi.hoisted(() => ({
@@ -66,13 +66,18 @@ const hit: SearchHit = {
   blocks: [],
 };
 
+const originalScrollIntoView = Object.getOwnPropertyDescriptor(Element.prototype, "scrollIntoView");
+
 describe("App", () => {
   beforeEach(() => {
     mocks.search.mockReset();
     mocks.setQuery.mockReset();
     mocks.setMode.mockReset();
     mocks.openLawDocument.mockReset();
-    Element.prototype.scrollIntoView = vi.fn();
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: vi.fn(),
+    });
     searchState = {
       results: {
         hits: [hit, { ...hit, file_id: "2", article_no: "710" }],
@@ -90,6 +95,14 @@ describe("App", () => {
       error: null,
       requestId: null,
     };
+  });
+
+  afterEach(() => {
+    if (originalScrollIntoView) {
+      Object.defineProperty(Element.prototype, "scrollIntoView", originalScrollIntoView);
+    } else {
+      Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+    }
   });
 
   it("submits search, changes mode, and navigates results with keyboard", async () => {

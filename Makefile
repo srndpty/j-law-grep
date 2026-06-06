@@ -17,7 +17,7 @@ MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
 REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-check frontend-check-win check setup-dev setup-dev-uv reindex reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv reindex reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -38,11 +38,22 @@ test:
 coverage:
 	$(PYTHON) -m pytest --cov=backend --cov=indexer --cov-report=term-missing
 
+ifeq ($(OS),Windows_NT)
 frontend-coverage:
 	$(POWERSHELL) "Set-Location frontend; npm.cmd run coverage"
 
 frontend-check:
 	$(POWERSHELL) "Set-Location frontend; npm.cmd run check"
+else
+frontend-coverage:
+	cd frontend && npm run coverage
+
+frontend-check:
+	cd frontend && npm run check
+endif
+
+frontend-coverage-win:
+	$(POWERSHELL) "Set-Location frontend; npm.cmd run coverage"
 
 frontend-check-win:
 	$(POWERSHELL) "Set-Location frontend; npm.cmd run check"
