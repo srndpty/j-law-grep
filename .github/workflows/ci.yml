@@ -85,7 +85,7 @@ jobs:
         run: pytest -q -m integration
 
   frontend:
-    name: Frontend (lint / typecheck / test / build)
+    name: Frontend (lint / typecheck / coverage / build)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -103,5 +103,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check (lint / format / typecheck / test / build)
+      - name: Check (lint / format / typecheck / coverage / build)
         run: npm run check
