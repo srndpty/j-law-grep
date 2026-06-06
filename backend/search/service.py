@@ -457,6 +457,11 @@ class SearchService:
     def _best_highlight_snippet(highlight: dict[str, Any]) -> str:
         for field in ("content", "caption", "heading"):
             snippets = highlight.get(field, [])
+            marked = [str(snippet) for snippet in snippets if "<mark>" in str(snippet)]
+            if marked:
+                return "".join(marked)
+        for field in ("content", "caption", "heading"):
+            snippets = highlight.get(field, [])
             if snippets:
                 return "".join(str(snippet) for snippet in snippets)
         return ""

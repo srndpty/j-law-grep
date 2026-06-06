@@ -489,6 +489,35 @@ def test_convert_hit_uses_caption_highlight_when_content_is_not_highlighted():
     assert result["highlights"] == [{"start": 1, "end": 3}]
 
 
+def test_convert_hit_prefers_marked_caption_over_content_no_match_fallback():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    hit = {
+        "_id": "doc-caption-over-content",
+        "_source": {
+            "law_name": "民法",
+            "article_no": "1",
+            "paragraph_no": None,
+            "item_no": None,
+            "path": "民法/1",
+            "line": 0,
+            "caption": "（基本原則）",
+            "content": "本文の先頭だけがfallbackとして返る。",
+            "url": "/l/minpo/a/1",
+            "blocks": [],
+        },
+        "highlight": {
+            "content": ["本文の先頭だけがfallbackとして返る。"],
+            "caption": ["（<mark>基本</mark>原則）"],
+        },
+    }
+
+    result = service._convert_hit(hit, query="基本")
+
+    assert result["snippet"] == "（基本原則）"
+    assert result["highlights"] == [{"start": 1, "end": 3}]
+
+
 def test_convert_hit_derives_article_from_url_when_missing():
     backend = DummyBackend()
     service = SearchService(backend=backend)
