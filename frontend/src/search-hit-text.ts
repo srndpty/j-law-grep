@@ -90,6 +90,7 @@ interface ParagraphGroup {
 
 interface ArticleGroup {
   articleNo: string;
+  caption: string;
   heading: string;
   paragraphs: ParagraphGroup[];
 }
@@ -104,12 +105,14 @@ function groupLawSections(sections: LawSection[]): ArticleGroup[] {
     if (!article) {
       article = {
         articleNo: articleKey,
+        caption: section.caption ?? "",
         heading: section.heading,
         paragraphs: [],
       };
       articleIndex.set(articleKey, article);
       articles.push(article);
     }
+    if (!article.caption && section.caption) article.caption = section.caption;
     if (!article.heading && section.heading) article.heading = section.heading;
 
     const paragraphKey = section.paragraph_no ?? "";
@@ -158,6 +161,11 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
 
       return `
         <article class="article">
+          ${
+            article.caption
+              ? `<div class="article-caption">${escapeHtml(article.caption)}</div>`
+              : ""
+          }
           <div class="article-title">${escapeHtml(articleTitle)}</div>
           ${paragraphs}
         </article>`;
@@ -201,6 +209,10 @@ export function renderLawDocument(document: LawDocument, hit: SearchHit): string
     }
     .article {
       padding: 4px 0 10px;
+    }
+    .article-caption {
+      font-weight: 700;
+      padding-left: 24px;
     }
     .article-title {
       float: left;

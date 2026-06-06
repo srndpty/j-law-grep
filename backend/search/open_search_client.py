@@ -110,6 +110,7 @@ class OpenSearchBackend:
                             "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
                         },
                     },
+                    "caption": {"type": "text", "analyzer": "jp_ngram_analyzer"},
                     "heading": {"type": "text", "analyzer": "jp_ngram_analyzer"},
                     "content": {
                         "type": "text",
@@ -327,6 +328,7 @@ class OpenSearchBackend:
                     "article_no",
                     "paragraph_no",
                     "item_no",
+                    "caption",
                     "heading",
                     "content_plain",
                     "content",

@@ -132,7 +132,7 @@ class SearchService:
                 {
                     "multi_match": {
                         "query": residual_query or raw_query,
-                        "fields": ["content^2", "content.keywordish", "heading^3"],
+                        "fields": ["content^2", "content.keywordish", "caption^3", "heading^3"],
                         "operator": "and",
                     }
                 }
@@ -281,6 +281,15 @@ class SearchService:
         if term:
             boosts.extend(
                 [
+                    {
+                        "match_phrase": {
+                            "caption": {
+                                "query": term,
+                                "analyzer": "whitespace",
+                                "boost": 5.0,
+                            }
+                        }
+                    },
                     {
                         "match_phrase": {
                             "heading": {
@@ -463,6 +472,7 @@ class SearchService:
             "article_no": source.get("article_no", "") or "",
             "paragraph_no": source.get("paragraph_no"),
             "item_no": source.get("item_no"),
+            "caption": source.get("caption", "") or "",
             "heading": source.get("heading", "") or "",
             "text": text,
             "url": source.get("url", "") or "",

@@ -31,6 +31,7 @@ def test_branch_article_number_comes_from_num_attribute():
     articles = _article_map(law)
     assert "1" in articles
     assert "2の2" in articles  # 第2条の2, previously lost as empty article_no
+    assert articles["1"]["caption"] == "（目的）"
     assert law["law_name"] == "テスト法"
     assert law["law_id"] == "平成元年法律第一号"
 

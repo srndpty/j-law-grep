@@ -36,6 +36,7 @@ class DummyBackend:
                             "article_no": "10",
                             "paragraph_no": None,
                             "item_no": None,
+                            "caption": "（見出し）",
                             "content_plain": "第十条の本文",
                             "blocks": [],
                             "url": "/l/minpo/a/10",
@@ -249,6 +250,7 @@ def test_ranking_boosts_are_should_only():
 
     assert {"term": {"citation_key": {"value": "民法 709条", "boost": 12.0}}} in query["should"]
     assert any("heading" in clause.get("match_phrase", {}) for clause in query["should"])
+    assert any("caption" in clause.get("match_phrase", {}) for clause in query["should"])
     assert "minimum_should_match" not in query
 
 
@@ -411,6 +413,31 @@ def test_convert_hit_includes_article_metadata():
     assert result["snippet"] == "不法行為による損害の賠償"
     assert result["snippet_text"] == "不法行為による損害の賠償"
     assert result["highlights"] == [{"start": 7, "end": 9}]
+
+
+def test_convert_law_section_includes_caption():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    result = service._convert_law_section(
+        {
+            "_id": "doc-caption",
+            "_source": {
+                "law_id": "test",
+                "law_name": "テスト法",
+                "article_no": "1",
+                "paragraph_no": 1,
+                "item_no": None,
+                "caption": "（目的）",
+                "heading": "第一条",
+                "content_plain": "本文。",
+                "blocks": [],
+                "url": "/l/test/a/1/1",
+                "path": "テスト法/1",
+            },
+        }
+    )
+
+    assert result["caption"] == "（目的）"
 
 
 def test_convert_hit_turns_opensearch_mark_tags_into_ranges():

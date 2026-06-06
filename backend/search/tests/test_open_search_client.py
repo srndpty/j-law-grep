@@ -242,6 +242,7 @@ def test_position_fields_are_keywords(monkeypatch):
     properties = definition["mappings"]["properties"]
     assert properties["paragraph_no"]["type"] == "keyword"
     assert properties["item_no"]["type"] == "keyword"
+    assert properties["caption"] == {"type": "text", "analyzer": "jp_ngram_analyzer"}
     assert properties["content_long"] == {"type": "keyword", "ignore_above": 8192}
 
 

@@ -109,7 +109,7 @@ make reindex INDEX_INPUT=indexer/sample_corpus
 
 いずれかが失敗すると alias は切り替わらず、作りかけの index は削除されます。`switch_alias()` 自体も切替直前に target index の存在と schema を再確認します。`reindex-versioned` は後方互換のため `reindex` の別名として残しています。
 
-`OPENSEARCH_SCHEMA_VERSION=5` では長文 literal 用の `content_long` keyword field と keyword 検索用の `content.keywordish` multi-field を追加しています。schema version 4 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
+`OPENSEARCH_SCHEMA_VERSION=6` では e-Gov の `ArticleCaption` を保持する `caption` field を追加しています。schema version 5 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
 
 フルコーパスを検索したい場合は、sample ではなく次を実行します。
 
@@ -211,7 +211,7 @@ make health-smoke
 
 - `auto`: 引用だけ (`民法709条`) なら citation、引用 + 残余語 (`民法709条 損害`) なら citation filter 付き全文検索、引用がなければ通常の全文フレーズ検索。
 - `literal`: 入力文字列を 1 つのフレーズとして検索。引用だけの入力 (`民法90条`) は citation として解決します。
-- `keyword`: 入力語を AND 条件として広めに検索。`content` / `content.keywordish` / `heading` を対象にします。
+- `keyword`: 入力語を AND 条件として広めに検索。`content` / `content.keywordish` / `caption` / `heading` を対象にします。
 - `boolean`: `A B` (AND)、`A | B` / `A OR B` (OR グループ)、`-C` (除外)、`"..."` (フレーズ) を解釈。
 - `citation`: `民法709条` のような条文位置検索。漢数字 (`第七百九条`) と全角数字 (`７０９`) を正規化します。枝番条文 (`第2条の2` / `2の2条` / `2_2条`) も `2の2` として解決します。
 - `regex`: 制限付き正規表現検索。自動検索では実行しません。OpenSearch の term-level regexp を使うため、grep の行単位 regex と完全に同じ挙動ではありません。
