@@ -240,19 +240,17 @@ def parse_appendix_tables(root: ET.Element) -> list[dict]:
 
 
 def collect_structural_warnings(root: ET.Element, law_id: str) -> list[ParseWarning]:
-    """Flag content the converter drops: appendix tables, figures, and
-    supplementary provisions whose body is paragraphs (not articles)."""
+    """Flag content the converter drops: styles, figures, notes, and other
+    appendix containers that are not turned into searchable records.
+
+    Appendix tables (``AppdxTable``) and paragraph-bodied supplementary
+    provisions (``SupplProvision``) are converted into pseudo articles
+    elsewhere, so they are intentionally not warned about here."""
     warnings: list[ParseWarning] = []
     for node in root.iter():
         name = local_name(node.tag)
-        if name in APPENDIX_TABLE_TAGS:
-            continue
-        elif name in APPENDIX_OTHER_TAGS:
+        if name in APPENDIX_OTHER_TAGS:
             warnings.append(ParseWarning(WARN_APPENDIX_SKIPPED, law_id, f"{name} not converted"))
-    for node in root.iter():
-        if local_name(node.tag) != "SupplProvision":
-            continue
-        continue
     return warnings
 
 
