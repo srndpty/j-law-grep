@@ -120,7 +120,7 @@ OpenSearch の shards は既定 4、heap は `.env` の `OPENSEARCH_JAVA_OPTS` �
 `python -m indexer.egov_importer --xml-dir data/egov-xml --output indexer/data` は XML を `indexer/data/*.json` に変換し、`manifest.json` と `import_warnings.jsonl` を生成します。
 
 - 条番号は `Article` の `Num` 属性から取得します。枝番条文 (`Num="2_2"` = 第2条の2) は `2の2` に正規化します。
-- 変換後の各法令は `indexer/schema.py` の `validate_law_document` で構造検証し、問題を warning として JSONL 1 行ずつ出力します (変換は中断しません)。warning コード: `empty_law_id` / `empty_law_name` / `empty_law` / `missing_article_no` / `short_content` / `unsupported_item_no` / `lost_table` / `appendix_skipped`。
+- 変換後の各法令は `indexer/schema.py` の `validate_law_document` で構造検証し、問題を warning として JSONL 1 行ずつ出力します (変換は中断しません)。warning コード: `empty_law_id` / `empty_law_name` / `empty_law` / `missing_article_no` / `short_content` / `unsupported_item_no` / `appendix_skipped`。
 - 条ではなく項だけで構成された附則 (`SupplProvision`) は `附則1-1` のような pseudo article として変換します (複数ある場合は `附則2-1` のように区別)。別表 (`AppdxTable` 等) も `別表1` のように本文を flatten して検索対象に入れます。様式・図など未変換領域は `appendix_skipped` として記録します。
 - 変換後はコード別の集計が標準エラーに出ます。フルコーパス投入前に `make warning-summary` でコード別件数と影響法令を確認できます。
 

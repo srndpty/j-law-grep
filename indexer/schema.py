@@ -43,7 +43,6 @@ WARN_EMPTY_LAW = "empty_law"
 WARN_MISSING_ARTICLE_NO = "missing_article_no"
 WARN_SHORT_CONTENT = "short_content"
 WARN_UNSUPPORTED_ITEM_NO = "unsupported_item_no"
-WARN_LOST_TABLE = "lost_table"
 WARN_APPENDIX_SKIPPED = "appendix_skipped"
 
 # Minimum sensible article body length; shorter usually means a parse miss.
