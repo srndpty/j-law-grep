@@ -62,6 +62,24 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 
 > `indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` と `.gitignore` で Docker image / Git 管理から除外しています。
 
+### 3. 国会会議録を取得・投入する
+
+国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `横断` で切り替えられます。
+
+```powershell
+# 小さく試す
+make diet-fetch DIET_ARGS="--all-houses --session-from 212 --session-to 212 --limit-meetings 20"
+make reindex-diet
+
+# バックフィル (第1回から指定回まで、衆参両院)
+make diet-fetch-backfill DIET_SESSION_TO=212
+make reindex-diet
+```
+
+`diet-fetch-backfill` は途中停止を前提に、既存 JSON と `_fetch_state.json` を見て取得済み `issueID` を skip します。失敗した会議は `_fetch_errors.jsonl` に記録し、次回実行時に再試行できます。再取得したい場合は `DIET_ARGS="--overwrite"` を追加してください。公式 API への負荷を避けるため、既定でリクエスト間隔は 3 秒です (`DIET_DELAY_SECONDS=...` で調整)。
+
+> `indexer/diet_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
+
 ## frontend と backend の接続
 
 frontend は `/api/search` への相対パスで検索 API を呼び、backend への到達は Vite の proxy が担います。
@@ -113,7 +131,7 @@ OpenSearch の shards は既定 4、heap は `.env` の `OPENSEARCH_JAVA_OPTS` �
 
 ### schema version
 
-`OPENSEARCH_SCHEMA_VERSION=6` では e-Gov の `ArticleCaption` を保持する `caption` field を追加しています。schema version 5 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
+`OPENSEARCH_SCHEMA_VERSION=7` では国会会議録用の `source_type` / `speaker` / `meeting_name` などの field を追加しています。schema version 6 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
 
 ## e-Gov XML からの取り込み
 

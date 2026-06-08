@@ -16,6 +16,8 @@ def iter_corpus_json_paths(input_dir: Path) -> Iterator[Path]:
     for path in sorted(input_dir.glob("*.json")):
         if path.name == MANIFEST_FILENAME:
             continue
+        if path.name.startswith("_"):
+            continue
         yield path
 
 

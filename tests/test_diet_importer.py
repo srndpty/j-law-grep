@@ -1,6 +1,9 @@
 import json
+from argparse import Namespace
 
-from indexer.diet_importer import iter_issue_ids, normalize_meeting_record, write_meeting
+import pytest
+
+from indexer.diet_importer import iter_issue_ids, normalize_meeting_record, run_fetch, write_meeting
 from indexer.manifest import build_manifest
 from indexer.pipeline import collect_records, to_index_actions
 
@@ -104,3 +107,156 @@ def test_write_meeting_does_not_overwrite_by_default(tmp_path):
     write_meeting(tmp_path, meeting)
 
     assert json.loads(path.read_text(encoding="utf-8")) == {"issue_id": "kept"}
+
+
+def _fetch_args(tmp_path, **overrides):
+    values = {
+        "output": tmp_path,
+        "house": "衆議院",
+        "all_houses": False,
+        "meeting": None,
+        "from_date": None,
+        "until_date": None,
+        "session_from": 212,
+        "session_to": 212,
+        "limit_meetings": None,
+        "delay_seconds": 0,
+        "retries": 0,
+        "retry_backoff_seconds": 0,
+        "checkpoint_every": 1,
+        "state_file": None,
+        "errors_file": None,
+        "overwrite": False,
+    }
+    values.update(overrides)
+    return Namespace(**values)
+
+
+def test_run_fetch_skips_existing_file_and_writes_checkpoint(tmp_path):
+    existing = normalize_meeting_record(_meeting_payload())
+    write_meeting(tmp_path, existing)
+    fetched_payload = {**_meeting_payload(), "issueID": "121214601X00220240127", "issue": "2"}
+
+    def fetcher(path, params):
+        if path == "meeting_list":
+            return {
+                "meetingRecord": [
+                    {"issueID": "121214601X00120240126"},
+                    {"issueID": "121214601X00220240127"},
+                ]
+            }
+        assert params["issueID"] == "121214601X00220240127"
+        return {"meetingRecord": [fetched_payload]}
+
+    stats = run_fetch(_fetch_args(tmp_path), fetcher=fetcher)
+    state = json.loads((tmp_path / "_fetch_state.json").read_text(encoding="utf-8"))
+
+    assert stats.discovered == 2
+    assert stats.skipped == 1
+    assert stats.fetched == 1
+    assert sorted(state["completed_issue_ids"]) == [
+        "121214601X00120240126",
+        "121214601X00220240127",
+    ]
+    assert (tmp_path / "121214601X00220240127.json").exists()
+
+
+def test_run_fetch_overwrite_refetches_completed_issue(tmp_path):
+    meeting = normalize_meeting_record(_meeting_payload())
+    write_meeting(tmp_path, meeting)
+    (tmp_path / "_fetch_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "completed_issue_ids": ["121214601X00120240126"],
+                "runs": [],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    replacement = {
+        **_meeting_payload(),
+        "speechRecord": [
+            {
+                "speechID": "121214601X00120240126_001",
+                "speechOrder": "1",
+                "speaker": "議長",
+                "speech": "上書き後の本文です。",
+            }
+        ],
+    }
+
+    def fetcher(path, params):
+        if path == "meeting_list":
+            return {"meetingRecord": [{"issueID": "121214601X00120240126"}]}
+        return {"meetingRecord": [replacement]}
+
+    stats = run_fetch(_fetch_args(tmp_path, overwrite=True), fetcher=fetcher)
+    saved = json.loads((tmp_path / "121214601X00120240126.json").read_text(encoding="utf-8"))
+
+    assert stats.fetched == 1
+    assert stats.skipped == 0
+    assert saved["speeches"][0]["text"] == "上書き後の本文です。"
+
+
+def test_run_fetch_records_failures_and_continues(tmp_path):
+    def fetcher(path, params):
+        if path == "meeting_list":
+            return {
+                "meetingRecord": [
+                    {"issueID": "bad"},
+                    {"issueID": "121214601X00120240126"},
+                ]
+            }
+        if params["issueID"] == "bad":
+            raise RuntimeError("boom")
+        return {"meetingRecord": [_meeting_payload()]}
+
+    stats = run_fetch(_fetch_args(tmp_path), fetcher=fetcher)
+    errors = (tmp_path / "_fetch_errors.jsonl").read_text(encoding="utf-8").splitlines()
+
+    assert stats.failed == 1
+    assert stats.fetched == 1
+    assert json.loads(errors[0])["issue_id"] == "bad"
+    assert (tmp_path / "121214601X00120240126.json").exists()
+
+
+def test_run_fetch_all_houses_builds_separate_scopes(tmp_path):
+    seen_houses = []
+
+    def fetcher(path, params):
+        if path == "meeting_list":
+            seen_houses.append(params["nameOfHouse"])
+            return {"meetingRecord": []}
+        raise AssertionError("meeting endpoint should not be called")
+
+    stats = run_fetch(_fetch_args(tmp_path, all_houses=True, house=None), fetcher=fetcher)
+
+    assert stats.discovered == 0
+    assert seen_houses == ["衆議院", "参議院"]
+
+
+def test_run_fetch_requires_a_scope(tmp_path):
+    with pytest.raises(SystemExit, match="Specify at least one search scope"):
+        run_fetch(
+            _fetch_args(
+                tmp_path,
+                house=None,
+                all_houses=False,
+                session_from=None,
+                session_to=None,
+            ),
+            fetcher=lambda path, params: {},
+        )
+
+
+def test_manifest_ignores_fetch_state_files(tmp_path):
+    meeting = normalize_meeting_record(_meeting_payload())
+    write_meeting(tmp_path, meeting)
+    (tmp_path / "_fetch_state.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "_fetch_errors.json").write_text("{}", encoding="utf-8")
+
+    manifest = build_manifest(tmp_path, source="diet")
+
+    assert manifest["counts"] == {"laws": 1, "articles": 1, "records": 1}

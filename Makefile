@@ -14,12 +14,13 @@ BULK_MAX_MB ?= 2
 INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
 DIET_INPUT ?= indexer/diet_data
 DIET_ALIAS ?= jdiet-current
+DIET_DELAY_SECONDS ?= 3
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
 REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch diet-fetch-backfill reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -72,6 +73,10 @@ setup-dev-uv:
 
 diet-fetch:
 	$(PYTHON) -m indexer.diet_importer --output $(DIET_INPUT) $(DIET_ARGS)
+
+diet-fetch-backfill:
+	@test -n "$(DIET_SESSION_TO)" || (echo "Set DIET_SESSION_TO=<latest session number>"; exit 2)
+	$(PYTHON) -m indexer.diet_importer --output $(DIET_INPUT) --all-houses --session-from 1 --session-to $(DIET_SESSION_TO) --delay-seconds $(DIET_DELAY_SECONDS) $(DIET_ARGS)
 
 # Standard reindex: build a fresh versioned index, validate schema + golden
 # queries against it, then atomically switch the alias. The old index stays
