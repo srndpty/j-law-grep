@@ -20,6 +20,10 @@ def iter_corpus_json_paths(input_dir: Path) -> Iterator[Path]:
 
 
 def document_stats(doc: dict) -> tuple[int, int]:
+    if doc.get("source_type") == "diet":
+        speeches = doc.get("speeches", []) or []
+        return 1, sum(1 for speech in speeches if normalize_text(speech.get("text", "")))
+
     article_count = 0
     record_count = 0
     for article in doc.get("articles", []):
@@ -65,6 +69,9 @@ def build_manifest(input_dir: Path, source: str = "local") -> dict:
             {
                 "law_id": doc.get("law_id", ""),
                 "law_name": doc.get("law_name", ""),
+                "source_type": doc.get("source_type", "law"),
+                "issue_id": doc.get("issue_id"),
+                "meeting_title": doc.get("meeting_title"),
                 "year_enforced": doc.get("year_enforced"),
                 "article_count": doc_articles,
                 "record_count": doc_records,

@@ -33,6 +33,7 @@ class SearchView(APIView):
         params = SearchParams(
             q=data["q"],
             mode=data.get("mode", "literal"),
+            source=data.get("source", "law"),
             filters=data.get("filters", {}),
             size=data.get("size", 20),
             page=data.get("page", 1),
@@ -69,6 +70,7 @@ class SearchDebugView(APIView):
         params = SearchParams(
             q=data["q"],
             mode=data.get("mode", "literal"),
+            source=data.get("source", "law"),
             filters=data.get("filters", {}),
             size=data.get("size", 20),
             page=data.get("page", 1),

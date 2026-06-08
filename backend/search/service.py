@@ -37,11 +37,21 @@ class SearchParams:
     filters: dict[str, str | None]
     size: int
     page: int
+    source: str = "law"
 
 
 class SearchService:
     def __init__(self, backend: OpenSearchBackend | None = None) -> None:
         self.backend = backend or OpenSearchBackend()
+
+    def _backend_for_source(self, source: str) -> OpenSearchBackend:
+        if source == "diet":
+            return OpenSearchBackend(index=settings.OPENSEARCH_DIET_INDEX)
+        if source == "all":
+            return OpenSearchBackend(
+                index=f"{settings.OPENSEARCH_INDEX},{settings.OPENSEARCH_DIET_INDEX}"
+            )
+        return self.backend
 
     def ensure_index(self) -> None:
         self.backend.ensure_index()
@@ -324,25 +334,29 @@ class SearchService:
 
     def search(self, params: SearchParams) -> dict[str, Any]:
         if not params.q.strip():
+            backend = self._backend_for_source(params.source)
             return {
                 "hits": [],
                 "total": 0,
                 "took_ms": 0,
                 "query": self.classify_query(params.q, params.mode),
-                "index": {"name": self.backend.index},
+                "index": {"name": backend.index},
+                "source": params.source,
             }
         body = self.build_query(params)
         size = params.size
         page = max(params.page, 1)
         from_ = (page - 1) * size
-        response = self.backend.search(body=body, size=size, from_=from_)
+        backend = self._backend_for_source(params.source)
+        response = backend.search(body=body, size=size, from_=from_)
         hits = [self._convert_hit(hit, params.q) for hit in response["hits"]["hits"]]
         return {
             "hits": hits,
             "total": response["hits"].get("total", {}).get("value", 0),
             "took_ms": response.get("took", 0),
             "query": self.classify_query(params.q, params.mode),
-            "index": {"name": self.backend.index},
+            "index": {"name": backend.index},
+            "source": params.source,
         } | self._debug_payload(params)
 
     def debug_query(self, params: SearchParams) -> dict[str, Any]:
@@ -355,7 +369,7 @@ class SearchService:
             "ranking_signals": self._debug_payload(params)
             .get("debug", {})
             .get("ranking_signals", {}),
-            "index": {"name": self.backend.index},
+            "index": {"name": self._backend_for_source(params.source).index},
         }
 
     @staticmethod
@@ -424,6 +438,7 @@ class SearchService:
             path = f"{law_name}/{article_no}" if article_no else law_name
         data = SearchHit(
             file_id=str(hit.get("_id", "")),
+            source_type=source.get("source_type", "law") or "law",
             law_id=source.get("law_id", "") or "",
             law_name=law_name,
             article_no=article_no,
@@ -439,6 +454,7 @@ class SearchService:
         )
         return {
             "file_id": data.file_id,
+            "source_type": data.source_type,
             "law_id": data.law_id,
             "law_name": data.law_name,
             "article_no": data.article_no,

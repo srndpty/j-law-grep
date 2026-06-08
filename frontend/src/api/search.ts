@@ -5,6 +5,7 @@ export interface HighlightRange {
 
 export interface SearchHit {
   file_id: string;
+  source_type?: "law" | "diet" | string;
   law_id: string;
   law_name: string;
   article_no: string;
@@ -40,6 +41,7 @@ export interface SearchResponse {
 export interface SearchRequest {
   q: string;
   mode: string;
+  source?: string;
   filters: Record<string, string>;
   size: number;
   page: number;

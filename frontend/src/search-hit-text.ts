@@ -25,7 +25,7 @@ export function formatLocation(hit: SearchHit): string {
   const articleNo = deriveArticleNo(hit);
   const paragraphNo = deriveParagraphNo(hit);
   if (articleNo) {
-    segments.push(articleNo.includes("条") ? articleNo : `第${articleNo}条`);
+    segments.push(hit.source_type === "diet" ? `発言${articleNo}` : articleLabel(articleNo));
   }
   if (paragraphNo) segments.push(`${paragraphNo}項`);
   if (hit.item_no) segments.push(`${hit.item_no}号`);
@@ -338,6 +338,10 @@ function writeError(tab: Window, message: string) {
 }
 
 export async function openLawDocument(hit: SearchHit) {
+  if (hit.source_type === "diet" && hit.url) {
+    window.open(hit.url, "_blank", "noopener");
+    return;
+  }
   const tab = window.open("about:blank", "_blank");
   if (!tab) return;
   tab.opener = null;

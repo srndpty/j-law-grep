@@ -7,6 +7,7 @@ import { useSearchSettings } from "./hooks/useSearchSettings";
 import { useSearch } from "./hooks/useSearch";
 import { SearchBar } from "./components/SearchBar";
 import { SearchModeTabs } from "./components/SearchModeTabs";
+import { SearchSourceTabs } from "./components/SearchSourceTabs";
 import { SearchResultList } from "./components/SearchResultList";
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -15,7 +16,7 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 export default function App() {
-  const { query, setQuery, mode, setMode, requestBody } = useSearchSettings();
+  const { query, setQuery, mode, setMode, source, setSource, requestBody } = useSearchSettings();
   const [isComposing, setIsComposing] = useState(false);
   const { results, isLoading, error, requestId, search } = useSearch({
     requestBody,
@@ -91,6 +92,7 @@ export default function App() {
                   setQuery(value);
                 }}
               />
+              <SearchSourceTabs source={source} onChange={setSource} />
               <SearchModeTabs mode={mode} onChange={setMode} />
               <Button type="submit">検索</Button>
             </form>

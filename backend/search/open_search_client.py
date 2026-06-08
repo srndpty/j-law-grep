@@ -13,6 +13,7 @@ from opensearchpy import OpenSearch, TransportError
 @dataclass
 class SearchHit:
     file_id: str
+    source_type: str
     law_id: str
     law_name: str
     article_no: str
@@ -88,6 +89,7 @@ class OpenSearchBackend:
                     "schema_version": settings.OPENSEARCH_SCHEMA_VERSION,
                 },
                 "properties": {
+                    "source_type": {"type": "keyword"},
                     "law_id": {"type": "keyword"},
                     "law_name": {
                         "type": "keyword",
@@ -126,6 +128,39 @@ class OpenSearchBackend:
                     },
                     "content_plain": {"type": "text", "index": False},
                     "year_enforced": {"type": "keyword"},
+                    "issue_id": {"type": "keyword"},
+                    "house": {"type": "keyword"},
+                    "meeting_name": {
+                        "type": "keyword",
+                        "fields": {
+                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
+                        },
+                    },
+                    "session": {"type": "keyword"},
+                    "issue": {"type": "keyword"},
+                    "date": {"type": "date", "format": "strict_date_optional_time||yyyy-MM-dd"},
+                    "speaker": {
+                        "type": "keyword",
+                        "fields": {
+                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
+                        },
+                    },
+                    "speaker_yomi": {
+                        "type": "keyword",
+                        "fields": {
+                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
+                        },
+                    },
+                    "speaker_group": {"type": "keyword"},
+                    "speaker_position": {
+                        "type": "text",
+                        "analyzer": "jp_ngram_analyzer",
+                        "fields": {"keyword": {"type": "keyword", "ignore_above": 256}},
+                    },
+                    "speaker_role": {"type": "keyword"},
+                    "speech_id": {"type": "keyword"},
+                    "speech_order": {"type": "keyword"},
+                    "pdf_url": {"type": "keyword"},
                     "path": {"type": "keyword"},
                     "url": {"type": "keyword"},
                     "line": {"type": "integer"},

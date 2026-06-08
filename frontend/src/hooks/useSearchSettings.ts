@@ -6,6 +6,7 @@ const STORAGE_KEY = "j-law-grep.settings.v1";
 export interface SearchSettings {
   query: string;
   mode: string;
+  source: string;
 }
 
 function loadInitialSettings(): SearchSettings {
@@ -20,6 +21,7 @@ function loadInitialSettings(): SearchSettings {
   return {
     query: params.get("q") ?? saved.query ?? DEFAULT_QUERY,
     mode: params.get("mode") ?? saved.mode ?? "auto",
+    source: params.get("source") ?? saved.source ?? "law",
   };
 }
 
@@ -27,25 +29,28 @@ export function useSearchSettings() {
   const initial = useMemo(() => loadInitialSettings(), []);
   const [query, setQuery] = useState(initial.query);
   const [mode, setMode] = useState<string>(initial.mode);
+  const [source, setSource] = useState<string>(initial.source);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, mode }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ query, mode, source }));
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (mode !== "auto") params.set("mode", mode);
+    if (source !== "law") params.set("source", source);
     const next = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState(null, "", next);
-  }, [mode, query]);
+  }, [mode, query, source]);
 
   const requestBody = useMemo(
     () => ({
       q: query,
       mode,
+      source,
       filters: {},
       size: 20,
       page: 1,
     }),
-    [mode, query]
+    [mode, query, source]
   );
 
   return {
@@ -53,6 +58,8 @@ export function useSearchSettings() {
     setQuery,
     mode,
     setMode,
+    source,
+    setSource,
     requestBody,
   };
 }

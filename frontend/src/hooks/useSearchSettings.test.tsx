@@ -13,9 +13,11 @@ describe("useSearchSettings", () => {
 
     expect(result.current.query).toBe(DEFAULT_QUERY);
     expect(result.current.mode).toBe("auto");
+    expect(result.current.source).toBe("law");
     expect(result.current.requestBody).toEqual({
       q: DEFAULT_QUERY,
       mode: "auto",
+      source: "law",
       filters: {},
       size: 20,
       page: 1,
@@ -42,8 +44,24 @@ describe("useSearchSettings", () => {
     expect(JSON.parse(localStorage.getItem("j-law-grep.settings.v1") ?? "{}")).toEqual({
       query: "刑法",
       mode: "auto",
+      source: "law",
     });
     expect(window.location.search).toBe("?q=%E5%88%91%E6%B3%95");
+  });
+
+  it("persists non-default source in the query string", () => {
+    window.history.replaceState(null, "", "/?q=diet&source=diet");
+
+    const { result } = renderHook(() => useSearchSettings());
+
+    expect(result.current.source).toBe("diet");
+
+    act(() => {
+      result.current.setSource("all");
+    });
+
+    expect(result.current.requestBody.source).toBe("all");
+    expect(window.location.search).toBe("?q=diet&source=all");
   });
 
   it("ignores invalid saved settings json", () => {

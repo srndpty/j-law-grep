@@ -12,12 +12,14 @@ PROGRESS ?= 1
 BULK_CHUNK ?= 200
 BULK_MAX_MB ?= 2
 INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
+DIET_INPUT ?= indexer/diet_data
+DIET_ALIAS ?= jdiet-current
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
 REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv reindex reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
+.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
 up:
 	$(COMPOSE) up -d --build --remove-orphans
@@ -68,6 +70,9 @@ setup-dev-uv:
 	uv pip install -r requirements-dev.txt
 	cd frontend && npm ci
 
+diet-fetch:
+	$(PYTHON) -m indexer.diet_importer --output $(DIET_INPUT) $(DIET_ARGS)
+
 # Standard reindex: build a fresh versioned index, validate schema + golden
 # queries against it, then atomically switch the alias. The old index stays
 # live (and the new one is deleted) if any gate fails.
@@ -82,8 +87,11 @@ reindex:
 		$(COMPOSE) build backend; \
 		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir /app/$(REPORT_DIR) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
 	else \
-		OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir $(REPORT_DIR) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
+		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir $(REPORT_DIR) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
 	fi
+
+reindex-diet:
+	$(MAKE) reindex INDEX_INPUT=$(DIET_INPUT) INDEX_ALIAS=$(DIET_ALIAS) GOLDEN_FILE=
 
 # Backward-compatible alias for the standard versioned reindex.
 reindex-versioned: reindex
@@ -95,7 +103,7 @@ reindex-dev:
 		$(COMPOSE) build backend; \
 		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	else \
-		OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
+		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
 	fi
 
 golden: build-backend

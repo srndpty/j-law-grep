@@ -34,6 +34,11 @@ function articleLabel(articleNo: string): string {
   return articleNo.includes("条") ? articleNo : `第${articleNo}条`;
 }
 
+function positionLabel(hit: SearchHit, articleNo: string): string {
+  if (hit.source_type === "diet") return `発言${articleNo}`;
+  return articleLabel(articleNo);
+}
+
 interface Props {
   hit: SearchHit;
   selected: boolean;
@@ -61,9 +66,14 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
         <span className="font-semibold text-gray-700">{hit.law_name || hit.path}</span>
+        {hit.source_type === "diet" && (
+          <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
+            国会
+          </span>
+        )}
         {articleNo && (
           <span className="rounded border border-gray-200 px-1.5 py-0.5">
-            {articleLabel(articleNo)}
+            {positionLabel(hit, articleNo)}
           </span>
         )}
         {paragraphNo && (
@@ -83,7 +93,7 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
         }}
         className="mt-3 rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-blue-400 hover:text-blue-700"
       >
-        該当条を開く
+        {hit.source_type === "diet" ? "発言を開く" : "該当条を開く"}
       </button>
       <div className="pointer-events-none absolute right-3 top-3 z-20 hidden w-96 max-w-[calc(100vw-3rem)] rounded-md border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 shadow-lg group-hover:block group-focus:block">
         <div className="mb-2 border-b border-gray-200 pb-2 font-semibold text-gray-700">

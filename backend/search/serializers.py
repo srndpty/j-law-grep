@@ -21,6 +21,7 @@ class SearchRequestSerializer(serializers.Serializer):
         choices=["auto", "literal", "keyword", "boolean", "citation", "regex"], default="literal"
     )
     filters = SearchFiltersField(required=False, default=dict)
+    source = serializers.ChoiceField(choices=["law", "diet", "all"], default="law")
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     # Absolute cap; the precise `from + size` window is enforced in validate().
     page = serializers.IntegerField(min_value=1, max_value=MAX_RESULT_WINDOW, default=1)
@@ -46,6 +47,7 @@ class SearchRequestSerializer(serializers.Serializer):
 
 class SearchHitSerializer(serializers.Serializer):
     file_id = serializers.CharField()
+    source_type = serializers.CharField(default="law")
     law_id = serializers.CharField(allow_blank=True, default="")
     law_name = serializers.CharField(allow_blank=True, default="")
     article_no = serializers.CharField(allow_blank=True, default="")
