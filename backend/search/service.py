@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from django.conf import settings
@@ -28,6 +30,21 @@ DANGEROUS_REGEX_PATTERNS = (
     r"\(\.\*\)\+",
     r"\([^)]*[+*][^)]*\)[+*]",
 )
+# Allowed filter keys per source. `all` accepts the union so a cross-search can
+# constrain both the law and diet halves. Unknown keys are rejected (400) before
+# the query reaches OpenSearch.
+LAW_FILTER_KEYS = frozenset({"law", "year"})
+DIET_FILTER_KEYS = frozenset({"house", "meeting", "speaker", "date_from", "date_to"})
+ALLOWED_FILTER_KEYS = {
+    "law": LAW_FILTER_KEYS,
+    "diet": DIET_FILTER_KEYS,
+    "all": LAW_FILTER_KEYS | DIET_FILTER_KEYS,
+}
+DATE_FILTER_KEYS = ("date_from", "date_to")
+# The `date` mapping is strict yyyy-MM-dd. date.fromisoformat (Py3.11+) also
+# accepts basic/week forms like 20250609 or 2025-W24-1, which would pass here
+# unnormalized and then fail to parse in OpenSearch. Pin the format first.
+DATE_FILTER_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @dataclass
@@ -37,11 +54,27 @@ class SearchParams:
     filters: dict[str, str | None]
     size: int
     page: int
+    source: str = "law"
 
 
 class SearchService:
-    def __init__(self, backend: OpenSearchBackend | None = None) -> None:
-        self.backend = backend or OpenSearchBackend()
+    def __init__(
+        self,
+        backend: OpenSearchBackend | None = None,
+        backend_factory: Callable[[str], OpenSearchBackend] | None = None,
+    ) -> None:
+        self.backend_factory = backend_factory or (lambda index: OpenSearchBackend(index=index))
+        self.backend = backend or self.backend_factory(settings.OPENSEARCH_INDEX)
+
+    def _backend_for_source(self, source: str) -> OpenSearchBackend:
+        if source == "diet":
+            return self.backend_factory(settings.OPENSEARCH_DIET_INDEX)
+        if source == "all":
+            # Span the law alias the service was configured with plus the diet
+            # alias, so an injected backend's index is honored instead of the
+            # global setting (keeps diet/all routing unit-testable).
+            return self.backend_factory(f"{self.backend.index},{settings.OPENSEARCH_DIET_INDEX}")
+        return self.backend
 
     def ensure_index(self) -> None:
         self.backend.ensure_index()
@@ -83,6 +116,27 @@ class SearchService:
         citation_filter_key = citation_key(citation)
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
         residual_query = parsed_citation.residual_query
+        # Citation parsing is law-centric: article_no/law_name map onto law
+        # records. Diet records reuse article_no for the speech order, so applying
+        # citation handling there returns 発言709 / requires law_name=民法 and
+        # drops real hits. For diet, ignore the citation split and treat the whole
+        # query as free-text content search.
+        treat_citation = params.source != "diet"
+        # Text used for content matching. Law/all strip the citation prefix
+        # (residual); diet searches the raw string as-is.
+        text_query = (residual_query or raw_query) if treat_citation else raw_query
+        # A pure citation lookup (民法709条) drives `must` to match_all and routes
+        # the citation into the law-scoped filters only. There is no free-text
+        # term to constrain diet records with, so for cross-search this must not
+        # fall through to "every speech matches".
+        citation_lookup = (
+            treat_citation
+            and bool(citation.article_no)
+            and (
+                params.mode == "citation"
+                or (params.mode in {"auto", "literal", "keyword"} and citation_only)
+            )
+        )
 
         must: list[dict[str, Any]] = []
         filter_clauses: list[dict[str, Any]] = []
@@ -102,12 +156,15 @@ class SearchService:
                     }
                 }
             )
-        elif params.mode == "citation":
+        elif treat_citation and params.mode == "citation":
             if not citation.article_no:
                 raise ValueError("Citation query must include an article number.")
             must.append({"match_all": {}})
         elif (
-            params.mode in {"auto", "literal", "keyword"} and citation.article_no and citation_only
+            treat_citation
+            and params.mode in {"auto", "literal", "keyword"}
+            and citation.article_no
+            and citation_only
         ):
             must.append({"match_all": {}})
         elif params.mode == "boolean":
@@ -131,7 +188,7 @@ class SearchService:
             must.append(
                 {
                     "multi_match": {
-                        "query": residual_query or raw_query,
+                        "query": text_query,
                         "fields": ["content^2", "content.keywordish", "caption^3", "heading^3"],
                         "operator": "and",
                     }
@@ -139,34 +196,70 @@ class SearchService:
             )
         else:
             # must.append({"match_phrase": {"content": params.q}})
-            must.append(self._literal_content_clause(residual_query or raw_query))
+            must.append(self._literal_content_clause(text_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
+        house_filter = params.filters.get("house") if params.filters else None
+        meeting_filter = params.filters.get("meeting") if params.filters else None
+        speaker_filter = params.filters.get("speaker") if params.filters else None
+        date_from_filter = params.filters.get("date_from") if params.filters else None
+        date_to_filter = params.filters.get("date_to") if params.filters else None
+
+        # Split filters by the source they constrain. For source="all" these are
+        # applied per-source (see _source_filter_clauses) so a diet-only filter
+        # such as speaker does not drop every law hit, and vice versa.
+        law_scoped: list[dict[str, Any]] = []
+        diet_scoped: list[dict[str, Any]] = []
 
         if law_filter:
-            filter_clauses.append(self._law_name_filter(law_filter))
+            law_scoped.append(self._law_name_filter(law_filter))
             boost_should.extend(self._law_name_boosts(law_filter))
-
         if year_filter:
-            filter_clauses.append({"term": {"year_enforced": year_filter}})
+            law_scoped.append({"term": {"year_enforced": year_filter}})
 
-        if citation.law_name:
-            filter_clauses.append(self._law_name_filter(citation.law_name))
-            boost_should.extend(self._law_name_boosts(citation.law_name))
-        if citation.article_no:
-            filter_clauses.append({"term": {"article_no": citation.article_no}})
-        if citation.paragraph_no is not None:
-            filter_clauses.append({"term": {"paragraph_no": str(citation.paragraph_no)}})
-        if citation.item_no is not None:
-            filter_clauses.append({"term": {"item_no": str(citation.item_no)}})
+        if house_filter:
+            diet_scoped.append({"term": {"house": house_filter}})
+        if meeting_filter:
+            diet_scoped.append(self._keyword_or_prefix_filter("meeting_name", meeting_filter))
+        if speaker_filter:
+            diet_scoped.append(self._speaker_filter(speaker_filter))
+        if date_from_filter or date_to_filter:
+            date_range: dict[str, str] = {}
+            if date_from_filter:
+                date_range["gte"] = date_from_filter
+            if date_to_filter:
+                date_range["lte"] = date_to_filter
+            diet_scoped.append({"range": {"date": date_range}})
 
-        if citation_filter_key:
+        # A citation (民法709条 -> law_name + article_no ...) only constrains law
+        # records, so it joins the law-scoped group. Skipped for diet, where these
+        # fields mean something else (article_no is the speech order).
+        if treat_citation:
+            if citation.law_name:
+                law_scoped.append(self._law_name_filter(citation.law_name))
+                boost_should.extend(self._law_name_boosts(citation.law_name))
+            if citation.article_no:
+                law_scoped.append({"term": {"article_no": citation.article_no}})
+            if citation.paragraph_no is not None:
+                law_scoped.append({"term": {"paragraph_no": str(citation.paragraph_no)}})
+            if citation.item_no is not None:
+                law_scoped.append({"term": {"item_no": str(citation.item_no)}})
+
+        filter_clauses.extend(
+            self._source_filter_clauses(
+                params.source, law_scoped, diet_scoped, law_only=citation_lookup
+            )
+        )
+
+        if treat_citation and citation_filter_key:
             boost_should.append(
                 {"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}}
             )
 
         boost_should.extend(
-            self._ranking_boosts(params.mode, residual_query or raw_query, citation_filter_key)
+            self._ranking_boosts(
+                params.mode, text_query, citation_filter_key if treat_citation else None
+            )
         )
 
         query: dict[str, Any] = {
@@ -186,14 +279,26 @@ class SearchService:
         }
 
     @staticmethod
-    def classify_query(raw_query: str, mode: str) -> dict[str, Any]:
+    def classify_query(raw_query: str, mode: str, source: str = "law") -> dict[str, Any]:
         parsed_citation = parse_citation_query(raw_query.strip())
         citation = parsed_citation.citation
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
+        # Diet search treats citation parsing as plain content search, so never
+        # report an effective citation mode there (see build_query).
+        treat_citation = source != "diet"
         effective_mode = mode
         if mode == "auto":
-            effective_mode = "citation" if citation.article_no and citation_only else "literal"
-        elif mode in {"literal", "keyword"} and citation.article_no and citation_only:
+            effective_mode = (
+                "citation"
+                if treat_citation and citation.article_no and citation_only
+                else "literal"
+            )
+        elif (
+            treat_citation
+            and mode in {"literal", "keyword"}
+            and citation.article_no
+            and citation_only
+        ):
             effective_mode = "citation"
         return {
             "raw": raw_query,
@@ -210,6 +315,37 @@ class SearchService:
             "paragraph_no": citation.paragraph_no,
             "item_no": citation.item_no,
         }
+
+    @staticmethod
+    def _source_filter_clauses(
+        source: str,
+        law_scoped: list[dict[str, Any]],
+        diet_scoped: list[dict[str, Any]],
+        law_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        if source == "diet":
+            return [{"term": {"source_type": "diet"}}, *law_scoped, *diet_scoped]
+        if source == "law":
+            return [{"term": {"source_type": "law"}}, *law_scoped, *diet_scoped]
+        # Cross-search. A pure citation lookup has no free-text term to constrain
+        # diet records with (`must` is match_all), so collapse to law-only rather
+        # than letting the diet branch match every speech.
+        if law_only:
+            return [{"term": {"source_type": "law"}}, *law_scoped]
+        # Otherwise match a law doc that satisfies the law-side filters OR a diet
+        # doc that satisfies the diet-side filters. Each branch carries its own
+        # source_type term, so a filter for one source never drops the other.
+        return [
+            {
+                "bool": {
+                    "should": [
+                        {"bool": {"filter": [{"term": {"source_type": "law"}}, *law_scoped]}},
+                        {"bool": {"filter": [{"term": {"source_type": "diet"}}, *diet_scoped]}},
+                    ],
+                    "minimum_should_match": 1,
+                }
+            }
+        ]
 
     @staticmethod
     def _law_name_filter(value: str) -> dict[str, Any]:
@@ -231,6 +367,30 @@ class SearchService:
             {"match_phrase_prefix": {"law_name.prefix": value}},
             {"match_phrase_prefix": {"law_aliases.prefix": value}},
         ]
+
+    @staticmethod
+    def _keyword_or_prefix_filter(field: str, value: str) -> dict[str, Any]:
+        return {
+            "bool": {
+                "should": [
+                    {"term": {field: value}},
+                    {"prefix": {field: value}},
+                ],
+                "minimum_should_match": 1,
+            }
+        }
+
+    @classmethod
+    def _speaker_filter(cls, value: str) -> dict[str, Any]:
+        return {
+            "bool": {
+                "should": [
+                    cls._keyword_or_prefix_filter("speaker", value),
+                    cls._keyword_or_prefix_filter("speaker_yomi", value),
+                ],
+                "minimum_should_match": 1,
+            }
+        }
 
     @staticmethod
     def _content_phrase_clause(term: str) -> dict[str, Any]:
@@ -322,27 +482,44 @@ class SearchService:
         compact_citation = re.sub(r"\s+", "", citation_filter_key)
         return compact_query == compact_citation
 
+    @staticmethod
+    def _index_payload(backend: OpenSearchBackend) -> dict[str, Any]:
+        # `name` stays the comma-joined alias for backward compatibility; for
+        # source="all" callers can use the split `indices` list instead of
+        # parsing the string.
+        return {"name": backend.index, "indices": backend.index.split(",")}
+
     def search(self, params: SearchParams) -> dict[str, Any]:
         if not params.q.strip():
+            backend = self._backend_for_source(params.source)
             return {
                 "hits": [],
                 "total": 0,
                 "took_ms": 0,
-                "query": self.classify_query(params.q, params.mode),
-                "index": {"name": self.backend.index},
+                "query": self.classify_query(params.q, params.mode, params.source),
+                "index": self._index_payload(backend),
+                "source": params.source,
             }
         body = self.build_query(params)
         size = params.size
         page = max(params.page, 1)
         from_ = (page - 1) * size
-        response = self.backend.search(body=body, size=size, from_=from_)
+        backend = self._backend_for_source(params.source)
+        # diet/all may target the jdiet-current alias before it exists (fresh
+        # env, CI, first boot). Tolerate the missing index so `all` still
+        # returns law hits and `diet` returns 0 results instead of a 5xx.
+        ignore_unavailable = params.source in {"diet", "all"}
+        response = backend.search(
+            body=body, size=size, from_=from_, ignore_unavailable=ignore_unavailable
+        )
         hits = [self._convert_hit(hit, params.q) for hit in response["hits"]["hits"]]
         return {
             "hits": hits,
             "total": response["hits"].get("total", {}).get("value", 0),
             "took_ms": response.get("took", 0),
-            "query": self.classify_query(params.q, params.mode),
-            "index": {"name": self.backend.index},
+            "query": self.classify_query(params.q, params.mode, params.source),
+            "index": self._index_payload(backend),
+            "source": params.source,
         } | self._debug_payload(params)
 
     def debug_query(self, params: SearchParams) -> dict[str, Any]:
@@ -351,11 +528,13 @@ class SearchService:
         return {
             "query_dsl": body,
             "parsed_citation": self._citation_payload(parsed.citation),
-            "effective_mode": self.classify_query(params.q, params.mode)["effective_mode"],
+            "effective_mode": self.classify_query(params.q, params.mode, params.source)[
+                "effective_mode"
+            ],
             "ranking_signals": self._debug_payload(params)
             .get("debug", {})
             .get("ranking_signals", {}),
-            "index": {"name": self.backend.index},
+            "index": {"name": self._backend_for_source(params.source).index},
         }
 
     @staticmethod
@@ -386,6 +565,30 @@ class SearchService:
                 f"Pagination beyond {MAX_RESULT_WINDOW} results is not supported "
                 "(narrow the query or reduce page/size)."
             )
+
+    @staticmethod
+    def validate_filters(source: str, filters: dict[str, str | None] | None) -> None:
+        if not filters:
+            return
+        allowed = ALLOWED_FILTER_KEYS.get(source, LAW_FILTER_KEYS)
+        unknown = sorted(key for key in filters if key not in allowed)
+        if unknown:
+            raise ValueError(f"Unsupported filter(s) for source '{source}': {', '.join(unknown)}.")
+        parsed_dates: dict[str, date] = {}
+        for key in DATE_FILTER_KEYS:
+            raw = filters.get(key)
+            if not raw:
+                continue
+            if not DATE_FILTER_PATTERN.match(raw):
+                raise ValueError(f"{key} must be a valid YYYY-MM-DD date.")
+            try:
+                parsed_dates[key] = date.fromisoformat(raw)
+            except ValueError as exc:
+                raise ValueError(f"{key} must be a valid YYYY-MM-DD date.") from exc
+        date_from = parsed_dates.get("date_from")
+        date_to = parsed_dates.get("date_to")
+        if date_from and date_to and date_from > date_to:
+            raise ValueError("date_from must not be after date_to.")
 
     @staticmethod
     def validate_regex(pattern: str) -> None:
@@ -424,6 +627,7 @@ class SearchService:
             path = f"{law_name}/{article_no}" if article_no else law_name
         data = SearchHit(
             file_id=str(hit.get("_id", "")),
+            source_type=source.get("source_type", "law") or "law",
             law_id=source.get("law_id", "") or "",
             law_name=law_name,
             article_no=article_no,
@@ -436,9 +640,17 @@ class SearchService:
             highlights=highlights,
             url=url,
             blocks=source.get("blocks", []),
+            house=source.get("house"),
+            meeting_name=source.get("meeting_name"),
+            date=source.get("date"),
+            speaker=source.get("speaker"),
+            speaker_group=source.get("speaker_group"),
+            speaker_position=source.get("speaker_position"),
+            speaker_role=source.get("speaker_role"),
         )
         return {
             "file_id": data.file_id,
+            "source_type": data.source_type,
             "law_id": data.law_id,
             "law_name": data.law_name,
             "article_no": data.article_no,
@@ -451,6 +663,13 @@ class SearchService:
             "highlights": data.highlights,
             "url": data.url,
             "blocks": data.blocks,
+            "house": data.house,
+            "meeting_name": data.meeting_name,
+            "date": data.date,
+            "speaker": data.speaker,
+            "speaker_group": data.speaker_group,
+            "speaker_position": data.speaker_position,
+            "speaker_role": data.speaker_role,
         }
 
     @staticmethod

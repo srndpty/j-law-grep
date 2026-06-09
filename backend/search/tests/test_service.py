@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -18,8 +19,9 @@ class DummyBackend:
     def ensure_index(self) -> None:
         pass
 
-    def search(self, body, size, from_):
+    def search(self, body, size, from_, ignore_unavailable=False):
         self.last_body = body
+        self.last_ignore_unavailable = ignore_unavailable
         return {"hits": {"hits": [], "total": {"value": 0}}, "took": 1}
 
     def law_document(self, law_id, article=None):
@@ -386,6 +388,64 @@ def test_law_filter_matches_name_or_alias():
     assert {"term": {"law_aliases": "民法典"}} in should
 
 
+def test_diet_filters_apply_metadata_filters():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算",
+        mode="literal",
+        filters={
+            "house": "衆議院",
+            "meeting": "予算委員会",
+            "speaker": "山田太郎",
+            "date_from": "2025-06-09",
+            "date_to": "2026-06-09",
+        },
+        size=20,
+        page=1,
+        source="diet",
+    )
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+    assert {"term": {"source_type": "diet"}} in filters
+    assert {"term": {"house": "衆議院"}} in filters
+    assert service._keyword_or_prefix_filter("meeting_name", "予算委員会") in filters
+    assert service._speaker_filter("山田太郎") in filters
+    assert {"range": {"date": {"gte": "2025-06-09", "lte": "2026-06-09"}}} in filters
+
+
+def test_speaker_filter_uses_keyword_prefix_not_ngram_prefix():
+    service = SearchService(backend=DummyBackend())
+
+    speaker_filter = service._speaker_filter("青柳仁士")
+
+    assert speaker_filter == {
+        "bool": {
+            "should": [
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"speaker": "青柳仁士"}},
+                            {"prefix": {"speaker": "青柳仁士"}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"speaker_yomi": "青柳仁士"}},
+                            {"prefix": {"speaker_yomi": "青柳仁士"}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
 def test_convert_hit_includes_article_metadata():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -413,6 +473,45 @@ def test_convert_hit_includes_article_metadata():
     assert result["snippet"] == "不法行為による損害の賠償"
     assert result["snippet_text"] == "不法行為による損害の賠償"
     assert result["highlights"] == [{"start": 7, "end": 9}]
+
+
+def test_convert_hit_includes_diet_metadata():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    hit = {
+        "_id": "diet1",
+        "_source": {
+            "source_type": "diet",
+            "law_id": "121205254X01220231213",
+            "law_name": "衆議院 本会議 第212回 第12号",
+            "article_no": "1",
+            "paragraph_no": None,
+            "item_no": None,
+            "path": "国会会議録/衆議院/本会議/第212回/第12号/発言1",
+            "line": 0,
+            "content": "これより会議を開きます。",
+            "url": "https://kokkai.ndl.go.jp/txt/121205254X01220231213/1",
+            "blocks": [],
+            "house": "衆議院",
+            "meeting_name": "本会議",
+            "date": "2023-12-13",
+            "speaker": "額賀福志郎",
+            "speaker_group": "自由民主党",
+            "speaker_position": "議長",
+            "speaker_role": "",
+        },
+        "highlight": {"content": []},
+    }
+
+    result = service._convert_hit(hit, query="会議")
+
+    assert result["source_type"] == "diet"
+    assert result["house"] == "衆議院"
+    assert result["meeting_name"] == "本会議"
+    assert result["date"] == "2023-12-13"
+    assert result["speaker"] == "額賀福志郎"
+    assert result["speaker_group"] == "自由民主党"
+    assert result["speaker_position"] == "議長"
 
 
 def test_convert_law_section_includes_caption():
@@ -566,3 +665,242 @@ def test_regex_query_rejects_expensive_patterns():
         assert "too broad" in str(exc)
     else:
         raise AssertionError("Expected expensive regex to be rejected")
+
+
+def test_law_source_adds_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="law")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    assert {"term": {"source_type": "law"}} in filters
+
+
+def test_diet_source_adds_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="予算", mode="literal", filters={}, size=20, page=1, source="diet")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    assert {"term": {"source_type": "diet"}} in filters
+
+
+def test_all_source_does_not_add_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    # No top-level source_type term: the source split lives inside a should.
+    assert {"term": {"source_type": "law"}} not in filters
+    assert {"term": {"source_type": "diet"}} not in filters
+
+
+def test_all_source_with_diet_filter_keeps_law_results():
+    # Spec lock: in cross-search, a diet-only filter (speaker) must not drop law
+    # docs. Law docs pass through the law branch (which carries no diet filter),
+    # while diet docs are constrained by the speaker filter.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算", mode="literal", filters={"speaker": "山田太郎"}, size=20, page=1, source="all"
+    )
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+    should = filters[0]["bool"]["should"]
+    assert filters[0]["bool"]["minimum_should_match"] == 1
+
+    law_branch = next(b for b in should if {"term": {"source_type": "law"}} in b["bool"]["filter"])
+    diet_branch = next(
+        b for b in should if {"term": {"source_type": "diet"}} in b["bool"]["filter"]
+    )
+    # Law branch is unconstrained by the speaker filter; diet branch carries it.
+    assert service._speaker_filter("山田太郎") not in law_branch["bool"]["filter"]
+    assert service._speaker_filter("山田太郎") in diet_branch["bool"]["filter"]
+
+
+def test_all_source_with_law_filter_keeps_diet_results():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算", mode="literal", filters={"law": "民法"}, size=20, page=1, source="all"
+    )
+
+    should = service.build_query(params)["query"]["bool"]["filter"][0]["bool"]["should"]
+    law_branch = next(b for b in should if {"term": {"source_type": "law"}} in b["bool"]["filter"])
+    diet_branch = next(
+        b for b in should if {"term": {"source_type": "diet"}} in b["bool"]["filter"]
+    )
+    assert service._law_name_filter("民法") in law_branch["bool"]["filter"]
+    # Diet branch is not constrained by the law-name filter.
+    assert service._law_name_filter("民法") not in diet_branch["bool"]["filter"]
+
+
+def test_diet_source_treats_citation_only_as_content_search():
+    # 国会タブで「709条」は法令引用ではなく本文検索として扱う。match_all +
+    # article_no=709 で発言709 を返すのではなく、本文に「709条」を含む発言を探す。
+    service = SearchService(backend=DummyBackend())
+    params = SearchParams(q="709条", mode="auto", filters={}, size=20, page=1, source="diet")
+
+    query = service.build_query(params)["query"]["bool"]
+
+    assert query["must"] != [{"match_all": {}}]
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "709条"
+    assert {"term": {"article_no": "709"}} not in query["filter"]
+    assert query["filter"] == [{"term": {"source_type": "diet"}}]
+    assert SearchService.classify_query("709条", "auto", "diet")["effective_mode"] == "literal"
+
+
+def test_diet_source_searches_full_query_not_citation_residual():
+    # 「民法 709条 損害」も法令フィルタ (law_name=民法) を掛けず、全文を本文検索する。
+    service = SearchService(backend=DummyBackend())
+    params = SearchParams(
+        q="民法 709条 損害", mode="auto", filters={}, size=20, page=1, source="diet"
+    )
+
+    query = service.build_query(params)["query"]["bool"]
+
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "民法 709条 損害"
+    assert service._law_name_filter("民法") not in query["filter"]
+    assert query["filter"] == [{"term": {"source_type": "diet"}}]
+
+
+def test_all_source_citation_only_does_not_match_all_diet():
+    # Spec lock: 横断 + citation-only (民法709条) must not dump every diet speech.
+    # `must` is match_all, so the diet branch (source_type=diet only) would
+    # otherwise match all speeches. Cross-search collapses to law-only here.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条", mode="auto", filters={}, size=20, page=1, source="all")
+
+    query = service.build_query(params)["query"]["bool"]
+    filters = query["filter"]
+
+    assert query["must"] == [{"match_all": {}}]
+    # Law-only collapse: a plain source_type=law term, citation filters applied,
+    # and crucially no diet branch anywhere in the filter tree.
+    assert {"term": {"source_type": "law"}} in filters
+    assert service._law_name_filter("民法") in filters
+    assert {"term": {"article_no": "709"}} in filters
+    assert 'source_type": "diet' not in json.dumps(filters)
+
+
+def test_all_source_citation_with_residual_keeps_diet_branch():
+    # With a free-text residual term the diet branch is meaningful again
+    # (the residual is enforced via top-level `must`), so keep cross-search.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="民法 709条 損害", mode="auto", filters={}, size=20, page=1, source="all"
+    )
+
+    query = service.build_query(params)["query"]["bool"]
+    should = query["filter"][0]["bool"]["should"]
+
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "損害"
+    assert any({"term": {"source_type": "diet"}} in b["bool"]["filter"] for b in should)
+
+
+def test_search_index_payload_includes_split_indices_for_all():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jlaw-current,jdiet-current"
+    assert result["index"]["indices"] == ["jlaw-current", "jdiet-current"]
+
+
+def test_search_routes_to_diet_backend_without_real_opensearch():
+    # diet/all routing must go through the injected backend_factory, so the
+    # diet path is unit-testable without constructing a real OpenSearchBackend.
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="予算", mode="literal", filters={}, size=20, page=1, source="diet")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jdiet-current"
+    assert created["jdiet-current"].last_ignore_unavailable is True
+
+
+def test_all_search_spans_injected_law_index_and_diet():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jlaw-current,jdiet-current"
+    assert created["jlaw-current,jdiet-current"].last_ignore_unavailable is True
+
+
+def test_law_search_does_not_set_ignore_unavailable():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="law")
+
+    service.search(params)
+
+    assert backend.last_ignore_unavailable is False
+
+
+def test_validate_filters_rejects_invalid_date():
+    with pytest.raises(ValueError, match="date_from must be a valid"):
+        SearchService.validate_filters("diet", {"date_from": "2025/06/09"})
+
+
+@pytest.mark.parametrize("value", ["20250609", "2025-W24-1", "2025-6-9", "2025-06-09T00:00:00"])
+def test_validate_filters_rejects_non_yyyy_mm_dd_iso_forms(value):
+    # date.fromisoformat (Py3.11+) accepts these, but the OpenSearch `date`
+    # mapping is strict yyyy-MM-dd, so they must be rejected at the API boundary.
+    with pytest.raises(ValueError, match="date_from must be a valid"):
+        SearchService.validate_filters("diet", {"date_from": value})
+
+
+def test_validate_filters_accepts_strict_yyyy_mm_dd():
+    SearchService.validate_filters("diet", {"date_from": "2025-06-09", "date_to": "2026-06-09"})
+
+
+def test_validate_filters_rejects_inverted_date_range():
+    with pytest.raises(ValueError, match="date_from must not be after date_to"):
+        SearchService.validate_filters("diet", {"date_from": "2026-06-09", "date_to": "2025-06-09"})
+
+
+def test_validate_filters_rejects_unknown_key_for_source():
+    with pytest.raises(ValueError, match="Unsupported filter"):
+        SearchService.validate_filters("diet", {"year": "2025"})
+
+
+def test_validate_filters_accepts_known_law_and_diet_keys():
+    SearchService.validate_filters("law", {"law": "民法", "year": "2025"})
+    SearchService.validate_filters(
+        "diet", {"house": "衆議院", "date_from": "2025-06-09", "date_to": "2026-06-09"}
+    )
+    # `all` accepts the union of law and diet keys.
+    SearchService.validate_filters("all", {"law": "民法", "speaker": "山田"})

@@ -21,6 +21,7 @@ class SearchRequestSerializer(serializers.Serializer):
         choices=["auto", "literal", "keyword", "boolean", "citation", "regex"], default="literal"
     )
     filters = SearchFiltersField(required=False, default=dict)
+    source = serializers.ChoiceField(choices=["law", "diet", "all"], default="law")
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     # Absolute cap; the precise `from + size` window is enforced in validate().
     page = serializers.IntegerField(min_value=1, max_value=MAX_RESULT_WINDOW, default=1)
@@ -41,11 +42,16 @@ class SearchRequestSerializer(serializers.Serializer):
             SearchService.validate_pagination(attrs.get("page", 1), attrs.get("size", 20))
         except ValueError as exc:
             raise serializers.ValidationError({"page": str(exc)}) from exc
+        try:
+            SearchService.validate_filters(attrs.get("source", "law"), attrs.get("filters"))
+        except ValueError as exc:
+            raise serializers.ValidationError({"filters": str(exc)}) from exc
         return attrs
 
 
 class SearchHitSerializer(serializers.Serializer):
     file_id = serializers.CharField()
+    source_type = serializers.CharField(default="law")
     law_id = serializers.CharField(allow_blank=True, default="")
     law_name = serializers.CharField(allow_blank=True, default="")
     article_no = serializers.CharField(allow_blank=True, default="")
@@ -58,6 +64,13 @@ class SearchHitSerializer(serializers.Serializer):
     highlights = serializers.ListField(child=serializers.DictField(), default=list)
     url = serializers.CharField(allow_blank=True, default="")
     blocks = serializers.ListField(child=serializers.DictField(), default=list)
+    house = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    meeting_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    date = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_group = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_position = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_role = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class SearchResponseSerializer(serializers.Serializer):

@@ -317,3 +317,101 @@ def test_validate_ready_checks_index_schema_and_count(monkeypatch):
     assert payload["concrete"] == ["laws"]
     assert payload["schema_version"] == 2
     assert client.counted == "laws"
+    assert "diet" not in payload
+
+
+class DietAwareIndices(DummyIndices):
+    def __init__(self, existing, mappings):
+        super().__init__()
+        self._existing = set(existing)
+        self._mappings = mappings
+
+    def exists(self, index):
+        return index in self._existing
+
+    def get_mapping(self, index):
+        return {index: self._mappings[index]}
+
+    def get_alias(self, name):
+        raise open_search_client.TransportError(404, "missing")
+
+
+class DietAwareClient:
+    def __init__(self, existing, mappings):
+        self.indices = DietAwareIndices(existing, mappings)
+        self.counted = []
+
+    def count(self, index):
+        self.counted.append(index)
+        return {"count": 1}
+
+
+def test_validate_ready_skips_diet_index_when_absent(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(
+            OPENSEARCH_SCHEMA_VERSION=7,
+            OPENSEARCH_NUMBER_OF_SHARDS=4,
+            OPENSEARCH_DIET_INDEX="jdiet-current",
+        ),
+    )
+    meta = {"mappings": {"_meta": {"schema_version": 7}}}
+    client = DietAwareClient(existing={"jlaw-current"}, mappings={"jlaw-current": meta})
+    backend = OpenSearchBackend(client=client, index="jlaw-current")
+
+    payload = backend.validate_ready()
+
+    assert "diet" not in payload
+    assert client.counted == ["jlaw-current"]
+
+
+def test_validate_ready_validates_diet_index_when_present(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(
+            OPENSEARCH_SCHEMA_VERSION=7,
+            OPENSEARCH_NUMBER_OF_SHARDS=4,
+            OPENSEARCH_DIET_INDEX="jdiet-current",
+        ),
+    )
+    meta = {"mappings": {"_meta": {"schema_version": 7}}}
+    client = DietAwareClient(
+        existing={"jlaw-current", "jdiet-current"},
+        mappings={"jlaw-current": meta, "jdiet-current": meta},
+    )
+    backend = OpenSearchBackend(client=client, index="jlaw-current")
+
+    payload = backend.validate_ready()
+
+    assert payload["diet"]["name"] == "jdiet-current"
+    assert payload["diet"]["concrete"] == ["jdiet-current"]
+    assert "jdiet-current" in client.counted
+
+
+def test_validate_ready_raises_on_diet_schema_mismatch(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(
+            OPENSEARCH_SCHEMA_VERSION=7,
+            OPENSEARCH_NUMBER_OF_SHARDS=4,
+            OPENSEARCH_DIET_INDEX="jdiet-current",
+        ),
+    )
+    client = DietAwareClient(
+        existing={"jlaw-current", "jdiet-current"},
+        mappings={
+            "jlaw-current": {"mappings": {"_meta": {"schema_version": 7}}},
+            "jdiet-current": {"mappings": {"_meta": {"schema_version": 6}}},
+        },
+    )
+    backend = OpenSearchBackend(client=client, index="jlaw-current")
+
+    try:
+        backend.validate_ready()
+    except RuntimeError as exc:
+        assert "schema version mismatch" in str(exc)
+    else:
+        raise AssertionError("Expected diet schema mismatch to fail readyz")

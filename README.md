@@ -62,6 +62,32 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 
 > `indexer/data` はフルコーパス用のローカル置き場です。`.dockerignore` と `.gitignore` で Docker image / Git 管理から除外しています。
 
+### 3. 国会会議録を取得・投入する
+
+国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `横断` で切り替えられます。
+`国会` / `横断` では、院・会議名・発言者・日付範囲で絞り込めます。発言者は前方一致です (`山田` → `山田太郎` は拾うが `太郎` では拾わない)。
+
+`横断` の filter は source ごとに掛かります。たとえば `横断` で発言者だけ指定すると、法令側は素通しで横断結果に残り、国会側だけ発言者で絞られます。逆に法令名で絞ると国会側は素通しで残ります。「両方に同じ条件を AND したい」用途ではなく「片側を絞っても反対側は消えない」挙動です。
+
+```powershell
+# 小さく試す
+make diet-fetch DIET_ARGS="--all-houses --session-from 212 --session-to 212 --limit-discovered 20"
+make reindex-diet
+
+# 日付範囲で取得する (例: 直近1年)
+make diet-fetch-range DIET_FROM_DATE=2025-06-09 DIET_UNTIL_DATE=2026-06-09
+make reindex-diet
+
+# バックフィル (第1回から指定回まで、衆参両院)
+# DIET_SESSION_TO は最新回次を確認して置き換える (212 は例)
+make diet-fetch-backfill DIET_SESSION_TO=212
+make reindex-diet
+```
+
+`diet-fetch-backfill` は第1回から指定回までを対象にする全量取得用です。通常の確認や部分投入では `diet-fetch-range` か `diet-fetch DIET_ARGS="..."` で日付・回次・件数を絞ってください。件数で止めたいときは基準を選べます: `--limit-discovered N` は「N 件発見したら停止」(skip も含む)、`--limit-fetched N` は「N 件新規取得したら停止」(skip は数えない) です。`--limit-meetings` は `--limit-fetched` の旧称 (fetched 基準) です。既存ファイルが多い状態で「小さく試す」なら、想定外に先まで走らない `--limit-discovered` を使ってください。取得は途中停止を前提に、既存 JSON と `_fetch_state.json` を見て取得済み `issueID` を skip します。失敗した会議は `_fetch_errors.jsonl` に記録し、次回実行時に再試行できます。再取得したい場合は `DIET_ARGS="--overwrite"` を追加してください。公式 API への負荷を避けるため、既定でリクエスト間隔は 3 秒です (`DIET_DELAY_SECONDS=...` で調整)。
+
+> `indexer/diet_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
+
 ## frontend と backend の接続
 
 frontend は `/api/search` への相対パスで検索 API を呼び、backend への到達は Vite の proxy が担います。
@@ -113,7 +139,7 @@ OpenSearch の shards は既定 4、heap は `.env` の `OPENSEARCH_JAVA_OPTS` �
 
 ### schema version
 
-`OPENSEARCH_SCHEMA_VERSION=6` では e-Gov の `ArticleCaption` を保持する `caption` field を追加しています。schema version 5 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
+`OPENSEARCH_SCHEMA_VERSION=7` では国会会議録用の `source_type` / `speaker` / `meeting_name` などの field を追加しています。schema version 6 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
 
 ## e-Gov XML からの取り込み
 
