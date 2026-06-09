@@ -112,6 +112,14 @@ class SearchService:
         citation_filter_key = citation_key(citation)
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
         residual_query = parsed_citation.residual_query
+        # A pure citation lookup (民法709条) drives `must` to match_all and routes
+        # the citation into the law-scoped filters only. There is no free-text
+        # term to constrain diet records with, so for cross-search this must not
+        # fall through to "every speech matches".
+        citation_lookup = bool(citation.article_no) and (
+            params.mode == "citation"
+            or (params.mode in {"auto", "literal", "keyword"} and citation_only)
+        )
 
         must: list[dict[str, Any]] = []
         filter_clauses: list[dict[str, Any]] = []
@@ -215,7 +223,11 @@ class SearchService:
         if citation.item_no is not None:
             law_scoped.append({"term": {"item_no": str(citation.item_no)}})
 
-        filter_clauses.extend(self._source_filter_clauses(params.source, law_scoped, diet_scoped))
+        filter_clauses.extend(
+            self._source_filter_clauses(
+                params.source, law_scoped, diet_scoped, law_only=citation_lookup
+            )
+        )
 
         if citation_filter_key:
             boost_should.append(
@@ -273,14 +285,20 @@ class SearchService:
         source: str,
         law_scoped: list[dict[str, Any]],
         diet_scoped: list[dict[str, Any]],
+        law_only: bool = False,
     ) -> list[dict[str, Any]]:
         if source == "diet":
             return [{"term": {"source_type": "diet"}}, *law_scoped, *diet_scoped]
         if source == "law":
             return [{"term": {"source_type": "law"}}, *law_scoped, *diet_scoped]
-        # Cross-search: match a law doc that satisfies the law-side filters OR a
-        # diet doc that satisfies the diet-side filters. Each branch carries its
-        # own source_type term, so a filter for one source never drops the other.
+        # Cross-search. A pure citation lookup has no free-text term to constrain
+        # diet records with (`must` is match_all), so collapse to law-only rather
+        # than letting the diet branch match every speech.
+        if law_only:
+            return [{"term": {"source_type": "law"}}, *law_scoped]
+        # Otherwise match a law doc that satisfies the law-side filters OR a diet
+        # doc that satisfies the diet-side filters. Each branch carries its own
+        # source_type term, so a filter for one source never drops the other.
         return [
             {
                 "bool": {

@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -736,6 +737,42 @@ def test_all_source_with_law_filter_keeps_diet_results():
     assert service._law_name_filter("民法") in law_branch["bool"]["filter"]
     # Diet branch is not constrained by the law-name filter.
     assert service._law_name_filter("民法") not in diet_branch["bool"]["filter"]
+
+
+def test_all_source_citation_only_does_not_match_all_diet():
+    # Spec lock: 横断 + citation-only (民法709条) must not dump every diet speech.
+    # `must` is match_all, so the diet branch (source_type=diet only) would
+    # otherwise match all speeches. Cross-search collapses to law-only here.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="民法 709条", mode="auto", filters={}, size=20, page=1, source="all")
+
+    query = service.build_query(params)["query"]["bool"]
+    filters = query["filter"]
+
+    assert query["must"] == [{"match_all": {}}]
+    # Law-only collapse: a plain source_type=law term, citation filters applied,
+    # and crucially no diet branch anywhere in the filter tree.
+    assert {"term": {"source_type": "law"}} in filters
+    assert service._law_name_filter("民法") in filters
+    assert {"term": {"article_no": "709"}} in filters
+    assert 'source_type": "diet' not in json.dumps(filters)
+
+
+def test_all_source_citation_with_residual_keeps_diet_branch():
+    # With a free-text residual term the diet branch is meaningful again
+    # (the residual is enforced via top-level `must`), so keep cross-search.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="民法 709条 損害", mode="auto", filters={}, size=20, page=1, source="all"
+    )
+
+    query = service.build_query(params)["query"]["bool"]
+    should = query["filter"][0]["bool"]["should"]
+
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "損害"
+    assert any({"term": {"source_type": "diet"}} in b["bool"]["filter"] for b in should)
 
 
 def test_search_index_payload_includes_split_indices_for_all():
