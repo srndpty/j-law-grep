@@ -18,8 +18,9 @@ class DummyBackend:
     def ensure_index(self) -> None:
         pass
 
-    def search(self, body, size, from_):
+    def search(self, body, size, from_, ignore_unavailable=False):
         self.last_body = body
+        self.last_ignore_unavailable = ignore_unavailable
         return {"hits": {"hits": [], "total": {"value": 0}}, "took": 1}
 
     def law_document(self, law_id, article=None):
@@ -663,3 +664,106 @@ def test_regex_query_rejects_expensive_patterns():
         assert "too broad" in str(exc)
     else:
         raise AssertionError("Expected expensive regex to be rejected")
+
+
+def test_law_source_adds_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="law")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    assert {"term": {"source_type": "law"}} in filters
+
+
+def test_diet_source_adds_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="予算", mode="literal", filters={}, size=20, page=1, source="diet")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    assert {"term": {"source_type": "diet"}} in filters
+
+
+def test_all_source_does_not_add_source_type_filter():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    assert {"term": {"source_type": "law"}} not in filters
+    assert {"term": {"source_type": "diet"}} not in filters
+
+
+def test_search_routes_to_diet_backend_without_real_opensearch():
+    # diet/all routing must go through the injected backend_factory, so the
+    # diet path is unit-testable without constructing a real OpenSearchBackend.
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="予算", mode="literal", filters={}, size=20, page=1, source="diet")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jdiet-current"
+    assert created["jdiet-current"].last_ignore_unavailable is True
+
+
+def test_all_search_spans_injected_law_index_and_diet():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jlaw-current,jdiet-current"
+    assert created["jlaw-current,jdiet-current"].last_ignore_unavailable is True
+
+
+def test_law_search_does_not_set_ignore_unavailable():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="law")
+
+    service.search(params)
+
+    assert backend.last_ignore_unavailable is False
+
+
+def test_validate_filters_rejects_invalid_date():
+    with pytest.raises(ValueError, match="date_from must be a valid"):
+        SearchService.validate_filters("diet", {"date_from": "2025/06/09"})
+
+
+def test_validate_filters_rejects_inverted_date_range():
+    with pytest.raises(ValueError, match="date_from must not be after date_to"):
+        SearchService.validate_filters("diet", {"date_from": "2026-06-09", "date_to": "2025-06-09"})
+
+
+def test_validate_filters_rejects_unknown_key_for_source():
+    with pytest.raises(ValueError, match="Unsupported filter"):
+        SearchService.validate_filters("diet", {"year": "2025"})
+
+
+def test_validate_filters_accepts_known_law_and_diet_keys():
+    SearchService.validate_filters("law", {"law": "民法", "year": "2025"})
+    SearchService.validate_filters(
+        "diet", {"house": "衆議院", "date_from": "2025-06-09", "date_to": "2026-06-09"}
+    )
+    # `all` accepts the union of law and diet keys.
+    SearchService.validate_filters("all", {"law": "民法", "speaker": "山田"})

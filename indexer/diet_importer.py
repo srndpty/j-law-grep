@@ -16,7 +16,7 @@ from indexer.utils import normalize_text
 
 API_BASE_URL = "https://kokkai.ndl.go.jp/api"
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "indexer" / "diet_data"
-USER_AGENT = "j-law-grep/0.1 (+https://github.com/)"
+USER_AGENT = "j-law-grep/0.1 (+https://github.com/srndpty/j-law-grep)"
 DEFAULT_HOUSES = ("衆議院", "参議院")
 FETCH_STATE_FILENAME = "_fetch_state.json"
 FETCH_ERRORS_FILENAME = "_fetch_errors.jsonl"
@@ -251,7 +251,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--until-date", dest="until_date", help="YYYY-MM-DD")
     parser.add_argument("--session-from", type=int)
     parser.add_argument("--session-to", type=int)
-    parser.add_argument("--limit-meetings", type=int)
+    parser.add_argument(
+        "--limit-discovered",
+        type=int,
+        help="Stop after discovering this many meetings (counts skipped + fetched + failed).",
+    )
+    parser.add_argument(
+        "--limit-fetched",
+        type=int,
+        help="Stop after fetching this many new meetings (skips do not count).",
+    )
+    parser.add_argument(
+        "--limit-meetings",
+        type=int,
+        help="Deprecated alias for --limit-fetched (fetched-count based).",
+    )
     parser.add_argument("--delay-seconds", type=float, default=3.0)
     parser.add_argument("--retries", type=int, default=3)
     parser.add_argument("--retry-backoff-seconds", type=float, default=10.0)
@@ -302,10 +316,19 @@ def run_fetch(
         "stats": asdict(stats),
     }
 
+    # --limit-meetings is the legacy fetched-count flag; --limit-fetched takes
+    # precedence when both are set. --limit-discovered bounds discovery instead,
+    # so a run with many already-fetched files does not walk far past the cap.
+    limit_fetched = args.limit_fetched if args.limit_fetched is not None else args.limit_meetings
+    limit_discovered = args.limit_discovered
+
     stop = False
     for scope in scopes:
         for issue_id in iter_issue_ids(scope, fetcher=fetch, delay_seconds=args.delay_seconds):
-            if args.limit_meetings is not None and stats.fetched >= args.limit_meetings:
+            if limit_fetched is not None and stats.fetched >= limit_fetched:
+                stop = True
+                break
+            if limit_discovered is not None and stats.discovered >= limit_discovered:
                 stop = True
                 break
             stats.discovered += 1

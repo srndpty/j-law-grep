@@ -91,6 +91,23 @@ describe("useSearchSettings", () => {
     expect(result.current.requestBody.filters).toEqual({});
   });
 
+  it("normalizes an invalid source from the query string to law", () => {
+    window.history.replaceState(null, "", "/?q=diet&source=foo");
+
+    const { result } = renderHook(() => useSearchSettings());
+
+    expect(result.current.source).toBe("law");
+    expect(result.current.requestBody.source).toBe("law");
+  });
+
+  it("normalizes an invalid mode from the query string to auto", () => {
+    window.history.replaceState(null, "", "/?q=diet&mode=bogus");
+
+    const { result } = renderHook(() => useSearchSettings());
+
+    expect(result.current.mode).toBe("auto");
+  });
+
   it("ignores invalid saved settings json", () => {
     localStorage.setItem("j-law-grep.settings.v1", "{");
 

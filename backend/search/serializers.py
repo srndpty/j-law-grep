@@ -42,6 +42,10 @@ class SearchRequestSerializer(serializers.Serializer):
             SearchService.validate_pagination(attrs.get("page", 1), attrs.get("size", 20))
         except ValueError as exc:
             raise serializers.ValidationError({"page": str(exc)}) from exc
+        try:
+            SearchService.validate_filters(attrs.get("source", "law"), attrs.get("filters"))
+        except ValueError as exc:
+            raise serializers.ValidationError({"filters": str(exc)}) from exc
         return attrs
 
 

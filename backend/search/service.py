@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from django.conf import settings
@@ -28,6 +30,17 @@ DANGEROUS_REGEX_PATTERNS = (
     r"\(\.\*\)\+",
     r"\([^)]*[+*][^)]*\)[+*]",
 )
+# Allowed filter keys per source. `all` accepts the union so a cross-search can
+# constrain both the law and diet halves. Unknown keys are rejected (400) before
+# the query reaches OpenSearch.
+LAW_FILTER_KEYS = frozenset({"law", "year"})
+DIET_FILTER_KEYS = frozenset({"house", "meeting", "speaker", "date_from", "date_to"})
+ALLOWED_FILTER_KEYS = {
+    "law": LAW_FILTER_KEYS,
+    "diet": DIET_FILTER_KEYS,
+    "all": LAW_FILTER_KEYS | DIET_FILTER_KEYS,
+}
+DATE_FILTER_KEYS = ("date_from", "date_to")
 
 
 @dataclass
@@ -41,16 +54,22 @@ class SearchParams:
 
 
 class SearchService:
-    def __init__(self, backend: OpenSearchBackend | None = None) -> None:
-        self.backend = backend or OpenSearchBackend()
+    def __init__(
+        self,
+        backend: OpenSearchBackend | None = None,
+        backend_factory: Callable[[str], OpenSearchBackend] | None = None,
+    ) -> None:
+        self.backend_factory = backend_factory or (lambda index: OpenSearchBackend(index=index))
+        self.backend = backend or self.backend_factory(settings.OPENSEARCH_INDEX)
 
     def _backend_for_source(self, source: str) -> OpenSearchBackend:
         if source == "diet":
-            return OpenSearchBackend(index=settings.OPENSEARCH_DIET_INDEX)
+            return self.backend_factory(settings.OPENSEARCH_DIET_INDEX)
         if source == "all":
-            return OpenSearchBackend(
-                index=f"{settings.OPENSEARCH_INDEX},{settings.OPENSEARCH_DIET_INDEX}"
-            )
+            # Span the law alias the service was configured with plus the diet
+            # alias, so an injected backend's index is honored instead of the
+            # global setting (keeps diet/all routing unit-testable).
+            return self.backend_factory(f"{self.backend.index},{settings.OPENSEARCH_DIET_INDEX}")
         return self.backend
 
     def ensure_index(self) -> None:
@@ -393,7 +412,13 @@ class SearchService:
         page = max(params.page, 1)
         from_ = (page - 1) * size
         backend = self._backend_for_source(params.source)
-        response = backend.search(body=body, size=size, from_=from_)
+        # diet/all may target the jdiet-current alias before it exists (fresh
+        # env, CI, first boot). Tolerate the missing index so `all` still
+        # returns law hits and `diet` returns 0 results instead of a 5xx.
+        ignore_unavailable = params.source in {"diet", "all"}
+        response = backend.search(
+            body=body, size=size, from_=from_, ignore_unavailable=ignore_unavailable
+        )
         hits = [self._convert_hit(hit, params.q) for hit in response["hits"]["hits"]]
         return {
             "hits": hits,
@@ -445,6 +470,28 @@ class SearchService:
                 f"Pagination beyond {MAX_RESULT_WINDOW} results is not supported "
                 "(narrow the query or reduce page/size)."
             )
+
+    @staticmethod
+    def validate_filters(source: str, filters: dict[str, str | None] | None) -> None:
+        if not filters:
+            return
+        allowed = ALLOWED_FILTER_KEYS.get(source, LAW_FILTER_KEYS)
+        unknown = sorted(key for key in filters if key not in allowed)
+        if unknown:
+            raise ValueError(f"Unsupported filter(s) for source '{source}': {', '.join(unknown)}.")
+        parsed_dates: dict[str, date] = {}
+        for key in DATE_FILTER_KEYS:
+            raw = filters.get(key)
+            if not raw:
+                continue
+            try:
+                parsed_dates[key] = date.fromisoformat(raw)
+            except ValueError as exc:
+                raise ValueError(f"{key} must be a valid YYYY-MM-DD date.") from exc
+        date_from = parsed_dates.get("date_from")
+        date_to = parsed_dates.get("date_to")
+        if date_from and date_to and date_from > date_to:
+            raise ValueError("date_from must not be after date_to.")
 
     @staticmethod
     def validate_regex(pattern: str) -> None:

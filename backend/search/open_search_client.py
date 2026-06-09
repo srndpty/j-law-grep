@@ -137,27 +137,15 @@ class OpenSearchBackend:
                     "year_enforced": {"type": "keyword"},
                     "issue_id": {"type": "keyword"},
                     "house": {"type": "keyword"},
-                    "meeting_name": {
-                        "type": "keyword",
-                        "fields": {
-                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
-                        },
-                    },
+                    # meeting_name / speaker / speaker_yomi are matched with
+                    # keyword term + `prefix` queries (see SearchService), which
+                    # already give forward-match without an edge-ngram subfield.
+                    "meeting_name": {"type": "keyword"},
                     "session": {"type": "keyword"},
                     "issue": {"type": "keyword"},
                     "date": {"type": "date", "format": "strict_date_optional_time||yyyy-MM-dd"},
-                    "speaker": {
-                        "type": "keyword",
-                        "fields": {
-                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
-                        },
-                    },
-                    "speaker_yomi": {
-                        "type": "keyword",
-                        "fields": {
-                            "prefix": {"type": "text", "analyzer": "jp_edge_analyzer"},
-                        },
-                    },
+                    "speaker": {"type": "keyword"},
+                    "speaker_yomi": {"type": "keyword"},
                     "speaker_group": {"type": "keyword"},
                     "speaker_position": {
                         "type": "text",
@@ -249,15 +237,39 @@ class OpenSearchBackend:
         return [target]
 
     def validate_ready(self) -> dict[str, Any]:
+        # The law alias must exist and match the backend schema version. This is
+        # what catches the "ran new code against an un-reindexed v6 index" case,
+        # where the source_type filter would otherwise silently return 0 hits.
         concrete_indices = self.concrete_indices(self.index)
         for index in concrete_indices:
             self.validate_schema(index)
             self.count(index=index)
-        return {
+        payload: dict[str, Any] = {
             "name": self.index,
             "concrete": concrete_indices,
             "schema_version": settings.OPENSEARCH_SCHEMA_VERSION,
         }
+        diet = self._diet_ready_payload()
+        if diet is not None:
+            payload["diet"] = diet
+        return payload
+
+    def _diet_ready_payload(self) -> dict[str, Any] | None:
+        # The diet alias is optional: a law-only deployment never creates it, so
+        # its absence is not a readiness failure (diet/all searches tolerate the
+        # missing index). When it does exist, hold it to the same schema gate.
+        diet_index = getattr(settings, "OPENSEARCH_DIET_INDEX", None)
+        if not diet_index:
+            return None
+        diet_concrete = self.indices_for_alias(diet_index)
+        if not diet_concrete:
+            if not self.client.indices.exists(index=diet_index):
+                return None
+            diet_concrete = [diet_index]
+        for index in diet_concrete:
+            self.validate_schema(index)
+            self.count(index=index)
+        return {"name": diet_index, "concrete": diet_concrete}
 
     def cluster_health(self) -> dict[str, Any]:
         return self.client.cluster.health()
@@ -332,12 +344,20 @@ class OpenSearchBackend:
                 break
         return names
 
-    def search(self, body: dict[str, Any], size: int, from_: int) -> dict[str, Any]:
+    def search(
+        self,
+        body: dict[str, Any],
+        size: int,
+        from_: int,
+        ignore_unavailable: bool = False,
+    ) -> dict[str, Any]:
+        params = {"ignore_unavailable": "true"} if ignore_unavailable else None
         return self.client.search(
             index=self.index,
             body=body,
             size=size,
             from_=from_,
+            params=params,
             request_timeout=settings.OPENSEARCH_REQUEST_TIMEOUT_SECONDS,
         )
 

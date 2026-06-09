@@ -12,6 +12,22 @@ export interface SearchSettings {
 
 const DIET_FILTER_KEYS = ["house", "meeting", "speaker", "date_from", "date_to"] as const;
 
+const SOURCES = ["law", "diet", "all"] as const;
+const MODES = ["auto", "literal", "keyword", "boolean", "citation", "regex"] as const;
+
+export type SearchSource = (typeof SOURCES)[number];
+
+// URL query and localStorage are user-controllable, so normalize unknown values
+// to safe defaults instead of forwarding e.g. `?source=foo` to the API (which
+// would 400) or leaving every source/mode tab inactive in the UI.
+function normalizeSource(value: string | null | undefined): SearchSource {
+  return SOURCES.includes(value as SearchSource) ? (value as SearchSource) : "law";
+}
+
+function normalizeMode(value: string | null | undefined): string {
+  return MODES.includes(value as (typeof MODES)[number]) ? (value as string) : "auto";
+}
+
 function loadInitialSettings(): SearchSettings {
   const params = new URLSearchParams(window.location.search);
   const saved = (() => {
@@ -23,8 +39,8 @@ function loadInitialSettings(): SearchSettings {
   })();
   return {
     query: params.get("q") ?? saved.query ?? DEFAULT_QUERY,
-    mode: params.get("mode") ?? saved.mode ?? "auto",
-    source: params.get("source") ?? saved.source ?? "law",
+    mode: normalizeMode(params.get("mode") ?? saved.mode),
+    source: normalizeSource(params.get("source") ?? saved.source),
     filters: Object.fromEntries(
       DIET_FILTER_KEYS.map((key) => [key, params.get(key) ?? saved[key] ?? ""])
     ),

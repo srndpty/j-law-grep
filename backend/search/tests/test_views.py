@@ -145,6 +145,26 @@ def test_search_view_window_overflow_returns_400():
     assert "page" in response.data
 
 
+def test_search_view_invalid_date_filter_returns_400():
+    response = post_search(
+        SuccessfulSearchService,
+        {"q": "予算", "source": "diet", "filters": {"date_from": "2025/06/09"}},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "filters" in response.data
+
+
+def test_search_view_unknown_filter_key_returns_400():
+    response = post_search(
+        SuccessfulSearchService,
+        {"q": "予算", "source": "diet", "filters": {"year": "2025"}},
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "filters" in response.data
+
+
 def test_laws_view_returns_laws():
     response = get_laws(SuccessfulLawsService)
 

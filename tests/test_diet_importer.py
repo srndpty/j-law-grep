@@ -120,6 +120,8 @@ def _fetch_args(tmp_path, **overrides):
         "session_from": 212,
         "session_to": 212,
         "limit_meetings": None,
+        "limit_discovered": None,
+        "limit_fetched": None,
         "delay_seconds": 0,
         "retries": 0,
         "retry_backoff_seconds": 0,
@@ -220,6 +222,51 @@ def test_run_fetch_records_failures_and_continues(tmp_path):
     assert stats.fetched == 1
     assert json.loads(errors[0])["issue_id"] == "bad"
     assert (tmp_path / "121214601X00120240126.json").exists()
+
+
+def test_run_fetch_limit_discovered_stops_after_counting_skips(tmp_path):
+    # An existing file is skipped but still counts toward --limit-discovered, so
+    # discovery stops promptly instead of walking far past the cap.
+    existing = normalize_meeting_record(_meeting_payload())
+    write_meeting(tmp_path, existing)
+
+    def fetcher(path, params):
+        if path == "meeting_list":
+            return {
+                "meetingRecord": [
+                    {"issueID": "121214601X00120240126"},
+                    {"issueID": "121214601X00220240127"},
+                ]
+            }
+        raise AssertionError("meeting endpoint should not be called once discovery cap is hit")
+
+    stats = run_fetch(_fetch_args(tmp_path, limit_discovered=1), fetcher=fetcher)
+
+    assert stats.discovered == 1
+    assert stats.skipped == 1
+    assert stats.fetched == 0
+
+
+def test_run_fetch_limit_fetched_counts_only_new_meetings(tmp_path):
+    existing = normalize_meeting_record(_meeting_payload())
+    write_meeting(tmp_path, existing)
+    fetched_payload = {**_meeting_payload(), "issueID": "121214601X00220240127", "issue": "2"}
+
+    def fetcher(path, params):
+        if path == "meeting_list":
+            return {
+                "meetingRecord": [
+                    {"issueID": "121214601X00120240126"},
+                    {"issueID": "121214601X00220240127"},
+                ]
+            }
+        return {"meetingRecord": [fetched_payload]}
+
+    stats = run_fetch(_fetch_args(tmp_path, limit_fetched=1), fetcher=fetcher)
+
+    # The skipped existing file does not consume the fetched budget.
+    assert stats.skipped == 1
+    assert stats.fetched == 1
 
 
 def test_run_fetch_all_houses_builds_separate_scopes(tmp_path):
