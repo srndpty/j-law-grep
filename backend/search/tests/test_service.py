@@ -739,6 +739,35 @@ def test_all_source_with_law_filter_keeps_diet_results():
     assert service._law_name_filter("民法") not in diet_branch["bool"]["filter"]
 
 
+def test_diet_source_treats_citation_only_as_content_search():
+    # 国会タブで「709条」は法令引用ではなく本文検索として扱う。match_all +
+    # article_no=709 で発言709 を返すのではなく、本文に「709条」を含む発言を探す。
+    service = SearchService(backend=DummyBackend())
+    params = SearchParams(q="709条", mode="auto", filters={}, size=20, page=1, source="diet")
+
+    query = service.build_query(params)["query"]["bool"]
+
+    assert query["must"] != [{"match_all": {}}]
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "709条"
+    assert {"term": {"article_no": "709"}} not in query["filter"]
+    assert query["filter"] == [{"term": {"source_type": "diet"}}]
+    assert SearchService.classify_query("709条", "auto", "diet")["effective_mode"] == "literal"
+
+
+def test_diet_source_searches_full_query_not_citation_residual():
+    # 「民法 709条 損害」も法令フィルタ (law_name=民法) を掛けず、全文を本文検索する。
+    service = SearchService(backend=DummyBackend())
+    params = SearchParams(
+        q="民法 709条 損害", mode="auto", filters={}, size=20, page=1, source="diet"
+    )
+
+    query = service.build_query(params)["query"]["bool"]
+
+    assert query["must"][0]["match_phrase"]["content"]["query"] == "民法 709条 損害"
+    assert service._law_name_filter("民法") not in query["filter"]
+    assert query["filter"] == [{"term": {"source_type": "diet"}}]
+
+
 def test_all_source_citation_only_does_not_match_all_diet():
     # Spec lock: 横断 + citation-only (民法709条) must not dump every diet speech.
     # `must` is match_all, so the diet branch (source_type=diet only) would

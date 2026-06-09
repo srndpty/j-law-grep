@@ -112,13 +112,26 @@ class SearchService:
         citation_filter_key = citation_key(citation)
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
         residual_query = parsed_citation.residual_query
+        # Citation parsing is law-centric: article_no/law_name map onto law
+        # records. Diet records reuse article_no for the speech order, so applying
+        # citation handling there returns 発言709 / requires law_name=民法 and
+        # drops real hits. For diet, ignore the citation split and treat the whole
+        # query as free-text content search.
+        treat_citation = params.source != "diet"
+        # Text used for content matching. Law/all strip the citation prefix
+        # (residual); diet searches the raw string as-is.
+        text_query = (residual_query or raw_query) if treat_citation else raw_query
         # A pure citation lookup (民法709条) drives `must` to match_all and routes
         # the citation into the law-scoped filters only. There is no free-text
         # term to constrain diet records with, so for cross-search this must not
         # fall through to "every speech matches".
-        citation_lookup = bool(citation.article_no) and (
-            params.mode == "citation"
-            or (params.mode in {"auto", "literal", "keyword"} and citation_only)
+        citation_lookup = (
+            treat_citation
+            and bool(citation.article_no)
+            and (
+                params.mode == "citation"
+                or (params.mode in {"auto", "literal", "keyword"} and citation_only)
+            )
         )
 
         must: list[dict[str, Any]] = []
@@ -139,12 +152,15 @@ class SearchService:
                     }
                 }
             )
-        elif params.mode == "citation":
+        elif treat_citation and params.mode == "citation":
             if not citation.article_no:
                 raise ValueError("Citation query must include an article number.")
             must.append({"match_all": {}})
         elif (
-            params.mode in {"auto", "literal", "keyword"} and citation.article_no and citation_only
+            treat_citation
+            and params.mode in {"auto", "literal", "keyword"}
+            and citation.article_no
+            and citation_only
         ):
             must.append({"match_all": {}})
         elif params.mode == "boolean":
@@ -168,7 +184,7 @@ class SearchService:
             must.append(
                 {
                     "multi_match": {
-                        "query": residual_query or raw_query,
+                        "query": text_query,
                         "fields": ["content^2", "content.keywordish", "caption^3", "heading^3"],
                         "operator": "and",
                     }
@@ -176,7 +192,7 @@ class SearchService:
             )
         else:
             # must.append({"match_phrase": {"content": params.q}})
-            must.append(self._literal_content_clause(residual_query or raw_query))
+            must.append(self._literal_content_clause(text_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
         house_filter = params.filters.get("house") if params.filters else None
@@ -212,16 +228,18 @@ class SearchService:
             diet_scoped.append({"range": {"date": date_range}})
 
         # A citation (民法709条 -> law_name + article_no ...) only constrains law
-        # records, so it joins the law-scoped group.
-        if citation.law_name:
-            law_scoped.append(self._law_name_filter(citation.law_name))
-            boost_should.extend(self._law_name_boosts(citation.law_name))
-        if citation.article_no:
-            law_scoped.append({"term": {"article_no": citation.article_no}})
-        if citation.paragraph_no is not None:
-            law_scoped.append({"term": {"paragraph_no": str(citation.paragraph_no)}})
-        if citation.item_no is not None:
-            law_scoped.append({"term": {"item_no": str(citation.item_no)}})
+        # records, so it joins the law-scoped group. Skipped for diet, where these
+        # fields mean something else (article_no is the speech order).
+        if treat_citation:
+            if citation.law_name:
+                law_scoped.append(self._law_name_filter(citation.law_name))
+                boost_should.extend(self._law_name_boosts(citation.law_name))
+            if citation.article_no:
+                law_scoped.append({"term": {"article_no": citation.article_no}})
+            if citation.paragraph_no is not None:
+                law_scoped.append({"term": {"paragraph_no": str(citation.paragraph_no)}})
+            if citation.item_no is not None:
+                law_scoped.append({"term": {"item_no": str(citation.item_no)}})
 
         filter_clauses.extend(
             self._source_filter_clauses(
@@ -229,13 +247,15 @@ class SearchService:
             )
         )
 
-        if citation_filter_key:
+        if treat_citation and citation_filter_key:
             boost_should.append(
                 {"match_phrase_prefix": {"citation_key.prefix": citation_filter_key}}
             )
 
         boost_should.extend(
-            self._ranking_boosts(params.mode, residual_query or raw_query, citation_filter_key)
+            self._ranking_boosts(
+                params.mode, text_query, citation_filter_key if treat_citation else None
+            )
         )
 
         query: dict[str, Any] = {
@@ -255,14 +275,26 @@ class SearchService:
         }
 
     @staticmethod
-    def classify_query(raw_query: str, mode: str) -> dict[str, Any]:
+    def classify_query(raw_query: str, mode: str, source: str = "law") -> dict[str, Any]:
         parsed_citation = parse_citation_query(raw_query.strip())
         citation = parsed_citation.citation
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
+        # Diet search treats citation parsing as plain content search, so never
+        # report an effective citation mode there (see build_query).
+        treat_citation = source != "diet"
         effective_mode = mode
         if mode == "auto":
-            effective_mode = "citation" if citation.article_no and citation_only else "literal"
-        elif mode in {"literal", "keyword"} and citation.article_no and citation_only:
+            effective_mode = (
+                "citation"
+                if treat_citation and citation.article_no and citation_only
+                else "literal"
+            )
+        elif (
+            treat_citation
+            and mode in {"literal", "keyword"}
+            and citation.article_no
+            and citation_only
+        ):
             effective_mode = "citation"
         return {
             "raw": raw_query,
@@ -460,7 +492,7 @@ class SearchService:
                 "hits": [],
                 "total": 0,
                 "took_ms": 0,
-                "query": self.classify_query(params.q, params.mode),
+                "query": self.classify_query(params.q, params.mode, params.source),
                 "index": self._index_payload(backend),
                 "source": params.source,
             }
@@ -481,7 +513,7 @@ class SearchService:
             "hits": hits,
             "total": response["hits"].get("total", {}).get("value", 0),
             "took_ms": response.get("took", 0),
-            "query": self.classify_query(params.q, params.mode),
+            "query": self.classify_query(params.q, params.mode, params.source),
             "index": self._index_payload(backend),
             "source": params.source,
         } | self._debug_payload(params)
@@ -492,7 +524,9 @@ class SearchService:
         return {
             "query_dsl": body,
             "parsed_citation": self._citation_payload(parsed.citation),
-            "effective_mode": self.classify_query(params.q, params.mode)["effective_mode"],
+            "effective_mode": self.classify_query(params.q, params.mode, params.source)[
+                "effective_mode"
+            ],
             "ranking_signals": self._debug_payload(params)
             .get("debug", {})
             .get("ranking_signals", {}),
