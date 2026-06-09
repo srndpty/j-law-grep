@@ -39,6 +39,17 @@ function positionLabel(hit: SearchHit, articleNo: string): string {
   return articleLabel(articleNo);
 }
 
+function dietMetadata(hit: SearchHit): string[] {
+  if (hit.source_type !== "diet") return [];
+  return [
+    hit.house ?? "",
+    hit.meeting_name ?? "",
+    hit.date ?? "",
+    hit.speaker ? `発言者: ${hit.speaker}` : "",
+    hit.speaker_group ?? "",
+  ].filter(Boolean);
+}
+
 interface Props {
   hit: SearchHit;
   selected: boolean;
@@ -50,6 +61,7 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
   const previewText = hitText(hit);
   const articleNo = deriveArticleNo(hit);
   const paragraphNo = deriveParagraphNo(hit);
+  const dietMeta = dietMetadata(hit);
 
   return (
     <article
@@ -83,6 +95,13 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
           <span className="rounded border border-gray-200 px-1.5 py-0.5">{hit.item_no}号</span>
         )}
       </div>
+      {dietMeta.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
+          {dietMeta.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      )}
       <div className="mt-2 text-sm leading-relaxed text-gray-900">{renderSnippet(hit)}</div>
       <button
         type="button"

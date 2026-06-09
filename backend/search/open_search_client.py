@@ -26,6 +26,13 @@ class SearchHit:
     highlights: list[dict[str, int]]
     url: str
     blocks: list[dict[str, Any]]
+    house: str | None = None
+    meeting_name: str | None = None
+    date: str | None = None
+    speaker: str | None = None
+    speaker_group: str | None = None
+    speaker_position: str | None = None
+    speaker_role: str | None = None
 
 
 @lru_cache(maxsize=8)

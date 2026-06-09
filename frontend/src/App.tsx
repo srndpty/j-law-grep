@@ -8,6 +8,7 @@ import { useSearch } from "./hooks/useSearch";
 import { SearchBar } from "./components/SearchBar";
 import { SearchModeTabs } from "./components/SearchModeTabs";
 import { SearchSourceTabs } from "./components/SearchSourceTabs";
+import { SearchDietFilters } from "./components/SearchDietFilters";
 import { SearchResultList } from "./components/SearchResultList";
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -16,7 +17,18 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 }
 
 export default function App() {
-  const { query, setQuery, mode, setMode, source, setSource, requestBody } = useSearchSettings();
+  const {
+    query,
+    setQuery,
+    mode,
+    setMode,
+    source,
+    setSource,
+    filters,
+    setFilter,
+    clearDietFilters,
+    requestBody,
+  } = useSearchSettings();
   const [isComposing, setIsComposing] = useState(false);
   const { results, isLoading, error, requestId, search } = useSearch({
     requestBody,
@@ -73,30 +85,38 @@ export default function App() {
   return (
     <div className="min-h-screen bg-muted text-foreground">
       <header className="border-b border-gray-800 bg-[#111418]">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-6 py-3">
-          <span className="text-xl font-semibold text-white">j-law-grep</span>
-          <div className="flex flex-1 items-center gap-2">
-            <form
-              className="flex w-full items-center gap-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void search();
-              }}
-            >
-              <SearchBar
-                value={query}
-                onChange={setQuery}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={(value) => {
-                  setIsComposing(false);
-                  setQuery(value);
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-3">
+          <div className="flex items-center gap-4">
+            <span className="text-xl font-semibold text-white">j-law-grep</span>
+            <div className="flex flex-1 items-center gap-2">
+              <form
+                className="flex w-full items-center gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void search();
                 }}
-              />
-              <SearchSourceTabs source={source} onChange={setSource} />
-              <SearchModeTabs mode={mode} onChange={setMode} />
-              <Button type="submit">検索</Button>
-            </form>
+              >
+                <SearchBar
+                  value={query}
+                  onChange={setQuery}
+                  onCompositionStart={() => setIsComposing(true)}
+                  onCompositionEnd={(value) => {
+                    setIsComposing(false);
+                    setQuery(value);
+                  }}
+                />
+                <SearchSourceTabs source={source} onChange={setSource} />
+                <SearchModeTabs mode={mode} onChange={setMode} />
+                <Button type="submit">検索</Button>
+              </form>
+            </div>
           </div>
+          <SearchDietFilters
+            source={source}
+            filters={filters}
+            onChange={setFilter}
+            onClear={clearDietFilters}
+          />
         </div>
       </header>
 

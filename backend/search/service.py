@@ -152,6 +152,14 @@ class SearchService:
             must.append(self._literal_content_clause(residual_query or raw_query))
         law_filter = params.filters.get("law") if params.filters else None
         year_filter = params.filters.get("year") if params.filters else None
+        house_filter = params.filters.get("house") if params.filters else None
+        meeting_filter = params.filters.get("meeting") if params.filters else None
+        speaker_filter = params.filters.get("speaker") if params.filters else None
+        date_from_filter = params.filters.get("date_from") if params.filters else None
+        date_to_filter = params.filters.get("date_to") if params.filters else None
+
+        if params.source in {"law", "diet"}:
+            filter_clauses.append({"term": {"source_type": params.source}})
 
         if law_filter:
             filter_clauses.append(self._law_name_filter(law_filter))
@@ -159,6 +167,19 @@ class SearchService:
 
         if year_filter:
             filter_clauses.append({"term": {"year_enforced": year_filter}})
+        if house_filter:
+            filter_clauses.append({"term": {"house": house_filter}})
+        if meeting_filter:
+            filter_clauses.append(self._keyword_or_prefix_filter("meeting_name", meeting_filter))
+        if speaker_filter:
+            filter_clauses.append(self._speaker_filter(speaker_filter))
+        if date_from_filter or date_to_filter:
+            date_range: dict[str, str] = {}
+            if date_from_filter:
+                date_range["gte"] = date_from_filter
+            if date_to_filter:
+                date_range["lte"] = date_to_filter
+            filter_clauses.append({"range": {"date": date_range}})
 
         if citation.law_name:
             filter_clauses.append(self._law_name_filter(citation.law_name))
@@ -241,6 +262,30 @@ class SearchService:
             {"match_phrase_prefix": {"law_name.prefix": value}},
             {"match_phrase_prefix": {"law_aliases.prefix": value}},
         ]
+
+    @staticmethod
+    def _keyword_or_prefix_filter(field: str, value: str) -> dict[str, Any]:
+        return {
+            "bool": {
+                "should": [
+                    {"term": {field: value}},
+                    {"match_phrase_prefix": {f"{field}.prefix": value}},
+                ],
+                "minimum_should_match": 1,
+            }
+        }
+
+    @classmethod
+    def _speaker_filter(cls, value: str) -> dict[str, Any]:
+        return {
+            "bool": {
+                "should": [
+                    cls._keyword_or_prefix_filter("speaker", value),
+                    cls._keyword_or_prefix_filter("speaker_yomi", value),
+                ],
+                "minimum_should_match": 1,
+            }
+        }
 
     @staticmethod
     def _content_phrase_clause(term: str) -> dict[str, Any]:
@@ -451,6 +496,13 @@ class SearchService:
             highlights=highlights,
             url=url,
             blocks=source.get("blocks", []),
+            house=source.get("house"),
+            meeting_name=source.get("meeting_name"),
+            date=source.get("date"),
+            speaker=source.get("speaker"),
+            speaker_group=source.get("speaker_group"),
+            speaker_position=source.get("speaker_position"),
+            speaker_role=source.get("speaker_role"),
         )
         return {
             "file_id": data.file_id,
@@ -467,6 +519,13 @@ class SearchService:
             "highlights": data.highlights,
             "url": data.url,
             "blocks": data.blocks,
+            "house": data.house,
+            "meeting_name": data.meeting_name,
+            "date": data.date,
+            "speaker": data.speaker,
+            "speaker_group": data.speaker_group,
+            "speaker_position": data.speaker_position,
+            "speaker_role": data.speaker_role,
         }
 
     @staticmethod

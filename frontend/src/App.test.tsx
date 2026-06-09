@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => ({
   search: vi.fn(),
   setQuery: vi.fn(),
   setMode: vi.fn(),
+  setSource: vi.fn(),
+  setFilter: vi.fn(),
+  clearDietFilters: vi.fn(),
   openLawDocument: vi.fn(),
 }));
 
@@ -16,9 +19,15 @@ vi.mock("./hooks/useSearchSettings", () => ({
     setQuery: mocks.setQuery,
     mode: "literal",
     setMode: mocks.setMode,
+    source: "law",
+    setSource: mocks.setSource,
+    filters: {},
+    setFilter: mocks.setFilter,
+    clearDietFilters: mocks.clearDietFilters,
     requestBody: {
       q: "民法",
       mode: "literal",
+      source: "law",
       filters: {},
       size: 20,
       page: 1,
@@ -73,6 +82,9 @@ describe("App", () => {
     mocks.search.mockReset();
     mocks.setQuery.mockReset();
     mocks.setMode.mockReset();
+    mocks.setSource.mockReset();
+    mocks.setFilter.mockReset();
+    mocks.clearDietFilters.mockReset();
     mocks.openLawDocument.mockReset();
     Object.defineProperty(Element.prototype, "scrollIntoView", {
       configurable: true,

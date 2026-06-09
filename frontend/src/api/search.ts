@@ -18,6 +18,13 @@ export interface SearchHit {
   highlights?: HighlightRange[];
   url: string;
   blocks: Array<Record<string, unknown>>;
+  house?: string | null;
+  meeting_name?: string | null;
+  date?: string | null;
+  speaker?: string | null;
+  speaker_group?: string | null;
+  speaker_position?: string | null;
+  speaker_role?: string | null;
 }
 
 export interface SearchResponse {

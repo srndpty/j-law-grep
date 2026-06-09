@@ -386,6 +386,32 @@ def test_law_filter_matches_name_or_alias():
     assert {"term": {"law_aliases": "民法典"}} in should
 
 
+def test_diet_filters_apply_metadata_filters():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算",
+        mode="literal",
+        filters={
+            "house": "衆議院",
+            "meeting": "予算委員会",
+            "speaker": "山田太郎",
+            "date_from": "2025-06-09",
+            "date_to": "2026-06-09",
+        },
+        size=20,
+        page=1,
+        source="diet",
+    )
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+    assert {"term": {"source_type": "diet"}} in filters
+    assert {"term": {"house": "衆議院"}} in filters
+    assert service._keyword_or_prefix_filter("meeting_name", "予算委員会") in filters
+    assert service._speaker_filter("山田太郎") in filters
+    assert {"range": {"date": {"gte": "2025-06-09", "lte": "2026-06-09"}}} in filters
+
+
 def test_convert_hit_includes_article_metadata():
     backend = DummyBackend()
     service = SearchService(backend=backend)
@@ -413,6 +439,45 @@ def test_convert_hit_includes_article_metadata():
     assert result["snippet"] == "不法行為による損害の賠償"
     assert result["snippet_text"] == "不法行為による損害の賠償"
     assert result["highlights"] == [{"start": 7, "end": 9}]
+
+
+def test_convert_hit_includes_diet_metadata():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    hit = {
+        "_id": "diet1",
+        "_source": {
+            "source_type": "diet",
+            "law_id": "121205254X01220231213",
+            "law_name": "衆議院 本会議 第212回 第12号",
+            "article_no": "1",
+            "paragraph_no": None,
+            "item_no": None,
+            "path": "国会会議録/衆議院/本会議/第212回/第12号/発言1",
+            "line": 0,
+            "content": "これより会議を開きます。",
+            "url": "https://kokkai.ndl.go.jp/txt/121205254X01220231213/1",
+            "blocks": [],
+            "house": "衆議院",
+            "meeting_name": "本会議",
+            "date": "2023-12-13",
+            "speaker": "額賀福志郎",
+            "speaker_group": "自由民主党",
+            "speaker_position": "議長",
+            "speaker_role": "",
+        },
+        "highlight": {"content": []},
+    }
+
+    result = service._convert_hit(hit, query="会議")
+
+    assert result["source_type"] == "diet"
+    assert result["house"] == "衆議院"
+    assert result["meeting_name"] == "本会議"
+    assert result["date"] == "2023-12-13"
+    assert result["speaker"] == "額賀福志郎"
+    assert result["speaker_group"] == "自由民主党"
+    assert result["speaker_position"] == "議長"
 
 
 def test_convert_law_section_includes_caption():

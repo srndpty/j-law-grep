@@ -65,6 +65,7 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 ### 3. 国会会議録を取得・投入する
 
 国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `横断` で切り替えられます。
+`国会` / `横断` では、院・会議名・発言者・日付範囲で絞り込めます。
 
 ```powershell
 # 小さく試す

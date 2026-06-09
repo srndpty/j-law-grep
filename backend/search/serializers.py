@@ -60,6 +60,13 @@ class SearchHitSerializer(serializers.Serializer):
     highlights = serializers.ListField(child=serializers.DictField(), default=list)
     url = serializers.CharField(allow_blank=True, default="")
     blocks = serializers.ListField(child=serializers.DictField(), default=list)
+    house = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    meeting_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    date = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_group = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_position = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    speaker_role = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class SearchResponseSerializer(serializers.Serializer):

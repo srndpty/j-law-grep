@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { SearchHit } from "../api/search";
 import { SearchBar } from "./SearchBar";
+import { SearchDietFilters } from "./SearchDietFilters";
 import { SearchModeTabs } from "./SearchModeTabs";
 import { SearchResultItem } from "./SearchResultItem";
 import { SearchResultList } from "./SearchResultList";
@@ -71,6 +72,35 @@ describe("SearchModeTabs", () => {
   });
 });
 
+describe("SearchDietFilters", () => {
+  it("renders only for diet-capable sources and reports changes", async () => {
+    const onChange = vi.fn();
+    const onClear = vi.fn();
+    const { rerender } = render(
+      <SearchDietFilters source="law" filters={{}} onChange={onChange} onClear={onClear} />
+    );
+
+    expect(screen.queryByLabelText("院")).not.toBeInTheDocument();
+
+    rerender(
+      <SearchDietFilters
+        source="diet"
+        filters={{ house: "", meeting: "", speaker: "", date_from: "", date_to: "" }}
+        onChange={onChange}
+        onClear={onClear}
+      />
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("院"), "衆議院");
+    await userEvent.type(screen.getByPlaceholderText("発言者"), "山田");
+    await userEvent.click(screen.getByRole("button", { name: "クリア" }));
+
+    expect(onChange).toHaveBeenCalledWith("house", "衆議院");
+    expect(onChange).toHaveBeenCalledWith("speaker", "山");
+    expect(onClear).toHaveBeenCalled();
+  });
+});
+
 describe("SearchResultList", () => {
   it("renders empty state when not loading", () => {
     render(
@@ -124,6 +154,34 @@ describe("SearchResultItem", () => {
 
     expect(screen.getByText("民法/709")).toBeInTheDocument();
     expect(screen.getByText("第709条")).toBeInTheDocument();
+  });
+
+  it("renders diet metadata", () => {
+    render(
+      <SearchResultItem
+        hit={{
+          ...hit,
+          source_type: "diet",
+          law_name: "衆議院 本会議 第212回 第12号",
+          article_no: "1",
+          house: "衆議院",
+          meeting_name: "本会議",
+          date: "2023-12-13",
+          speaker: "額賀福志郎",
+          speaker_group: "自由民主党",
+        }}
+        selected={false}
+        onSelect={vi.fn()}
+        setRef={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("国会")).toBeInTheDocument();
+    expect(screen.getByText("発言1")).toBeInTheDocument();
+    expect(screen.getByText("衆議院")).toBeInTheDocument();
+    expect(screen.getByText("本会議")).toBeInTheDocument();
+    expect(screen.getByText("2023-12-13")).toBeInTheDocument();
+    expect(screen.getByText("発言者: 額賀福志郎")).toBeInTheDocument();
   });
 });
 
