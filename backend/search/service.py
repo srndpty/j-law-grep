@@ -41,6 +41,10 @@ ALLOWED_FILTER_KEYS = {
     "all": LAW_FILTER_KEYS | DIET_FILTER_KEYS,
 }
 DATE_FILTER_KEYS = ("date_from", "date_to")
+# The `date` mapping is strict yyyy-MM-dd. date.fromisoformat (Py3.11+) also
+# accepts basic/week forms like 20250609 or 2025-W24-1, which would pass here
+# unnormalized and then fail to parse in OpenSearch. Pin the format first.
+DATE_FILTER_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 @dataclass
@@ -575,6 +579,8 @@ class SearchService:
             raw = filters.get(key)
             if not raw:
                 continue
+            if not DATE_FILTER_PATTERN.match(raw):
+                raise ValueError(f"{key} must be a valid YYYY-MM-DD date.")
             try:
                 parsed_dates[key] = date.fromisoformat(raw)
             except ValueError as exc:

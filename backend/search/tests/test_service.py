@@ -875,6 +875,18 @@ def test_validate_filters_rejects_invalid_date():
         SearchService.validate_filters("diet", {"date_from": "2025/06/09"})
 
 
+@pytest.mark.parametrize("value", ["20250609", "2025-W24-1", "2025-6-9", "2025-06-09T00:00:00"])
+def test_validate_filters_rejects_non_yyyy_mm_dd_iso_forms(value):
+    # date.fromisoformat (Py3.11+) accepts these, but the OpenSearch `date`
+    # mapping is strict yyyy-MM-dd, so they must be rejected at the API boundary.
+    with pytest.raises(ValueError, match="date_from must be a valid"):
+        SearchService.validate_filters("diet", {"date_from": value})
+
+
+def test_validate_filters_accepts_strict_yyyy_mm_dd():
+    SearchService.validate_filters("diet", {"date_from": "2025-06-09", "date_to": "2026-06-09"})
+
+
 def test_validate_filters_rejects_inverted_date_range():
     with pytest.raises(ValueError, match="date_from must not be after date_to"):
         SearchService.validate_filters("diet", {"date_from": "2026-06-09", "date_to": "2025-06-09"})
