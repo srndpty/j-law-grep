@@ -222,11 +222,14 @@ def diet_records_from_document(doc: dict) -> Iterator[IndexRecord]:
             if part
         )
         heading = " ".join(part for part in (speaker, speaker_position) if part)
+        # Diet speeches are plain text from the Kokkai API (already normalized),
+        # so store them under `text` rather than `html` to avoid implying the
+        # value is a safe HTML fragment.
         blocks = [
             {
                 "kind": "speech",
                 "speaker": speaker,
-                "html": text,
+                "text": text,
             }
         ]
         yield IndexRecord(

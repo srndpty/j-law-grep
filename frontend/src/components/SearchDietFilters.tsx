@@ -28,7 +28,7 @@ export function SearchDietFilters({ source, filters, onChange, onClear }: Props)
       />
       <input
         className="rounded-md border border-gray-700 bg-[#151a20] px-2 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-        placeholder="発言者"
+        placeholder="発言者（前方一致）"
         value={filters.speaker ?? ""}
         onChange={(event) => onChange("speaker", event.currentTarget.value)}
       />

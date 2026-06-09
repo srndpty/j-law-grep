@@ -92,7 +92,7 @@ describe("SearchDietFilters", () => {
     );
 
     await userEvent.selectOptions(screen.getByLabelText("院"), "衆議院");
-    await userEvent.type(screen.getByPlaceholderText("発言者"), "山田");
+    await userEvent.type(screen.getByPlaceholderText("発言者（前方一致）"), "山田");
     await userEvent.click(screen.getByRole("button", { name: "クリア" }));
 
     expect(onChange).toHaveBeenCalledWith("house", "衆議院");

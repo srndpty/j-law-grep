@@ -693,8 +693,67 @@ def test_all_source_does_not_add_source_type_filter():
 
     filters = service.build_query(params)["query"]["bool"]["filter"]
 
+    # No top-level source_type term: the source split lives inside a should.
     assert {"term": {"source_type": "law"}} not in filters
     assert {"term": {"source_type": "diet"}} not in filters
+
+
+def test_all_source_with_diet_filter_keeps_law_results():
+    # Spec lock: in cross-search, a diet-only filter (speaker) must not drop law
+    # docs. Law docs pass through the law branch (which carries no diet filter),
+    # while diet docs are constrained by the speaker filter.
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算", mode="literal", filters={"speaker": "山田太郎"}, size=20, page=1, source="all"
+    )
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+    should = filters[0]["bool"]["should"]
+    assert filters[0]["bool"]["minimum_should_match"] == 1
+
+    law_branch = next(b for b in should if {"term": {"source_type": "law"}} in b["bool"]["filter"])
+    diet_branch = next(
+        b for b in should if {"term": {"source_type": "diet"}} in b["bool"]["filter"]
+    )
+    # Law branch is unconstrained by the speaker filter; diet branch carries it.
+    assert service._speaker_filter("山田太郎") not in law_branch["bool"]["filter"]
+    assert service._speaker_filter("山田太郎") in diet_branch["bool"]["filter"]
+
+
+def test_all_source_with_law_filter_keeps_diet_results():
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="予算", mode="literal", filters={"law": "民法"}, size=20, page=1, source="all"
+    )
+
+    should = service.build_query(params)["query"]["bool"]["filter"][0]["bool"]["should"]
+    law_branch = next(b for b in should if {"term": {"source_type": "law"}} in b["bool"]["filter"])
+    diet_branch = next(
+        b for b in should if {"term": {"source_type": "diet"}} in b["bool"]["filter"]
+    )
+    assert service._law_name_filter("民法") in law_branch["bool"]["filter"]
+    # Diet branch is not constrained by the law-name filter.
+    assert service._law_name_filter("民法") not in diet_branch["bool"]["filter"]
+
+
+def test_search_index_payload_includes_split_indices_for_all():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(q="損害", mode="literal", filters={}, size=20, page=1, source="all")
+
+    result = service.search(params)
+
+    assert result["index"]["name"] == "jlaw-current,jdiet-current"
+    assert result["index"]["indices"] == ["jlaw-current", "jdiet-current"]
 
 
 def test_search_routes_to_diet_backend_without_real_opensearch():

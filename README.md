@@ -65,7 +65,9 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 ### 3. 国会会議録を取得・投入する
 
 国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `横断` で切り替えられます。
-`国会` / `横断` では、院・会議名・発言者・日付範囲で絞り込めます。
+`国会` / `横断` では、院・会議名・発言者・日付範囲で絞り込めます。発言者は前方一致です (`山田` → `山田太郎` は拾うが `太郎` では拾わない)。
+
+`横断` の filter は source ごとに掛かります。たとえば `横断` で発言者だけ指定すると、法令側は素通しで横断結果に残り、国会側だけ発言者で絞られます。逆に法令名で絞ると国会側は素通しで残ります。「両方に同じ条件を AND したい」用途ではなく「片側を絞っても反対側は消えない」挙動です。
 
 ```powershell
 # 小さく試す
@@ -77,6 +79,7 @@ make diet-fetch-range DIET_FROM_DATE=2025-06-09 DIET_UNTIL_DATE=2026-06-09
 make reindex-diet
 
 # バックフィル (第1回から指定回まで、衆参両院)
+# DIET_SESSION_TO は最新回次を確認して置き換える (212 は例)
 make diet-fetch-backfill DIET_SESSION_TO=212
 make reindex-diet
 ```
