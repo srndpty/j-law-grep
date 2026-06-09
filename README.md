@@ -71,12 +71,16 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 make diet-fetch DIET_ARGS="--all-houses --session-from 212 --session-to 212 --limit-meetings 20"
 make reindex-diet
 
+# 日付範囲で取得する (例: 直近1年)
+make diet-fetch-range DIET_FROM_DATE=2025-06-09 DIET_UNTIL_DATE=2026-06-09
+make reindex-diet
+
 # バックフィル (第1回から指定回まで、衆参両院)
 make diet-fetch-backfill DIET_SESSION_TO=212
 make reindex-diet
 ```
 
-`diet-fetch-backfill` は途中停止を前提に、既存 JSON と `_fetch_state.json` を見て取得済み `issueID` を skip します。失敗した会議は `_fetch_errors.jsonl` に記録し、次回実行時に再試行できます。再取得したい場合は `DIET_ARGS="--overwrite"` を追加してください。公式 API への負荷を避けるため、既定でリクエスト間隔は 3 秒です (`DIET_DELAY_SECONDS=...` で調整)。
+`diet-fetch-backfill` は第1回から指定回までを対象にする全量取得用です。通常の確認や部分投入では `diet-fetch-range` か `diet-fetch DIET_ARGS="..."` で日付・回次・件数を絞ってください。取得は途中停止を前提に、既存 JSON と `_fetch_state.json` を見て取得済み `issueID` を skip します。失敗した会議は `_fetch_errors.jsonl` に記録し、次回実行時に再試行できます。再取得したい場合は `DIET_ARGS="--overwrite"` を追加してください。公式 API への負荷を避けるため、既定でリクエスト間隔は 3 秒です (`DIET_DELAY_SECONDS=...` で調整)。
 
 > `indexer/diet_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
 
