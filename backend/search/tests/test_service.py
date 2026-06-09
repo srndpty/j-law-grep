@@ -412,6 +412,38 @@ def test_diet_filters_apply_metadata_filters():
     assert {"range": {"date": {"gte": "2025-06-09", "lte": "2026-06-09"}}} in filters
 
 
+def test_speaker_filter_uses_keyword_prefix_not_ngram_prefix():
+    service = SearchService(backend=DummyBackend())
+
+    speaker_filter = service._speaker_filter("青柳仁士")
+
+    assert speaker_filter == {
+        "bool": {
+            "should": [
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"speaker": "青柳仁士"}},
+                            {"prefix": {"speaker": "青柳仁士"}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"speaker_yomi": "青柳仁士"}},
+                            {"prefix": {"speaker_yomi": "青柳仁士"}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                },
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
 def test_convert_hit_includes_article_metadata():
     backend = DummyBackend()
     service = SearchService(backend=backend)

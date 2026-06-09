@@ -269,7 +269,7 @@ class SearchService:
             "bool": {
                 "should": [
                     {"term": {field: value}},
-                    {"match_phrase_prefix": {f"{field}.prefix": value}},
+                    {"prefix": {field: value}},
                 ],
                 "minimum_should_match": 1,
             }
