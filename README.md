@@ -86,6 +86,8 @@ make reindex-diet
 
 `diet-fetch-backfill` は第1回から指定回までを対象にする全量取得用です。通常の確認や部分投入では `diet-fetch-range` か `diet-fetch DIET_ARGS="..."` で日付・回次・件数を絞ってください。件数で止めたいときは基準を選べます: `--limit-discovered N` は「N 件発見したら停止」(skip も含む)、`--limit-fetched N` は「N 件新規取得したら停止」(skip は数えない) です。`--limit-meetings` は `--limit-fetched` の旧称 (fetched 基準) です。既存ファイルが多い状態で「小さく試す」なら、想定外に先まで走らない `--limit-discovered` を使ってください。取得は途中停止を前提に、既存 JSON と `_fetch_state.json` を見て取得済み `issueID` を skip します。失敗した会議は `_fetch_errors.jsonl` に記録し、次回実行時に再試行できます。再取得したい場合は `DIET_ARGS="--overwrite"` を追加してください。公式 API への負荷を避けるため、既定でリクエスト間隔は 3 秒です (`DIET_DELAY_SECONDS=...` で調整)。
 
+`reindex-diet` は既定で bulk request を4並列にします。OpenSearchのCPU・メモリが逼迫する場合は `DIET_BULK_WORKERS=2`、直列へ戻す場合は `DIET_BULK_WORKERS=1` を指定してください。chunk件数とrequest上限も `BULK_CHUNK` / `BULK_MAX_MB` で調整できます。
+
 > `indexer/diet_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
 
 ## frontend と backend の接続

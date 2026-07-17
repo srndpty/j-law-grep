@@ -1,3 +1,5 @@
+import threading
+import time
 from types import SimpleNamespace
 
 from search import open_search_client
@@ -224,6 +226,53 @@ def test_bulk_splits_by_max_chunk_bytes(monkeypatch):
 
     assert backend.bulk(actions, chunk_size=100) == 2
     assert len(calls) == 2
+
+
+def test_bulk_runs_requests_concurrently(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_BULK_TIMEOUT_SECONDS=10, OPENSEARCH_BULK_MAX_BYTES=1024),
+    )
+
+    class ConcurrentBulkClient(DummyBulkClient):
+        def __init__(self):
+            super().__init__({"errors": False, "items": []})
+            self.active = 0
+            self.max_active = 0
+            self.lock = threading.Lock()
+
+        def bulk(self, body, refresh, request_timeout):
+            with self.lock:
+                self.active += 1
+                self.max_active = max(self.max_active, self.active)
+            time.sleep(0.02)
+            with self.lock:
+                self.active -= 1
+            return {"errors": False, "items": []}
+
+    client = ConcurrentBulkClient()
+    backend = OpenSearchBackend(client=client, index="laws")
+    actions = [{"_id": str(index), "_source": {"content": str(index)}} for index in range(8)]
+
+    assert backend.bulk(actions, chunk_size=1, workers=4) == 8
+    assert client.max_active > 1
+
+
+def test_bulk_rejects_non_positive_workers(monkeypatch):
+    monkeypatch.setattr(
+        open_search_client,
+        "settings",
+        SimpleNamespace(OPENSEARCH_BULK_TIMEOUT_SECONDS=10, OPENSEARCH_BULK_MAX_BYTES=1024),
+    )
+    backend = OpenSearchBackend(client=DummyBulkClient({"errors": False}), index="laws")
+
+    try:
+        backend.bulk([], workers=0)
+    except ValueError as exc:
+        assert "at least 1" in str(exc)
+    else:
+        raise AssertionError("Expected invalid worker count to raise")
 
 
 def test_position_fields_are_keywords(monkeypatch):

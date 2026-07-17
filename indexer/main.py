@@ -84,6 +84,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-bulk-mb", type=int, default=None, help="Maximum bulk request size in MiB."
     )
+    parser.add_argument(
+        "--bulk-workers",
+        type=int,
+        default=1,
+        help="Number of concurrent bulk requests (default: 1).",
+    )
     parser.add_argument("--index", help="Concrete index to write. Defaults to OPENSEARCH_INDEX.")
     parser.add_argument("--alias", help="Alias to switch after a successful versioned build.")
     parser.add_argument(
@@ -150,6 +156,7 @@ def main() -> None:
             chunk_size=args.chunk_size,
             max_chunk_bytes=max_chunk_bytes,
             progress=args.progress,
+            workers=args.bulk_workers,
         )
 
         print(f"Indexed {indexed} records into {backend.index}")

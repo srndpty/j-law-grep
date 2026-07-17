@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any
@@ -465,31 +466,60 @@ class OpenSearchBackend:
         max_chunk_bytes: int | None = None,
         progress: bool = False,
         refresh_at_end: bool = True,
+        workers: int = 1,
     ) -> int:
-        processed = 0
+        if workers < 1:
+            raise ValueError("bulk workers must be at least 1")
+
         max_bytes = max_chunk_bytes or settings.OPENSEARCH_BULK_MAX_BYTES
-        for chunk in self._chunked(actions, size=chunk_size, max_bytes=max_bytes):
-            body: list[dict[str, Any]] = []
-            for action in chunk:
-                meta = {"index": {"_index": self.index, "_id": action["_id"]}}
-                body.extend([meta, action["_source"]])
-            # Keep requests small and defer refresh to the end for better throughput
-            response = self.client.bulk(
-                body=body,
-                refresh=False,
-                request_timeout=settings.OPENSEARCH_BULK_TIMEOUT_SECONDS,
-            )
-            if response.get("errors"):
-                failures = [
-                    item.get("index", item)
-                    for item in response.get("items", [])
-                    if item.get("index", {}).get("error")
-                ]
-                preview = failures[:3]
-                raise RuntimeError(f"OpenSearch bulk indexing failed: {preview}")
-            processed += len(chunk)
+        chunks = self._chunked(actions, size=chunk_size, max_bytes=max_bytes)
+        if workers == 1:
+            processed = sum(self._index_bulk_chunk(chunk) for chunk in chunks)
+        else:
+            processed = self._parallel_bulk(chunks, workers=workers)
         if refresh_at_end:
             self.client.indices.refresh(index=self.index)
+        return processed
+
+    def _index_bulk_chunk(self, chunk: list[dict[str, Any]]) -> int:
+        body: list[dict[str, Any]] = []
+        for action in chunk:
+            meta = {"index": {"_index": self.index, "_id": action["_id"]}}
+            body.extend([meta, action["_source"]])
+        # Keep requests small and defer refresh to the end for better throughput.
+        response = self.client.bulk(
+            body=body,
+            refresh=False,
+            request_timeout=settings.OPENSEARCH_BULK_TIMEOUT_SECONDS,
+        )
+        if response.get("errors"):
+            failures = [
+                item.get("index", item)
+                for item in response.get("items", [])
+                if item.get("index", {}).get("error")
+            ]
+            preview = failures[:3]
+            raise RuntimeError(f"OpenSearch bulk indexing failed: {preview}")
+        return len(chunk)
+
+    def _parallel_bulk(self, chunks: Iterable[list[dict[str, Any]]], workers: int) -> int:
+        processed = 0
+        pending: set[Future[int]] = set()
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="opensearch-bulk") as pool:
+            try:
+                for chunk in chunks:
+                    pending.add(pool.submit(self._index_bulk_chunk, chunk))
+                    # Bound queued payloads to one chunk per worker. Generating the next
+                    # chunk overlaps with requests that are still running, without retaining
+                    # the whole corpus in memory.
+                    if len(pending) >= workers:
+                        done, pending = wait(pending, return_when=FIRST_COMPLETED)
+                        processed += sum(future.result() for future in done)
+                processed += sum(future.result() for future in pending)
+            except Exception:
+                for future in pending:
+                    future.cancel()
+                raise
         return processed
 
 

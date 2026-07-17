@@ -1,3 +1,5 @@
+name: j-law-grep
+
 services:
   opensearch:
     image: opensearchproject/opensearch:2.9.0
@@ -51,3 +53,6 @@ services:
 
 volumes:
   opensearch-data:
+    # Keep the existing index data when the Compose project name changes.
+    name: deploy_opensearch-data
+    external: true

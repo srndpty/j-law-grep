@@ -30,13 +30,14 @@ class RecordingBackend:
     def ensure_index(self):
         self.ensured = True
 
-    def bulk(self, actions, chunk_size, max_chunk_bytes, progress):
+    def bulk(self, actions, chunk_size, max_chunk_bytes, progress, workers):
         self.bulk_calls.append(
             {
                 "actions": list(actions),
                 "chunk_size": chunk_size,
                 "max_chunk_bytes": max_chunk_bytes,
                 "progress": progress,
+                "workers": workers,
             }
         )
         return 2
@@ -160,6 +161,7 @@ def test_main_indexes_non_versioned_corpus_and_writes_stats(monkeypatch, tmp_pat
             "chunk_size": 7,
             "max_chunk_bytes": 2 * 1024 * 1024,
             "progress": True,
+            "workers": 1,
         }
     ]
     assert backend.prepared == [False]

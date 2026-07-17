@@ -11,20 +11,26 @@ INDEX_INPUT ?= indexer/sample_corpus
 PROGRESS ?= 1
 BULK_CHUNK ?= 200
 BULK_MAX_MB ?= 2
+BULK_WORKERS ?= 1
 INDEX_ALIAS ?= $(if $(OPENSEARCH_INDEX),$(OPENSEARCH_INDEX),jlaw-current)
 DIET_INPUT ?= indexer/diet_data
 DIET_ALIAS ?= $(if $(OPENSEARCH_DIET_INDEX),$(OPENSEARCH_DIET_INDEX),jdiet-current)
 DIET_DELAY_SECONDS ?= 3
 DIET_FROM_DATE ?=
 DIET_UNTIL_DATE ?=
+DIET_BULK_WORKERS ?= 4
+OPENSEARCH_DATA_VOLUME ?= deploy_opensearch-data
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
 REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch diet-fetch-range diet-fetch-backfill reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
+.PHONY: up ensure-opensearch-volume down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch diet-fetch-range diet-fetch-backfill reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
-up:
+ensure-opensearch-volume:
+	@docker volume inspect $(OPENSEARCH_DATA_VOLUME) >/dev/null 2>&1 || docker volume create $(OPENSEARCH_DATA_VOLUME)
+
+up: ensure-opensearch-volume
 	$(COMPOSE) up -d --build --remove-orphans
 
 build-backend:
@@ -97,13 +103,13 @@ reindex:
 	fi
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir /app/$(REPORT_DIR) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --bulk-workers $(BULK_WORKERS) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir /app/$(REPORT_DIR) $(if $(GOLDEN_FILE),--golden /app/$(GOLDEN_FILE),); \
 	else \
-		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir $(REPORT_DIR) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
+		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --bulk-workers $(BULK_WORKERS) --write-manifest --versioned --alias $(INDEX_ALIAS) --report-dir $(REPORT_DIR) $(if $(GOLDEN_FILE),--golden $(GOLDEN_FILE),); \
 	fi
 
 reindex-diet:
-	$(MAKE) reindex INDEX_INPUT=$(DIET_INPUT) INDEX_ALIAS=$(DIET_ALIAS) GOLDEN_FILE=
+	$(MAKE) reindex INDEX_INPUT=$(DIET_INPUT) INDEX_ALIAS=$(DIET_ALIAS) GOLDEN_FILE= BULK_WORKERS=$(DIET_BULK_WORKERS)
 
 # Backward-compatible alias for the standard versioned reindex.
 reindex-versioned: reindex
@@ -113,9 +119,9 @@ reindex-versioned: reindex
 reindex-dev:
 	@if [ "$(INDEX_INPUT)" = "indexer/sample_corpus" ]; then \
 		$(COMPOSE) build backend; \
-		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
+		$(COMPOSE) run --rm backend python -m indexer.main --input /app/$(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --bulk-workers $(BULK_WORKERS) --write-manifest; \
 	else \
-		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --write-manifest; \
+		OPENSEARCH_HOST=$(HOST_OPENSEARCH) $(PYTHON) -m indexer.main --input $(INDEX_INPUT) --provider opensearch $(if $(PROGRESS),--progress,) --chunk-size $(BULK_CHUNK) --max-bulk-mb $(BULK_MAX_MB) --bulk-workers $(BULK_WORKERS) --write-manifest; \
 	fi
 
 golden: build-backend
@@ -144,9 +150,9 @@ rollback-index:
 	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.rollback_index --alias $(INDEX_ALIAS) --to $(TO_INDEX)
 
 health-smoke:
-	curl -sS http://localhost:8000/healthz
-	curl -sS http://localhost:8000/readyz
-	curl -sS http://localhost:8000/metrics
+	curl -fsS http://localhost:8000/healthz
+	curl -fsS http://localhost:8000/readyz
+	curl -fsS http://localhost:8000/metrics
 
 down:
 	$(COMPOSE) down -v --remove-orphans
