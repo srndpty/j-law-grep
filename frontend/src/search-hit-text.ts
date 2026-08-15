@@ -19,13 +19,24 @@ export function deriveParagraphNo(hit: SearchHit): number | string | null {
   return null;
 }
 
+// 法令以外は article_no の意味が違う: 国会は発言番号、質問主意書は種別付きの
+// 段落位置 (q1 / a3)。
+export function positionLabel(hit: SearchHit, articleNo: string): string {
+  if (hit.source_type === "diet") return `発言${articleNo}`;
+  if (hit.source_type === "shuisho") {
+    const kind = hit.shuisho_kind === "answer" ? "答弁" : "質問";
+    return `${kind} 第${articleNo.replace(/^[qa]/, "")}段落`;
+  }
+  return articleLabel(articleNo);
+}
+
 export function formatLocation(hit: SearchHit): string {
   const base = hit.law_name || hit.path;
   const segments: string[] = [];
   const articleNo = deriveArticleNo(hit);
   const paragraphNo = deriveParagraphNo(hit);
   if (articleNo) {
-    segments.push(hit.source_type === "diet" ? `発言${articleNo}` : articleLabel(articleNo));
+    segments.push(positionLabel(hit, articleNo));
   }
   if (paragraphNo) segments.push(`${paragraphNo}項`);
   if (hit.item_no) segments.push(`${hit.item_no}号`);
@@ -338,7 +349,9 @@ function writeError(tab: Window, message: string) {
 }
 
 export async function openLawDocument(hit: SearchHit) {
-  if (hit.source_type === "diet" && hit.url) {
+  // 国会会議録と質問主意書は外部サイトの本文をそのまま開く (法令のように
+  // 全文を組み立てられないため)。
+  if (hit.source_type !== "law" && hit.source_type !== undefined && hit.url) {
     window.open(hit.url, "_blank", "noopener");
     return;
   }

@@ -58,6 +58,8 @@ class IndexRecord:
     speaker_role: str | None = None
     speech_id: str | None = None
     speech_order: str | None = None
+    shuisho_kind: str | None = None
+    shuisho_number: str | None = None
     pdf_url: str | None = None
 
 
@@ -104,6 +106,9 @@ def truncate_utf8(value: str, max_bytes: int = CONTENT_LONG_MAX_BYTES) -> str:
 def records_from_document(doc: dict) -> Iterator[IndexRecord]:
     if doc.get("source_type") == "diet":
         yield from diet_records_from_document(doc)
+        return
+    if doc.get("source_type") == "shuisho":
+        yield from shuisho_records_from_document(doc)
         return
 
     law_id = doc["law_id"]
@@ -271,6 +276,80 @@ def diet_records_from_document(doc: dict) -> Iterator[IndexRecord]:
         )
 
 
+def shuisho_records_from_document(doc: dict) -> Iterator[IndexRecord]:
+    shuisho_id = normalize_text(str(doc.get("shuisho_id") or ""))
+    house = normalize_text(str(doc.get("house") or ""))
+    session = normalize_text(str(doc.get("session") or ""))
+    number = normalize_text(str(doc.get("number") or ""))
+    title = normalize_text(str(doc.get("title") or "")) or shuisho_id
+    submitter = normalize_text(str(doc.get("submitter") or ""))
+
+    for kind, caption, prefix in (
+        ("question", "質問本文", "q"),
+        ("answer", "答弁本文", "a"),
+    ):
+        body = doc.get(kind)
+        if not isinstance(body, dict):
+            continue
+        url = normalize_text(str(body.get("url") or ""))
+        pdf_url = normalize_text(str(body.get("pdf_url") or ""))
+        date = normalize_text(str(body.get("date") or ""))
+        # 質問は提出者、答弁は答弁者 (内閣総理大臣) を speaker として扱い、
+        # 既存の speaker フィルタ・UI をそのまま流用する。
+        speaker = normalize_text(str(body.get("answerer") or "")) or submitter
+
+        for index, paragraph in enumerate(body.get("paragraphs", []) or [], start=1):
+            text = normalize_text(str(paragraph or ""))
+            if not text:
+                continue
+            # 質問と答弁は同じ shuisho_id を共有するので、article_no に種別の
+            # 接頭辞を付けて stable_doc_id の衝突を避ける。
+            article_no = f"{prefix}{index}"
+            path = "/".join(
+                part
+                for part in (
+                    "質問主意書",
+                    house,
+                    f"第{session}回" if session else "",
+                    issue_label(number),
+                    caption,
+                    str(index),
+                )
+                if part
+            )
+            yield IndexRecord(
+                source_type="shuisho",
+                law_id=shuisho_id,
+                law_name=title,
+                law_aliases=[],
+                article_no=article_no,
+                paragraph_no=None,
+                item_no=None,
+                caption=caption,
+                heading=speaker,
+                content=text,
+                content_plain=text,
+                citation=Citation(
+                    law_name=title,
+                    article_no=article_no,
+                    paragraph_no=None,
+                    item_no=None,
+                ),
+                year_enforced=date[:4] if len(date) >= 4 else None,
+                path=path,
+                url=url,
+                blocks=[{"kind": "text", "text": text}],
+                issue_id=shuisho_id,
+                house=house,
+                session=session,
+                date=date or None,
+                speaker=speaker,
+                shuisho_kind=kind,
+                shuisho_number=number,
+                pdf_url=pdf_url,
+            )
+
+
 def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
     seen: dict[str, int] = {}
     for record in records:
@@ -310,6 +389,17 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
                 "speaker_role": record.speaker_role,
                 "speech_id": record.speech_id,
                 "speech_order": record.speech_order,
+                "pdf_url": record.pdf_url,
+            }
+        elif record.source_type == "shuisho":
+            doc |= {
+                "issue_id": record.issue_id,
+                "house": record.house,
+                "session": record.session,
+                "date": record.date,
+                "speaker": record.speaker,
+                "shuisho_kind": record.shuisho_kind,
+                "shuisho_number": record.shuisho_number,
                 "pdf_url": record.pdf_url,
             }
         base_doc_id = stable_doc_id(record)

@@ -22,6 +22,7 @@
 # 法令・国会会議録コーパス (ローカル専用。image には入れない)
 /indexer/data
 /indexer/diet_data
+/indexer/shuisho_data
 /data
 
 # 秘密情報・ローカル設定 (image に焼き込まない)

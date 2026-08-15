@@ -21,7 +21,7 @@ class SearchRequestSerializer(serializers.Serializer):
         choices=["auto", "literal", "keyword", "boolean", "citation", "regex"], default="literal"
     )
     filters = SearchFiltersField(required=False, default=dict)
-    source = serializers.ChoiceField(choices=["law", "diet", "all"], default="law")
+    source = serializers.ChoiceField(choices=["law", "diet", "shuisho", "all"], default="law")
     size = serializers.IntegerField(min_value=1, max_value=100, default=20)
     # Absolute cap; the precise `from + size` window is enforced in validate().
     page = serializers.IntegerField(min_value=1, max_value=MAX_RESULT_WINDOW, default=1)
@@ -71,6 +71,9 @@ class SearchHitSerializer(serializers.Serializer):
     speaker_group = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     speaker_position = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     speaker_role = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    session = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    shuisho_kind = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    shuisho_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class SearchResponseSerializer(serializers.Serializer):

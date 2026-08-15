@@ -26,6 +26,18 @@ def document_stats(doc: dict) -> tuple[int, int]:
         speeches = doc.get("speeches", []) or []
         return 1, sum(1 for speech in speeches if normalize_text(speech.get("text", "")))
 
+    if doc.get("source_type") == "shuisho":
+        # 「article」は質問本文 / 答弁本文の 2 部、record は段落数。
+        bodies = [doc.get(kind) for kind in ("question", "answer")]
+        present = [body for body in bodies if isinstance(body, dict)]
+        record_count = sum(
+            1
+            for body in present
+            for paragraph in body.get("paragraphs", []) or []
+            if normalize_text(str(paragraph or ""))
+        )
+        return len(present), record_count
+
     article_count = 0
     record_count = 0
     for article in doc.get("articles", []):
@@ -69,8 +81,8 @@ def build_manifest(input_dir: Path, source: str = "local") -> dict:
         record_count += doc_records
         laws.append(
             {
-                "law_id": doc.get("law_id", ""),
-                "law_name": doc.get("law_name", ""),
+                "law_id": doc.get("law_id", "") or doc.get("shuisho_id", ""),
+                "law_name": doc.get("law_name", "") or doc.get("title", ""),
                 "source_type": doc.get("source_type", "law"),
                 "issue_id": doc.get("issue_id"),
                 "meeting_title": doc.get("meeting_title"),

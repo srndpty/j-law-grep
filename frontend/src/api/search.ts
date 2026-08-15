@@ -5,7 +5,7 @@ export interface HighlightRange {
 
 export interface SearchHit {
   file_id: string;
-  source_type?: "law" | "diet" | string;
+  source_type?: "law" | "diet" | "shuisho" | string;
   law_id: string;
   law_name: string;
   article_no: string;
@@ -25,6 +25,9 @@ export interface SearchHit {
   speaker_group?: string | null;
   speaker_position?: string | null;
   speaker_role?: string | null;
+  session?: string | null;
+  shuisho_kind?: "question" | "answer" | string | null;
+  shuisho_number?: string | null;
 }
 
 export interface SearchResponse {

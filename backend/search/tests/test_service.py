@@ -818,8 +818,12 @@ def test_search_index_payload_includes_split_indices_for_all():
 
     result = service.search(params)
 
-    assert result["index"]["name"] == "jlaw-current,jdiet-current"
-    assert result["index"]["indices"] == ["jlaw-current", "jdiet-current"]
+    assert result["index"]["name"] == "jlaw-current,jdiet-current,jshuisho-current"
+    assert result["index"]["indices"] == [
+        "jlaw-current",
+        "jdiet-current",
+        "jshuisho-current",
+    ]
 
 
 def test_search_routes_to_diet_backend_without_real_opensearch():
@@ -856,8 +860,8 @@ def test_all_search_spans_injected_law_index_and_diet():
 
     result = service.search(params)
 
-    assert result["index"]["name"] == "jlaw-current,jdiet-current"
-    assert created["jlaw-current,jdiet-current"].last_ignore_unavailable is True
+    assert result["index"]["name"] == "jlaw-current,jdiet-current,jshuisho-current"
+    assert created["jlaw-current,jdiet-current,jshuisho-current"].last_ignore_unavailable is True
 
 
 def test_law_search_does_not_set_ignore_unavailable():
@@ -904,3 +908,121 @@ def test_validate_filters_accepts_known_law_and_diet_keys():
     )
     # `all` accepts the union of law and diet keys.
     SearchService.validate_filters("all", {"law": "民法", "speaker": "山田"})
+
+
+def test_shuisho_filters_apply_metadata_filters():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(
+        q="閣議決定",
+        mode="literal",
+        filters={
+            "house": "衆議院",
+            "session": "217",
+            "speaker": "福田玄",
+            "shuisho_kind": "answer",
+            "date_from": "2025-01-01",
+            "date_to": "2025-12-31",
+        },
+        size=20,
+        page=1,
+        source="shuisho",
+    )
+
+    result = service.search(params)
+    filters = created["jshuisho-current"].last_body["query"]["bool"]["filter"]
+
+    assert result["index"]["name"] == "jshuisho-current"
+    assert created["jshuisho-current"].last_ignore_unavailable is True
+    assert {"term": {"source_type": "shuisho"}} in filters
+    assert {"term": {"house": "衆議院"}} in filters
+    assert {"term": {"session": "217"}} in filters
+    assert {"term": {"shuisho_kind": "answer"}} in filters
+    assert service._speaker_filter("福田玄") in filters
+    assert {"range": {"date": {"gte": "2025-01-01", "lte": "2025-12-31"}}} in filters
+
+
+def test_shuisho_search_disables_citation_parsing():
+    # article_no is the paragraph position for shuisho, so a citation query must
+    # not turn into a law-shaped article filter (same reason as diet).
+    backend = DummyBackend()
+    service = SearchService(backend=backend)
+    params = SearchParams(
+        q="民法 709条", mode="auto", filters={}, size=20, page=1, source="shuisho"
+    )
+
+    query = service.build_query(params)["query"]["bool"]
+
+    assert {"term": {"article_no": "709"}} not in query["filter"]
+    assert query["must"] != [{"match_all": {}}]
+    assert service.classify_query("民法 709条", "auto", "shuisho")["effective_mode"] == "literal"
+
+
+def test_all_search_keeps_each_source_filters_in_its_own_branch():
+    created: dict[str, DummyBackend] = {}
+
+    def factory(index: str) -> DummyBackend:
+        backend = DummyBackend()
+        backend.index = index
+        created[index] = backend
+        return backend
+
+    service = SearchService(backend_factory=factory)
+    params = SearchParams(
+        q="損害",
+        mode="literal",
+        filters={"law": "民法", "meeting": "予算委員会", "shuisho_kind": "question"},
+        size=20,
+        page=1,
+        source="all",
+    )
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+    branches = filters[0]["bool"]["should"]
+
+    by_source = {
+        branch["bool"]["filter"][0]["term"]["source_type"]: branch["bool"]["filter"][1:]
+        for branch in branches
+    }
+    assert set(by_source) == {"law", "diet", "shuisho"}
+    # 法令側のフィルタが国会/質問主意書のヒットを落とさない (逆も同様)。
+    assert service._law_name_filter("民法") in by_source["law"]
+    assert service._keyword_or_prefix_filter("meeting_name", "予算委員会") in by_source["diet"]
+    assert {"term": {"shuisho_kind": "question"}} in by_source["shuisho"]
+    assert {"term": {"shuisho_kind": "question"}} not in by_source["diet"]
+
+
+def test_citation_lookup_collapses_all_search_to_law_only():
+    service = SearchService(backend=DummyBackend())
+    params = SearchParams(q="民法709条", mode="auto", filters={}, size=20, page=1, source="all")
+
+    filters = service.build_query(params)["query"]["bool"]["filter"]
+
+    # A pure citation lookup has no free-text term, so the diet/shuisho branches
+    # must not be present at all (they would otherwise match every document).
+    assert {"term": {"source_type": "law"}} in filters
+    serialized = json.dumps(filters, ensure_ascii=False)
+    assert '"source_type": "diet"' not in serialized
+    assert '"source_type": "shuisho"' not in serialized
+
+
+def test_validate_filters_accepts_shuisho_keys_and_rejects_others():
+    SearchService.validate_filters(
+        "shuisho", {"house": "衆議院", "session": "217", "shuisho_kind": "answer"}
+    )
+    with pytest.raises(ValueError, match="Unsupported filter"):
+        SearchService.validate_filters("shuisho", {"meeting": "予算委員会"})
+    with pytest.raises(ValueError, match="Unsupported filter"):
+        SearchService.validate_filters("diet", {"shuisho_kind": "answer"})
+
+
+def test_validate_filters_rejects_unknown_shuisho_kind():
+    with pytest.raises(ValueError, match="shuisho_kind must be one of"):
+        SearchService.validate_filters("shuisho", {"shuisho_kind": "reply"})

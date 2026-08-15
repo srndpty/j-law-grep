@@ -51,5 +51,5 @@ make check         # lint + typecheck + test + frontend-check (コミット前�
 ## 触らない / 注意するファイル
 
 - `.env` はコミットしない (`.env.example` のみ追跡)。
-- `indexer/data/*` と `data/egov-xml/` はローカル専用コーパス置き場 (git/Docker から除外済み)。
+- `indexer/data/*`・`indexer/diet_data/*`・`indexer/shuisho_data/*` と `data/egov-xml/` はローカル専用コーパス置き場 (git/Docker から除外済み)。
 - `tmp/` は reindex レポート等の一時出力。

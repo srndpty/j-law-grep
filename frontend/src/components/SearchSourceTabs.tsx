@@ -3,6 +3,7 @@ import { clsx } from "clsx";
 const SOURCES = [
   { value: "law", label: "法令" },
   { value: "diet", label: "国会" },
+  { value: "shuisho", label: "質問主意書" },
   { value: "all", label: "横断" },
 ];
 

@@ -10,6 +10,12 @@ from typing import Any
 from django.conf import settings
 from opensearchpy import OpenSearch, TransportError
 
+# Optional corpora aliases reported by /readyz, keyed by the payload key.
+OPTIONAL_ALIAS_SETTINGS = {
+    "diet": "OPENSEARCH_DIET_INDEX",
+    "shuisho": "OPENSEARCH_SHUISHO_INDEX",
+}
+
 
 @dataclass
 class SearchHit:
@@ -34,6 +40,9 @@ class SearchHit:
     speaker_group: str | None = None
     speaker_position: str | None = None
     speaker_role: str | None = None
+    session: str | None = None
+    shuisho_kind: str | None = None
+    shuisho_number: str | None = None
 
 
 @lru_cache(maxsize=8)
@@ -156,6 +165,10 @@ class OpenSearchBackend:
                     "speaker_role": {"type": "keyword"},
                     "speech_id": {"type": "keyword"},
                     "speech_order": {"type": "keyword"},
+                    # 質問主意書: 質問本文 / 答弁本文の別と提出番号。件名は law_name、
+                    # 提出者・答弁者は speaker を流用しているので追加はこの2つだけ。
+                    "shuisho_kind": {"type": "keyword"},
+                    "shuisho_number": {"type": "keyword"},
                     "pdf_url": {"type": "keyword"},
                     "path": {"type": "keyword"},
                     "url": {"type": "keyword"},
@@ -250,27 +263,29 @@ class OpenSearchBackend:
             "concrete": concrete_indices,
             "schema_version": settings.OPENSEARCH_SCHEMA_VERSION,
         }
-        diet = self._diet_ready_payload()
-        if diet is not None:
-            payload["diet"] = diet
+        for key, setting_name in OPTIONAL_ALIAS_SETTINGS.items():
+            optional = self._optional_alias_ready_payload(setting_name)
+            if optional is not None:
+                payload[key] = optional
         return payload
 
-    def _diet_ready_payload(self) -> dict[str, Any] | None:
-        # The diet alias is optional: a law-only deployment never creates it, so
-        # its absence is not a readiness failure (diet/all searches tolerate the
-        # missing index). When it does exist, hold it to the same schema gate.
-        diet_index = getattr(settings, "OPENSEARCH_DIET_INDEX", None)
-        if not diet_index:
+    def _optional_alias_ready_payload(self, setting_name: str) -> dict[str, Any] | None:
+        # The diet / shuisho aliases are optional: a law-only deployment never
+        # creates them, so their absence is not a readiness failure (those
+        # searches tolerate the missing index). When one does exist, hold it to
+        # the same schema gate.
+        alias = getattr(settings, setting_name, None)
+        if not alias:
             return None
-        diet_concrete = self.indices_for_alias(diet_index)
-        if not diet_concrete:
-            if not self.client.indices.exists(index=diet_index):
+        concrete = self.indices_for_alias(alias)
+        if not concrete:
+            if not self.client.indices.exists(index=alias):
                 return None
-            diet_concrete = [diet_index]
-        for index in diet_concrete:
+            concrete = [alias]
+        for index in concrete:
             self.validate_schema(index)
             self.count(index=index)
-        return {"name": diet_index, "concrete": diet_concrete}
+        return {"name": alias, "concrete": concrete}
 
     def cluster_health(self) -> dict[str, Any]:
         return self.client.cluster.health()

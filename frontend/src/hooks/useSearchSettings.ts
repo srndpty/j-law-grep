@@ -10,9 +10,20 @@ export interface SearchSettings {
   filters: Record<string, string>;
 }
 
+// 法令以外のソースが使うフィルタキーの和集合。API 側は source ごとに許可キーを
+// 検証するので、送信前に source に応じて絞り込む (requestBody を参照)。
 const DIET_FILTER_KEYS = ["house", "meeting", "speaker", "date_from", "date_to"] as const;
+const SHUISHO_FILTER_KEYS = [
+  "house",
+  "session",
+  "speaker",
+  "date_from",
+  "date_to",
+  "shuisho_kind",
+] as const;
+const FILTER_KEYS = [...new Set<string>([...DIET_FILTER_KEYS, ...SHUISHO_FILTER_KEYS])];
 
-const SOURCES = ["law", "diet", "all"] as const;
+const SOURCES = ["law", "diet", "shuisho", "all"] as const;
 const MODES = ["auto", "literal", "keyword", "boolean", "citation", "regex"] as const;
 
 export type SearchSource = (typeof SOURCES)[number];
@@ -22,6 +33,15 @@ export type SearchSource = (typeof SOURCES)[number];
 // would 400) or leaving every source/mode tab inactive in the UI.
 function normalizeSource(value: string | null | undefined): SearchSource {
   return SOURCES.includes(value as SearchSource) ? (value as SearchSource) : "law";
+}
+
+// The API rejects filter keys that do not belong to the selected source, so a
+// leftover `session` from the 質問主意書 tab must not ride along on a 国会 search.
+function allowedFilterKeys(source: string): readonly string[] {
+  if (source === "law") return [];
+  if (source === "diet") return DIET_FILTER_KEYS;
+  if (source === "shuisho") return SHUISHO_FILTER_KEYS;
+  return FILTER_KEYS;
 }
 
 function normalizeMode(value: string | null | undefined): string {
@@ -42,7 +62,7 @@ function loadInitialSettings(): SearchSettings {
     mode: normalizeMode(params.get("mode") ?? saved.mode),
     source: normalizeSource(params.get("source") ?? saved.source),
     filters: Object.fromEntries(
-      DIET_FILTER_KEYS.map((key) => [key, params.get(key) ?? saved[key] ?? ""])
+      FILTER_KEYS.map((key) => [key, params.get(key) ?? saved[key] ?? ""])
     ),
   };
 }
@@ -59,7 +79,7 @@ export function useSearchSettings() {
   }
 
   function clearDietFilters() {
-    setFilters(Object.fromEntries(DIET_FILTER_KEYS.map((key) => [key, ""])));
+    setFilters(Object.fromEntries(FILTER_KEYS.map((key) => [key, ""])));
   }
 
   useEffect(() => {
@@ -68,11 +88,9 @@ export function useSearchSettings() {
     if (query) params.set("q", query);
     if (mode !== "auto") params.set("mode", mode);
     if (source !== "law") params.set("source", source);
-    if (source !== "law") {
-      for (const key of DIET_FILTER_KEYS) {
-        const value = filters[key];
-        if (value) params.set(key, value);
-      }
+    for (const key of allowedFilterKeys(source)) {
+      const value = filters[key];
+      if (value) params.set(key, value);
     }
     const next = params.toString() ? `?${params.toString()}` : window.location.pathname;
     window.history.replaceState(null, "", next);
@@ -83,10 +101,11 @@ export function useSearchSettings() {
       q: query,
       mode,
       source,
-      filters:
-        source === "law"
-          ? {}
-          : Object.fromEntries(Object.entries(filters).filter(([, value]) => value)),
+      filters: Object.fromEntries(
+        allowedFilterKeys(source)
+          .filter((key) => filters[key])
+          .map((key) => [key, filters[key]])
+      ),
       size: 20,
       page: 1,
     }),

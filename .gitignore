@@ -40,6 +40,8 @@ npm-debug.log*
 !/indexer/data/.gitkeep
 /indexer/diet_data/*
 !/indexer/diet_data/.gitkeep
+/indexer/shuisho_data/*
+!/indexer/shuisho_data/.gitkeep
 
 # 一時出力 (reindex レポート, bench, smoke 結果など)
 /tmp/
