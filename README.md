@@ -64,10 +64,10 @@ make reindex INDEX_INPUT=indexer/data GOLDEN_FILE= BULK_CHUNK=20000 BULK_MAX_MB=
 
 ### 3. 国会会議録を取得・投入する
 
-国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `横断` で切り替えられます。
+国会会議録は `indexer/diet_data` にローカル保存し、法令とは別 alias の `jdiet-current` に投入します。UI では検索元を `法令` / `国会` / `質問主意書` / `横断` で切り替えられます。
 `国会` / `横断` では、院・会議名・発言者・日付範囲で絞り込めます。発言者は前方一致です (`山田` → `山田太郎` は拾うが `太郎` では拾わない)。
 
-`横断` の filter は source ごとに掛かります。たとえば `横断` で発言者だけ指定すると、法令側は素通しで横断結果に残り、国会側だけ発言者で絞られます。逆に法令名で絞ると国会側は素通しで残ります。「両方に同じ条件を AND したい」用途ではなく「片側を絞っても反対側は消えない」挙動です。
+`横断` の filter は source ごとに掛かります。たとえば `横断` で発言者だけ指定すると、法令側は素通しで横断結果に残り、国会・質問主意書側だけ発言者で絞られます。逆に法令名で絞ると他は素通しで残ります。「両方に同じ条件を AND したい」用途ではなく「片側を絞っても反対側は消えない」挙動です。
 
 ```powershell
 # 小さく試す
@@ -89,6 +89,38 @@ make reindex-diet
 `reindex-diet` は既定で bulk request を4並列にします。OpenSearchのCPU・メモリが逼迫する場合は `DIET_BULK_WORKERS=2`、直列へ戻す場合は `DIET_BULK_WORKERS=1` を指定してください。chunk件数とrequest上限も `BULK_CHUNK` / `BULK_MAX_MB` で調整できます。
 
 > `indexer/diet_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
+
+### 4. 質問主意書を取得・投入する
+
+質問主意書とその答弁書 (閣議決定を経た政府の公式見解) は `indexer/shuisho_data` にローカル保存し、`jshuisho-current` alias に投入します。UI の検索元タブに `質問主意書` が増え、院・会期・提出者・日付範囲・質問/答弁の別で絞り込めます。
+
+公式 API が無いため衆参両院サイトの HTML をスクレイピングします。URL は会期と提出番号で決まるので、会期一覧ページから提出番号とリンクを拾い、質問本文・答弁本文をそれぞれ取得します。
+
+```powershell
+# 小さく試す (第217回の衆議院だけ、20件で打ち切り)
+make shuisho-fetch SHUISHO_HOUSE=shugiin SHUISHO_SESSION_FROM=217 SHUISHO_SESSION_TO=217 SHUISHO_ARGS="--limit-discovered 20"
+make reindex-shuisho
+
+# 直近数会期 (衆参両院)
+make shuisho-fetch SHUISHO_SESSION_FROM=213 SHUISHO_SESSION_TO=221
+make reindex-shuisho
+
+# バックフィル (既定は第100回から第221回まで)
+make shuisho-fetch-backfill SHUISHO_SESSION_TO=221
+make reindex-shuisho
+```
+
+会期は機械的に走査します。一覧ページが 404 の会期は「そもそも存在しない」ので正常系としてスキップし、5xx や通信障害は「取得すべき会期を取り逃した」として `failed` に数えます (`_fetch_errors.jsonl` の `fatal` で区別)。定期実行では `SHUISHO_ARGS="--strict"` を付けると失敗時に exit code が非 0 になります。HTML が公開されているのは概ね衆議院が第150回以降、参議院が第100回以降です。
+
+取得済みの件は既存 JSON と `_fetch_state.json` を見て skip するので、途中停止しても再開できます。JSON は一時ファイルへ書き切ってから置換するため、強制終了しても中途半端なファイルが「取得済み」として残ることはありません。**答弁が未受理だった件は、次回実行時に一覧へ答弁リンクが現れていれば答弁だけ自動で追記します**ので、答弁公開のたびに範囲全体を `--overwrite` し直す必要はありません。HTML 本文が一切取れない件 (PDF のみ等) は `_fetch_errors.jsonl` に記録して次へ進みます — PDF からのテキスト抽出は行いません。両院サイトへの負荷を避けるため、既定でリクエスト間隔は 3 秒です (`SHUISHO_DELAY_SECONDS=...` で調整)。
+
+検索レコードは段落単位です。`content_long` の 8KB 上限による部分文字列検索の取りこぼしを避けるためで、質問本文・答弁本文の各段落が 1 ヒットになります。件名は法令名と同じ field に載るので、`質問主意書` タブでも件名の前方一致が効きます。
+
+提出者による絞り込みは `submitter` を使います。`speaker` はレコードごとの発話者 (質問なら提出者、答弁なら答弁者の内閣総理大臣) なので、`speaker` で提出者名を指定すると対応する答弁書が落ちてしまいます。`submitter` は質問・答弁の両レコードに提出者を持つため、提出者で絞っても質問と答弁が揃って返ります。
+
+> 現状の取得対象は現行の `itdb_shitsumon.nsf` (衆) / `joho1/kousei/syuisyo` (参) の URL 体系だけです。衆議院の古い会期は別系統の `itdb_shitsumona.nsf` にもアーカイブがあり、そちらは未対応です。
+
+> `indexer/shuisho_data` はローカル専用です。`.gitkeep` 以外は Git 管理から除外しています。
 
 ## frontend と backend の接続
 
@@ -141,7 +173,7 @@ OpenSearch の shards は既定 4、heap は `.env` の `OPENSEARCH_JAVA_OPTS` �
 
 ### schema version
 
-`OPENSEARCH_SCHEMA_VERSION=7` では国会会議録用の `source_type` / `speaker` / `meeting_name` などの field を追加しています。schema version 6 以前の index は `/readyz` と `ensure_index` で不一致として扱われるため、versioned reindex で alias を切り替えてください。
+`OPENSEARCH_SCHEMA_VERSION=8` では質問主意書用の `shuisho_kind` / `shuisho_number` field を追加しています (version 7 で国会会議録用の `source_type` / `speaker` / `meeting_name` などを追加済み)。古い schema version の index は `/readyz` と `ensure_index` で不一致として扱われるため、`make reindex` / `make reindex-diet` / `make reindex-shuisho` をそれぞれ回して alias を切り替えてください。
 
 ## e-Gov XML からの取り込み
 
@@ -241,7 +273,9 @@ make cleanup-indices
 make rollback-index TO_INDEX=jlaw-current-v20260605000000
 ```
 
-`validate-index` は alias が指す index の件数が manifest と一致するかを確認します。`cleanup-indices` は既定で dry-run です。実削除する場合は `python -m indexer.cleanup_indices --alias jlaw-current --keep 3 --force` を実行してください (alias が指している index は削除しません)。
+`validate-index` は alias が指す index の件数が manifest と一致するかを確認します。`cleanup-indices` は既定で dry-run です。実削除する場合は `make cleanup-indices INDEX_ALIAS=jdiet-current KEEP=1 FORCE=1` のように `FORCE=1` を付けてください (alias が指している index は削除対象外で、`KEEP` は alias 以外の残す世代数です)。
+
+> Docker Desktop (WSL2) では index を削除してもホストの空き容量はすぐに増えません。`docker_data.vhdx` は自動拡張されるが自動縮小しないためです。ホストに返すには Docker を止めて仮想ディスクを compact する必要があります (`wsl --shutdown` 後に管理者権限の diskpart で `select vdisk file="...\docker_data.vhdx"` → `attach vdisk readonly` → `compact vdisk` → `detach vdisk`)。compact しなくても空いた領域は Docker 内で再利用されるため、次回の reindex で vhdx がさらに膨らむことはありません。
 
 ## 開発
 

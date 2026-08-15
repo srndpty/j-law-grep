@@ -31,15 +31,24 @@ DANGEROUS_REGEX_PATTERNS = (
     r"\([^)]*[+*][^)]*\)[+*]",
 )
 # Allowed filter keys per source. `all` accepts the union so a cross-search can
-# constrain both the law and diet halves. Unknown keys are rejected (400) before
-# the query reaches OpenSearch.
+# constrain every half. Unknown keys are rejected (400) before the query reaches
+# OpenSearch.
 LAW_FILTER_KEYS = frozenset({"law", "year"})
 DIET_FILTER_KEYS = frozenset({"house", "meeting", "speaker", "date_from", "date_to"})
+SHUISHO_FILTER_KEYS = frozenset(
+    {"house", "session", "submitter", "speaker", "date_from", "date_to", "shuisho_kind"}
+)
 ALLOWED_FILTER_KEYS = {
     "law": LAW_FILTER_KEYS,
     "diet": DIET_FILTER_KEYS,
-    "all": LAW_FILTER_KEYS | DIET_FILTER_KEYS,
+    "shuisho": SHUISHO_FILTER_KEYS,
+    "all": LAW_FILTER_KEYS | DIET_FILTER_KEYS | SHUISHO_FILTER_KEYS,
 }
+SHUISHO_KINDS = ("question", "answer")
+# Citation parsing is law-centric (article_no/law_name map onto law records).
+# Diet reuses article_no for the speech order and shuisho for the paragraph
+# position, so citation handling is disabled for both.
+CITATION_SOURCES = frozenset({"law", "all"})
 DATE_FILTER_KEYS = ("date_from", "date_to")
 # The `date` mapping is strict yyyy-MM-dd. date.fromisoformat (Py3.11+) also
 # accepts basic/week forms like 20250609 or 2025-W24-1, which would pass here
@@ -69,11 +78,18 @@ class SearchService:
     def _backend_for_source(self, source: str) -> OpenSearchBackend:
         if source == "diet":
             return self.backend_factory(settings.OPENSEARCH_DIET_INDEX)
+        if source == "shuisho":
+            return self.backend_factory(settings.OPENSEARCH_SHUISHO_INDEX)
         if source == "all":
-            # Span the law alias the service was configured with plus the diet
-            # alias, so an injected backend's index is honored instead of the
-            # global setting (keeps diet/all routing unit-testable).
-            return self.backend_factory(f"{self.backend.index},{settings.OPENSEARCH_DIET_INDEX}")
+            # Span the law alias the service was configured with plus the other
+            # corpora aliases, so an injected backend's index is honored instead
+            # of the global setting (keeps cross-source routing unit-testable).
+            indices = [
+                self.backend.index,
+                settings.OPENSEARCH_DIET_INDEX,
+                settings.OPENSEARCH_SHUISHO_INDEX,
+            ]
+            return self.backend_factory(",".join(indices))
         return self.backend
 
     def ensure_index(self) -> None:
@@ -117,13 +133,14 @@ class SearchService:
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
         residual_query = parsed_citation.residual_query
         # Citation parsing is law-centric: article_no/law_name map onto law
-        # records. Diet records reuse article_no for the speech order, so applying
-        # citation handling there returns 発言709 / requires law_name=民法 and
-        # drops real hits. For diet, ignore the citation split and treat the whole
-        # query as free-text content search.
-        treat_citation = params.source != "diet"
+        # records. Diet records reuse article_no for the speech order (and
+        # shuisho for the paragraph position), so applying citation handling
+        # there returns 発言709 / requires law_name=民法 and drops real hits.
+        # For those sources, ignore the citation split and treat the whole query
+        # as free-text content search.
+        treat_citation = params.source in CITATION_SOURCES
         # Text used for content matching. Law/all strip the citation prefix
-        # (residual); diet searches the raw string as-is.
+        # (residual); diet/shuisho search the raw string as-is.
         text_query = (residual_query or raw_query) if treat_citation else raw_query
         # A pure citation lookup (民法709条) drives `must` to match_all and routes
         # the citation into the law-scoped filters only. There is no free-text
@@ -204,12 +221,18 @@ class SearchService:
         speaker_filter = params.filters.get("speaker") if params.filters else None
         date_from_filter = params.filters.get("date_from") if params.filters else None
         date_to_filter = params.filters.get("date_to") if params.filters else None
+        session_filter = params.filters.get("session") if params.filters else None
+        shuisho_kind_filter = params.filters.get("shuisho_kind") if params.filters else None
+        submitter_filter = params.filters.get("submitter") if params.filters else None
 
         # Split filters by the source they constrain. For source="all" these are
         # applied per-source (see _source_filter_clauses) so a diet-only filter
-        # such as speaker does not drop every law hit, and vice versa.
+        # such as speaker does not drop every law hit, and vice versa. Filters
+        # shared by diet and shuisho (house / speaker / date) are appended to
+        # both groups.
         law_scoped: list[dict[str, Any]] = []
         diet_scoped: list[dict[str, Any]] = []
+        shuisho_scoped: list[dict[str, Any]] = []
 
         if law_filter:
             law_scoped.append(self._law_name_filter(law_filter))
@@ -218,18 +241,32 @@ class SearchService:
             law_scoped.append({"term": {"year_enforced": year_filter}})
 
         if house_filter:
-            diet_scoped.append({"term": {"house": house_filter}})
+            house_clause = {"term": {"house": house_filter}}
+            diet_scoped.append(house_clause)
+            shuisho_scoped.append(house_clause)
         if meeting_filter:
             diet_scoped.append(self._keyword_or_prefix_filter("meeting_name", meeting_filter))
         if speaker_filter:
-            diet_scoped.append(self._speaker_filter(speaker_filter))
+            speaker_clause = self._speaker_filter(speaker_filter)
+            diet_scoped.append(speaker_clause)
+            shuisho_scoped.append(speaker_clause)
         if date_from_filter or date_to_filter:
             date_range: dict[str, str] = {}
             if date_from_filter:
                 date_range["gte"] = date_from_filter
             if date_to_filter:
                 date_range["lte"] = date_to_filter
-            diet_scoped.append({"range": {"date": date_range}})
+            date_clause = {"range": {"date": date_range}}
+            diet_scoped.append(date_clause)
+            shuisho_scoped.append(date_clause)
+        if session_filter:
+            shuisho_scoped.append({"term": {"session": session_filter}})
+        if shuisho_kind_filter:
+            shuisho_scoped.append({"term": {"shuisho_kind": shuisho_kind_filter}})
+        if submitter_filter:
+            # 提出者は質問・答弁の両レコードに載るので、これで絞っても対応する
+            # 答弁書が落ちない (speaker は答弁だと答弁者になるので使えない)。
+            shuisho_scoped.append(self._keyword_or_prefix_filter("submitter", submitter_filter))
 
         # A citation (民法709条 -> law_name + article_no ...) only constrains law
         # records, so it joins the law-scoped group. Skipped for diet, where these
@@ -247,7 +284,9 @@ class SearchService:
 
         filter_clauses.extend(
             self._source_filter_clauses(
-                params.source, law_scoped, diet_scoped, law_only=citation_lookup
+                params.source,
+                {"law": law_scoped, "diet": diet_scoped, "shuisho": shuisho_scoped},
+                law_only=citation_lookup,
             )
         )
 
@@ -283,9 +322,9 @@ class SearchService:
         parsed_citation = parse_citation_query(raw_query.strip())
         citation = parsed_citation.citation
         citation_only = bool(citation.article_no and not parsed_citation.residual_query)
-        # Diet search treats citation parsing as plain content search, so never
-        # report an effective citation mode there (see build_query).
-        treat_citation = source != "diet"
+        # Diet / shuisho search treats citation parsing as plain content search,
+        # so never report an effective citation mode there (see build_query).
+        treat_citation = source in CITATION_SOURCES
         effective_mode = mode
         if mode == "auto":
             effective_mode = (
@@ -319,28 +358,37 @@ class SearchService:
     @staticmethod
     def _source_filter_clauses(
         source: str,
-        law_scoped: list[dict[str, Any]],
-        diet_scoped: list[dict[str, Any]],
+        scoped: dict[str, list[dict[str, Any]]],
         law_only: bool = False,
     ) -> list[dict[str, Any]]:
-        if source == "diet":
-            return [{"term": {"source_type": "diet"}}, *law_scoped, *diet_scoped]
-        if source == "law":
-            return [{"term": {"source_type": "law"}}, *law_scoped, *diet_scoped]
+        if source != "all":
+            # A single-source search targets one alias, so every filter group can
+            # be applied flatly: the groups for the other sources reference
+            # fields that source does not populate, but the alias only holds this
+            # source_type, so a non-matching group would only ever drop hits the
+            # user explicitly filtered for.
+            return [
+                {"term": {"source_type": source}},
+                *scoped.get(source, []),
+            ]
         # Cross-search. A pure citation lookup has no free-text term to constrain
-        # diet records with (`must` is match_all), so collapse to law-only rather
-        # than letting the diet branch match every speech.
+        # the non-law records with (`must` is match_all), so collapse to law-only
+        # rather than letting the other branches match every document.
         if law_only:
-            return [{"term": {"source_type": "law"}}, *law_scoped]
-        # Otherwise match a law doc that satisfies the law-side filters OR a diet
-        # doc that satisfies the diet-side filters. Each branch carries its own
-        # source_type term, so a filter for one source never drops the other.
+            return [{"term": {"source_type": "law"}}, *scoped.get("law", [])]
+        # Otherwise match a doc of any source that satisfies that source's own
+        # filters. Each branch carries its own source_type term, so a filter for
+        # one source never drops the others.
         return [
             {
                 "bool": {
                     "should": [
-                        {"bool": {"filter": [{"term": {"source_type": "law"}}, *law_scoped]}},
-                        {"bool": {"filter": [{"term": {"source_type": "diet"}}, *diet_scoped]}},
+                        {
+                            "bool": {
+                                "filter": [{"term": {"source_type": source_type}}, *clauses],
+                            }
+                        }
+                        for source_type, clauses in scoped.items()
                     ],
                     "minimum_should_match": 1,
                 }
@@ -505,10 +553,10 @@ class SearchService:
         page = max(params.page, 1)
         from_ = (page - 1) * size
         backend = self._backend_for_source(params.source)
-        # diet/all may target the jdiet-current alias before it exists (fresh
+        # diet/shuisho/all may target an optional alias before it exists (fresh
         # env, CI, first boot). Tolerate the missing index so `all` still
-        # returns law hits and `diet` returns 0 results instead of a 5xx.
-        ignore_unavailable = params.source in {"diet", "all"}
+        # returns law hits and the others return 0 results instead of a 5xx.
+        ignore_unavailable = params.source != "law"
         response = backend.search(
             body=body, size=size, from_=from_, ignore_unavailable=ignore_unavailable
         )
@@ -589,6 +637,9 @@ class SearchService:
         date_to = parsed_dates.get("date_to")
         if date_from and date_to and date_from > date_to:
             raise ValueError("date_from must not be after date_to.")
+        kind = filters.get("shuisho_kind")
+        if kind and kind not in SHUISHO_KINDS:
+            raise ValueError(f"shuisho_kind must be one of: {', '.join(SHUISHO_KINDS)}.")
 
     @staticmethod
     def validate_regex(pattern: str) -> None:
@@ -647,6 +698,10 @@ class SearchService:
             speaker_group=source.get("speaker_group"),
             speaker_position=source.get("speaker_position"),
             speaker_role=source.get("speaker_role"),
+            session=source.get("session"),
+            shuisho_kind=source.get("shuisho_kind"),
+            shuisho_number=source.get("shuisho_number"),
+            submitter=source.get("submitter"),
         )
         return {
             "file_id": data.file_id,
@@ -670,6 +725,10 @@ class SearchService:
             "speaker_group": data.speaker_group,
             "speaker_position": data.speaker_position,
             "speaker_role": data.speaker_role,
+            "session": data.session,
+            "shuisho_kind": data.shuisho_kind,
+            "shuisho_number": data.shuisho_number,
+            "submitter": data.submitter,
         }
 
     @staticmethod

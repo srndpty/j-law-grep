@@ -50,6 +50,9 @@ describe("useSearchSettings", () => {
       speaker: "",
       date_from: "",
       date_to: "",
+      session: "",
+      submitter: "",
+      shuisho_kind: "",
     });
     expect(window.location.search).toBe("?q=%E5%88%91%E6%B3%95");
   });
@@ -89,6 +92,29 @@ describe("useSearchSettings", () => {
     });
 
     expect(result.current.requestBody.filters).toEqual({});
+  });
+
+  it("sends only the filters the selected source accepts", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?q=%E9%96%A3%E8%AD%B0&source=shuisho&session=217&shuisho_kind=answer&meeting=%E4%BA%88%E7%AE%97"
+    );
+
+    const { result } = renderHook(() => useSearchSettings());
+
+    expect(result.current.source).toBe("shuisho");
+    // 会議名は国会だけのキーなので質問主意書検索には載せない (API が 400 を返す)。
+    expect(result.current.requestBody.filters).toEqual({
+      session: "217",
+      shuisho_kind: "answer",
+    });
+
+    act(() => {
+      result.current.setSource("diet");
+    });
+
+    expect(result.current.requestBody.filters).toEqual({ meeting: "予算" });
   });
 
   it("normalizes an invalid source from the query string to law", () => {

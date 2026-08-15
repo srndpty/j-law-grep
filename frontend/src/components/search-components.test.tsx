@@ -98,6 +98,28 @@ describe("SearchDietFilters", () => {
     expect(onChange).toHaveBeenCalledWith("house", "衆議院");
     expect(onChange).toHaveBeenCalledWith("speaker", "山");
     expect(onClear).toHaveBeenCalled();
+    // 会期と質問/答弁の別は質問主意書だけの絞り込み。
+    expect(screen.queryByLabelText("会期")).not.toBeInTheDocument();
+  });
+
+  it("swaps the diet-only and shuisho-only fields per source", async () => {
+    const onChange = vi.fn();
+    render(
+      <SearchDietFilters source="shuisho" filters={{}} onChange={onChange} onClear={vi.fn()} />
+    );
+
+    expect(screen.queryByPlaceholderText("会議名")).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText("会期"), "217");
+    await userEvent.selectOptions(screen.getByLabelText("質問/答弁"), "answer");
+
+    expect(onChange).toHaveBeenCalledWith("session", "2");
+    expect(onChange).toHaveBeenCalledWith("shuisho_kind", "answer");
+    // 「提出者」は submitter を引く。speaker だと答弁レコードは答弁者なので、
+    // 提出者で絞ると対応する答弁書が消えてしまう。
+    await userEvent.type(screen.getByPlaceholderText("提出者（前方一致）"), "福");
+    expect(onChange).toHaveBeenCalledWith("submitter", "福");
+    expect(onChange).not.toHaveBeenCalledWith("speaker", "福");
+    expect(screen.queryByPlaceholderText("発言者（前方一致）")).not.toBeInTheDocument();
   });
 });
 
@@ -182,6 +204,38 @@ describe("SearchResultItem", () => {
     expect(screen.getByText("本会議")).toBeInTheDocument();
     expect(screen.getByText("2023-12-13")).toBeInTheDocument();
     expect(screen.getByText("発言者: 額賀福志郎")).toBeInTheDocument();
+  });
+
+  it("renders shuisho metadata and labels the answer body", () => {
+    render(
+      <SearchResultItem
+        hit={{
+          ...hit,
+          source_type: "shuisho",
+          law_name: "創薬力強化に関する質問主意書",
+          article_no: "a2",
+          shuisho_kind: "answer",
+          shuisho_number: "1",
+          house: "衆議院",
+          session: "217",
+          date: "2025-02-04",
+          speaker: "内閣総理大臣 石破 茂",
+          submitter: "福田玄",
+          url: "https://www.shugiin.go.jp/internet/itdb_shitsumon.nsf/html/shitsumon/b217001.htm",
+        }}
+        selected={false}
+        onSelect={vi.fn()}
+        setRef={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText("質問主意書")).toBeInTheDocument();
+    expect(screen.getByText("答弁 第2段落")).toBeInTheDocument();
+    expect(screen.getByText("第217回")).toBeInTheDocument();
+    expect(screen.getByText("第1号")).toBeInTheDocument();
+    expect(screen.getByText("提出者: 福田玄")).toBeInTheDocument();
+    expect(screen.getByText("答弁者: 内閣総理大臣 石破 茂")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "答弁本文を開く" })).toBeInTheDocument();
   });
 });
 

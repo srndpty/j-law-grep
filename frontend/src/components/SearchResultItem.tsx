@@ -7,6 +7,7 @@ import {
   formatLocation,
   hitText,
   openLawDocument,
+  positionLabel,
 } from "../search-hit-text";
 import type { SearchHit } from "../api/search";
 
@@ -30,24 +31,43 @@ function renderSnippet(hit: SearchHit): JSX.Element[] | string {
   return nodes;
 }
 
-function articleLabel(articleNo: string): string {
-  return articleNo.includes("条") ? articleNo : `第${articleNo}条`;
+function sourceBadge(hit: SearchHit): string {
+  if (hit.source_type === "diet") return "国会";
+  if (hit.source_type === "shuisho") return "質問主意書";
+  return "";
 }
 
-function positionLabel(hit: SearchHit, articleNo: string): string {
-  if (hit.source_type === "diet") return `発言${articleNo}`;
-  return articleLabel(articleNo);
+function corpusMetadata(hit: SearchHit): string[] {
+  if (hit.source_type === "diet") {
+    return [
+      hit.house ?? "",
+      hit.meeting_name ?? "",
+      hit.date ?? "",
+      hit.speaker ? `発言者: ${hit.speaker}` : "",
+      hit.speaker_group ?? "",
+    ].filter(Boolean);
+  }
+  if (hit.source_type === "shuisho") {
+    // 答弁レコードは speaker が答弁者なので、提出者は submitter から別に出す。
+    const isAnswer = hit.shuisho_kind === "answer";
+    return [
+      hit.house ?? "",
+      hit.session ? `第${hit.session}回` : "",
+      hit.shuisho_number ? `第${hit.shuisho_number}号` : "",
+      hit.date ?? "",
+      hit.submitter ? `提出者: ${hit.submitter}` : "",
+      isAnswer && hit.speaker ? `答弁者: ${hit.speaker}` : "",
+    ].filter(Boolean);
+  }
+  return [];
 }
 
-function dietMetadata(hit: SearchHit): string[] {
-  if (hit.source_type !== "diet") return [];
-  return [
-    hit.house ?? "",
-    hit.meeting_name ?? "",
-    hit.date ?? "",
-    hit.speaker ? `発言者: ${hit.speaker}` : "",
-    hit.speaker_group ?? "",
-  ].filter(Boolean);
+function openLabel(hit: SearchHit): string {
+  if (hit.source_type === "diet") return "発言を開く";
+  if (hit.source_type === "shuisho") {
+    return hit.shuisho_kind === "answer" ? "答弁本文を開く" : "質問本文を開く";
+  }
+  return "該当条を開く";
 }
 
 interface Props {
@@ -61,7 +81,8 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
   const previewText = hitText(hit);
   const articleNo = deriveArticleNo(hit);
   const paragraphNo = deriveParagraphNo(hit);
-  const dietMeta = dietMetadata(hit);
+  const corpusMeta = corpusMetadata(hit);
+  const badge = sourceBadge(hit);
 
   return (
     <article
@@ -78,9 +99,9 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
         <span className="font-semibold text-gray-700">{hit.law_name || hit.path}</span>
-        {hit.source_type === "diet" && (
+        {badge && (
           <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
-            国会
+            {badge}
           </span>
         )}
         {articleNo && (
@@ -95,9 +116,9 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
           <span className="rounded border border-gray-200 px-1.5 py-0.5">{hit.item_no}号</span>
         )}
       </div>
-      {dietMeta.length > 0 && (
+      {corpusMeta.length > 0 && (
         <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
-          {dietMeta.map((item) => (
+          {corpusMeta.map((item) => (
             <span key={item}>{item}</span>
           ))}
         </div>
@@ -112,7 +133,7 @@ export function SearchResultItem({ hit, selected, onSelect, setRef }: Props) {
         }}
         className="mt-3 rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:border-blue-400 hover:text-blue-700"
       >
-        {hit.source_type === "diet" ? "発言を開く" : "該当条を開く"}
+        {openLabel(hit)}
       </button>
       <div className="pointer-events-none absolute right-3 top-3 z-20 hidden w-96 max-w-[calc(100vw-3rem)] rounded-md border border-gray-300 bg-white p-3 text-xs leading-relaxed text-gray-800 shadow-lg group-hover:block group-focus:block">
         <div className="mb-2 border-b border-gray-200 pb-2 font-semibold text-gray-700">

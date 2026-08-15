@@ -19,13 +19,19 @@ DIET_DELAY_SECONDS ?= 3
 DIET_FROM_DATE ?=
 DIET_UNTIL_DATE ?=
 DIET_BULK_WORKERS ?= 4
+SHUISHO_INPUT ?= indexer/shuisho_data
+SHUISHO_ALIAS ?= $(if $(OPENSEARCH_SHUISHO_INDEX),$(OPENSEARCH_SHUISHO_INDEX),jshuisho-current)
+SHUISHO_DELAY_SECONDS ?= 3
+SHUISHO_BULK_WORKERS ?= 4
+SHUISHO_HOUSE ?= both
 OPENSEARCH_DATA_VOLUME ?= deploy_opensearch-data
+KEEP ?= 3
 GOLDEN_FILE ?= tests/golden_queries/sample.json
 MANIFEST ?= indexer/data/manifest.json
 HOST_OPENSEARCH ?= http://127.0.0.1:9200
 REPORT_DIR ?= tmp/reindex-reports/$(shell date -u +%Y%m%d-%H%M%S)
 
-.PHONY: up ensure-opensearch-volume down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch diet-fetch-range diet-fetch-backfill reindex reindex-diet reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
+.PHONY: up ensure-opensearch-volume down ps build-backend restart-backend lint typecheck test coverage frontend-coverage frontend-coverage-win frontend-check frontend-check-win check setup-dev setup-dev-uv diet-fetch diet-fetch-range diet-fetch-backfill shuisho-fetch shuisho-fetch-backfill reindex reindex-diet reindex-shuisho reindex-versioned reindex-dev validate-index golden golden-full bench-search warning-summary index-report cleanup-indices rollback-index health-smoke api-smoke frontend-smoke smoke
 
 ensure-opensearch-volume:
 	@docker volume inspect $(OPENSEARCH_DATA_VOLUME) >/dev/null 2>&1 || docker volume create $(OPENSEARCH_DATA_VOLUME)
@@ -91,6 +97,18 @@ diet-fetch-backfill:
 	@test -n "$(DIET_SESSION_TO)" || (echo "Set DIET_SESSION_TO=<latest session number>"; exit 2)
 	$(PYTHON) -m indexer.diet_importer --output $(DIET_INPUT) --all-houses --session-from 1 --session-to $(DIET_SESSION_TO) --delay-seconds $(DIET_DELAY_SECONDS) $(DIET_ARGS)
 
+# 質問主意書: 会期レンジを指定して衆参のサイトから取得する (公式 API が無い)。
+# 例: make shuisho-fetch SHUISHO_SESSION_FROM=213 SHUISHO_SESSION_TO=221
+shuisho-fetch:
+	@test -n "$(SHUISHO_SESSION_FROM)" || (echo "Set SHUISHO_SESSION_FROM=<session>"; exit 2)
+	@test -n "$(SHUISHO_SESSION_TO)" || (echo "Set SHUISHO_SESSION_TO=<session>"; exit 2)
+	$(PYTHON) -m indexer.shuisho_importer --output $(SHUISHO_INPUT) --house $(SHUISHO_HOUSE) --session-from $(SHUISHO_SESSION_FROM) --session-to $(SHUISHO_SESSION_TO) --delay-seconds $(SHUISHO_DELAY_SECONDS) $(SHUISHO_ARGS)
+
+# 全会期バックフィル。存在しない会期は 404 なので自動的にスキップされる
+# (衆院は第150回前後、参院は第100回前後から HTML が公開されている)。
+shuisho-fetch-backfill:
+	$(MAKE) shuisho-fetch SHUISHO_SESSION_FROM=$(if $(SHUISHO_SESSION_FROM),$(SHUISHO_SESSION_FROM),100) SHUISHO_SESSION_TO=$(if $(SHUISHO_SESSION_TO),$(SHUISHO_SESSION_TO),221)
+
 # Standard reindex: build a fresh versioned index, validate schema + golden
 # queries against it, then atomically switch the alias. The old index stays
 # live (and the new one is deleted) if any gate fails.
@@ -110,6 +128,9 @@ reindex:
 
 reindex-diet:
 	$(MAKE) reindex INDEX_INPUT=$(DIET_INPUT) INDEX_ALIAS=$(DIET_ALIAS) GOLDEN_FILE= BULK_WORKERS=$(DIET_BULK_WORKERS)
+
+reindex-shuisho:
+	$(MAKE) reindex INDEX_INPUT=$(SHUISHO_INPUT) INDEX_ALIAS=$(SHUISHO_ALIAS) GOLDEN_FILE= BULK_WORKERS=$(SHUISHO_BULK_WORKERS)
 
 # Backward-compatible alias for the standard versioned reindex.
 reindex-versioned: reindex
@@ -142,8 +163,11 @@ validate-index:
 index-report:
 	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.index_report --alias $(INDEX_ALIAS) --json-out tmp/index_report.json
 
+# 既定は dry-run。実際に削除するときだけ FORCE=1 を付ける。
+# $(if $(FORCE),...) は FORCE=0 でも真になってしまうので、値を 1/true/yes に限定する。
+# 例: make cleanup-indices INDEX_ALIAS=jdiet-current KEEP=1 FORCE=1
 cleanup-indices:
-	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.cleanup_indices --alias $(INDEX_ALIAS) --keep 3
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.cleanup_indices --alias $(INDEX_ALIAS) --keep $(KEEP) $(if $(filter 1 true yes,$(FORCE)),--force,)
 
 rollback-index:
 	@test -n "$(TO_INDEX)" || (echo "Set TO_INDEX=<concrete-index>"; exit 2)
