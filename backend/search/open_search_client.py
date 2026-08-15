@@ -43,6 +43,7 @@ class SearchHit:
     session: str | None = None
     shuisho_kind: str | None = None
     shuisho_number: str | None = None
+    submitter: str | None = None
 
 
 @lru_cache(maxsize=8)
@@ -165,10 +166,12 @@ class OpenSearchBackend:
                     "speaker_role": {"type": "keyword"},
                     "speech_id": {"type": "keyword"},
                     "speech_order": {"type": "keyword"},
-                    # 質問主意書: 質問本文 / 答弁本文の別と提出番号。件名は law_name、
-                    # 提出者・答弁者は speaker を流用しているので追加はこの2つだけ。
+                    # 質問主意書: 質問本文 / 答弁本文の別と提出番号。件名は law_name
+                    # を流用する。submitter は質問・答弁の両レコードに提出者を持つ
+                    # (speaker はレコードごとの発話者なので答弁では答弁者になる)。
                     "shuisho_kind": {"type": "keyword"},
                     "shuisho_number": {"type": "keyword"},
+                    "submitter": {"type": "keyword"},
                     "pdf_url": {"type": "keyword"},
                     "path": {"type": "keyword"},
                     "url": {"type": "keyword"},

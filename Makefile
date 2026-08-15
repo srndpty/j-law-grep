@@ -163,10 +163,11 @@ validate-index:
 index-report:
 	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.index_report --alias $(INDEX_ALIAS) --json-out tmp/index_report.json
 
-# 既定は dry-run。実際に削除するときは FORCE=1 を付ける。
+# 既定は dry-run。実際に削除するときだけ FORCE=1 を付ける。
+# $(if $(FORCE),...) は FORCE=0 でも真になってしまうので、値を 1/true/yes に限定する。
 # 例: make cleanup-indices INDEX_ALIAS=jdiet-current KEEP=1 FORCE=1
 cleanup-indices:
-	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.cleanup_indices --alias $(INDEX_ALIAS) --keep $(KEEP) $(if $(FORCE),--force,)
+	OPENSEARCH_HOST=$(HOST_OPENSEARCH) python -m indexer.cleanup_indices --alias $(INDEX_ALIAS) --keep $(KEEP) $(if $(filter 1 true yes,$(FORCE)),--force,)
 
 rollback-index:
 	@test -n "$(TO_INDEX)" || (echo "Set TO_INDEX=<concrete-index>"; exit 2)

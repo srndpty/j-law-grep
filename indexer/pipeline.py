@@ -60,6 +60,7 @@ class IndexRecord:
     speech_order: str | None = None
     shuisho_kind: str | None = None
     shuisho_number: str | None = None
+    submitter: str | None = None
     pdf_url: str | None = None
 
 
@@ -294,8 +295,9 @@ def shuisho_records_from_document(doc: dict) -> Iterator[IndexRecord]:
         url = normalize_text(str(body.get("url") or ""))
         pdf_url = normalize_text(str(body.get("pdf_url") or ""))
         date = normalize_text(str(body.get("date") or ""))
-        # 質問は提出者、答弁は答弁者 (内閣総理大臣) を speaker として扱い、
-        # 既存の speaker フィルタ・UI をそのまま流用する。
+        # speaker はそのレコードの発話者 = 質問なら提出者、答弁なら答弁者
+        # (内閣総理大臣)。一方 submitter は質問・答弁の両方に提出者を入れる。
+        # 「提出者で絞る」と対応する答弁書まで消えるのを避けるため、両者を分ける。
         speaker = normalize_text(str(body.get("answerer") or "")) or submitter
 
         for index, paragraph in enumerate(body.get("paragraphs", []) or [], start=1):
@@ -344,6 +346,7 @@ def shuisho_records_from_document(doc: dict) -> Iterator[IndexRecord]:
                 session=session,
                 date=date or None,
                 speaker=speaker,
+                submitter=submitter,
                 shuisho_kind=kind,
                 shuisho_number=number,
                 pdf_url=pdf_url,
@@ -398,6 +401,7 @@ def to_index_actions(records: Iterable[IndexRecord]) -> Iterator[dict]:
                 "session": record.session,
                 "date": record.date,
                 "speaker": record.speaker,
+                "submitter": record.submitter,
                 "shuisho_kind": record.shuisho_kind,
                 "shuisho_number": record.shuisho_number,
                 "pdf_url": record.pdf_url,

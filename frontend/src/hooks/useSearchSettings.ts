@@ -16,6 +16,7 @@ const DIET_FILTER_KEYS = ["house", "meeting", "speaker", "date_from", "date_to"]
 const SHUISHO_FILTER_KEYS = [
   "house",
   "session",
+  "submitter",
   "speaker",
   "date_from",
   "date_to",

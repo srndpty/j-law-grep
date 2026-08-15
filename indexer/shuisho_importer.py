@@ -12,11 +12,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import time
 from collections.abc import Callable, Iterator
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
+from html import unescape
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -38,9 +40,10 @@ TAG_PATTERN = re.compile(r"<[^>]*>")
 BR_PATTERN = re.compile(r"<\s*br\s*/?\s*>", re.IGNORECASE)
 HR_PATTERN = re.compile(r"<\s*hr[^>]*>", re.IGNORECASE)
 CHARSET_PATTERN = re.compile(rb"charset\s*=\s*[\"']?([\w-]+)", re.IGNORECASE)
-# 本文の終端候補。衆院は末尾のナビ DIV、参院は本文を包む TD が閉じる。
-BODY_END_PATTERN = re.compile(
-    r"<\s*div\s+class=\"gh2|<\s*/\s*td\s*>|<\s*/\s*table\s*>|<\s*div\s+id=\"Footer",
+# 本文の終端判定に使うトークン。開閉の対応を数えるため td/table は開始タグも拾う
+# (body_end_index を参照)。ナビ・フッタの DIV はその場で終端。
+BODY_BOUNDARY_PATTERN = re.compile(
+    r"<\s*div\s+class=\"gh2|<\s*div\s+id=\"Footer|</?\s*(?:td|table)\b[^>]*>",
     re.IGNORECASE,
 )
 CABINET_NUMBER_PATTERN = re.compile(r"内閣[衆参]質[^<\s]*第[^<\s]*号")
@@ -71,6 +74,7 @@ class HttpNotFound(RuntimeError):
 class FetchStats:
     discovered: int = 0
     fetched: int = 0
+    updated: int = 0
     skipped: int = 0
     failed: int = 0
 
@@ -199,15 +203,41 @@ def fetch_html(
 
 
 def strip_tags(html: str) -> str:
-    return normalize_text(TAG_PATTERN.sub("", html))
+    return normalize_text(unescape(TAG_PATTERN.sub("", html)))
 
 
 def split_paragraphs(html: str) -> list[str]:
     """<BR> 区切りの平文を段落リストに。空行は落とす。"""
     text = BR_PATTERN.sub("\n", html)
     text = TAG_PATTERN.sub("", text)
+    # &amp; / &nbsp; / 数値参照が本文に残らないよう実体参照を戻す。
+    # NBSP は normalize_text が畳めるよう先に通常の空白へ寄せる。
+    text = unescape(text).replace("\xa0", " ")
     paragraphs = [normalize_text(line) for line in text.split("\n")]
     return [paragraph for paragraph in paragraphs if paragraph]
+
+
+def body_end_index(body: str) -> int | None:
+    """本文の終端位置。入れ子の表で早切りしないよう td/table の深さを追う。
+
+    衆院は本文の後にナビ DIV が続き、参院は本文を包む TD が閉じる。単純に最初の
+    `</td>` を終端にすると本文中の表で切れてしまうので、開始タグと対にならない
+    閉じタグ (深さが負に振れる位置) だけを終端として扱う。
+    """
+    depth = {"td": 0, "table": 0}
+    for match in BODY_BOUNDARY_PATTERN.finditer(body):
+        token = match.group(0).lower()
+        if token.startswith("<div"):
+            return match.start()
+        closing = token.startswith("</")
+        name = "table" if "table" in token else "td"
+        if closing:
+            if depth[name] <= 0:
+                return match.start()
+            depth[name] -= 1
+        else:
+            depth[name] += 1
+    return None
 
 
 def content_region(html: str) -> str:
@@ -227,9 +257,9 @@ def parse_body(html: str) -> BodyDoc:
         return BodyDoc()
     header = region[: split.start()]
     body = region[split.end() :]
-    end = BODY_END_PATTERN.search(body)
+    end = body_end_index(body)
     if end is not None:
-        body = body[: end.start()]
+        body = body[:end]
 
     header_text = strip_tags(header)
     answerer_match = ANSWERER_PATTERN.search(header)
@@ -365,30 +395,59 @@ def document_path(output_dir: Path, entry: ListEntry) -> Path:
     return output_dir / f"{entry.shuisho_id}.json"
 
 
-def write_document(output_dir: Path, entry: ListEntry, document: dict) -> Path:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    path = document_path(output_dir, entry)
-    with path.open("w", encoding="utf-8") as fh:
-        json.dump(document, fh, ensure_ascii=False, indent=2)
+def write_json_atomic(path: Path, payload: dict[str, Any]) -> Path:
+    """一時ファイルへ書き切ってから置換する。
+
+    強制終了で中途半端な JSON が残ると、次回は「ファイルがあるので取得済み」と
+    判定されて壊れたまま残り続けるため、途中経過が最終パスに現れないようにする。
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_name(f"{path.name}.tmp")
+    with tmp_path.open("w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp_path, path)
     return path
 
 
+def write_document(output_dir: Path, entry: ListEntry, document: dict) -> Path:
+    return write_json_atomic(document_path(output_dir, entry), document)
+
+
+def load_document(path: Path, shuisho_id: str) -> dict[str, Any] | None:
+    """取得済み JSON を読む。壊れている / 別件なら None を返して取り直させる。"""
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            document = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(document, dict) or document.get("shuisho_id") != shuisho_id:
+        return None
+    return document
+
+
 def load_fetch_state(path: Path) -> dict[str, Any]:
+    empty: dict[str, Any] = {"schema_version": 1, "completed_ids": [], "runs": []}
     if not path.exists():
-        return {"schema_version": 1, "completed_ids": [], "runs": []}
-    with path.open("r", encoding="utf-8") as fh:
-        state = json.load(fh)
+        return empty
+    try:
+        with path.open("r", encoding="utf-8") as fh:
+            state = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        # state が壊れていても既存 JSON から再開できるので、握って作り直す。
+        print(f"WARN discarding unreadable fetch state: {path}")
+        return empty
+    if not isinstance(state, dict):
+        return empty
     state.setdefault("completed_ids", [])
     state.setdefault("runs", [])
     return state
 
 
 def save_fetch_state(path: Path, state: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as fh:
-        json.dump(state, fh, ensure_ascii=False, indent=2)
-        fh.write("\n")
+    write_json_atomic(path, state)
 
 
 def append_fetch_error(path: Path, payload: dict[str, Any]) -> None:
@@ -425,6 +484,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--state-file", type=Path)
     parser.add_argument("--errors-file", type=Path)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit non-zero when any entry or list page failed (for scheduled runs).",
+    )
     return parser.parse_args(argv)
 
 
@@ -445,9 +509,13 @@ def iter_entries(
     session_to: int,
     fetcher: Callable[[str], str],
     delay_seconds: float = 3.0,
-    on_missing: Callable[[str, int, str], None] | None = None,
+    on_missing: Callable[[str, int, str, bool], None] | None = None,
 ) -> Iterator[ListEntry]:
-    """会期番号を機械的に走査する。一覧ページが無い会期 (404) はスキップ。"""
+    """会期番号を機械的に走査する。一覧ページが無い会期 (404) はスキップ。
+
+    404 は「その会期は存在しない」なので正常系。5xx や通信障害は「取得すべき
+    会期を取り逃した」なので、on_missing に fatal=True で伝えて失敗として数える。
+    """
     for house_code in houses:
         for session in range(session_from, session_to + 1):
             url = list_url(house_code, session)
@@ -455,11 +523,11 @@ def iter_entries(
                 html = fetcher(url)
             except HttpNotFound:
                 if on_missing:
-                    on_missing(house_code, session, "list page not found")
+                    on_missing(house_code, session, "list page not found", False)
                 html = ""
             except RuntimeError as exc:
                 if on_missing:
-                    on_missing(house_code, session, str(exc))
+                    on_missing(house_code, session, str(exc), True)
                 html = ""
             if html:
                 yield from parse_list(house_code, html, session, url)
@@ -511,7 +579,7 @@ def run_fetch(
         "stats": asdict(stats),
     }
 
-    def record_missing(house_code: str, session: int, reason: str) -> None:
+    def record_missing(house_code: str, session: int, reason: str, fatal: bool) -> None:
         append_fetch_error(
             errors_path,
             {
@@ -519,8 +587,14 @@ def run_fetch(
                 "house": house_code,
                 "session": session,
                 "error": reason,
+                "fatal": fatal,
             },
         )
+        if fatal:
+            # 5xx / 通信障害で会期まるごと取り逃した場合。404 (会期が存在しない)
+            # と違って再実行が必要なので、失敗として数え --strict の判定に載せる。
+            stats.failed += 1
+            print(f"FAILED list {house_code} session {session}: {reason}")
 
     entries = iter_entries(
         houses,
@@ -537,10 +611,46 @@ def run_fetch(
             break
         stats.discovered += 1
         path = document_path(args.output, entry)
-        if not args.overwrite and (entry.shuisho_id in completed or path.exists()):
+        existing = None if args.overwrite else load_document(path, entry.shuisho_id)
+        if existing is not None:
+            # 未答弁のまま保存した件は、一覧に答弁リンクが出たら答弁だけ追記する。
+            # これがないと答弁公開のたびに範囲全体を --overwrite する必要がある。
+            if existing.get("answer") is None and entry.answer_url:
+                try:
+                    answer = parse_body(fetch(entry.answer_url))
+                except HttpNotFound:
+                    answer = None
+                except RuntimeError as exc:
+                    stats.failed += 1
+                    append_fetch_error(
+                        errors_path,
+                        {
+                            "failed_at": utc_now(),
+                            "shuisho_id": entry.shuisho_id,
+                            "answer_url": entry.answer_url,
+                            "error": f"answer backfill failed: {exc}",
+                        },
+                    )
+                    print(f"FAILED answer backfill {entry.shuisho_id}: {exc}")
+                    continue
+                if args.delay_seconds > 0:
+                    time.sleep(args.delay_seconds)
+                if answer is not None and answer.paragraphs:
+                    merged = build_document(entry, None, answer)
+                    existing["answer"] = merged["answer"]
+                    existing["status"] = entry.status or existing.get("status", "")
+                    write_json_atomic(path, existing)
+                    completed.add(entry.shuisho_id)
+                    stats.updated += 1
+                    print(f"Updated answer {path}")
+                    continue
             completed.add(entry.shuisho_id)
             stats.skipped += 1
             continue
+        if not args.overwrite and path.exists():
+            # 中断で壊れた JSON。取り直すので completed からも外す。
+            print(f"WARN re-fetching unreadable document: {path}")
+            completed.discard(entry.shuisho_id)
         try:
             question, answer = fetch_entry_bodies(
                 entry, fetcher=fetch, delay_seconds=args.delay_seconds
@@ -566,7 +676,7 @@ def run_fetch(
                 },
             )
             print(f"FAILED {entry.shuisho_id}: {exc}")
-        processed = stats.fetched + stats.skipped + stats.failed
+        processed = stats.fetched + stats.updated + stats.skipped + stats.failed
         if args.checkpoint_every and processed % args.checkpoint_every == 0:
             state["completed_ids"] = sorted(completed)
             run_record["stats"] = asdict(stats)
@@ -581,14 +691,17 @@ def run_fetch(
     save_fetch_state(state_path, state)
     print(
         "Shuisho fetch complete: "
-        f"discovered={stats.discovered} fetched={stats.fetched} "
+        f"discovered={stats.discovered} fetched={stats.fetched} updated={stats.updated} "
         f"skipped={stats.skipped} failed={stats.failed} output={args.output}"
     )
     return stats
 
 
 def main() -> None:
-    run_fetch(parse_args())
+    args = parse_args()
+    stats = run_fetch(args)
+    if args.strict and stats.failed:
+        raise SystemExit(f"{stats.failed} entr(ies) failed; see the errors file.")
 
 
 if __name__ == "__main__":

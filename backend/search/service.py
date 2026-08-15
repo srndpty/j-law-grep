@@ -36,7 +36,7 @@ DANGEROUS_REGEX_PATTERNS = (
 LAW_FILTER_KEYS = frozenset({"law", "year"})
 DIET_FILTER_KEYS = frozenset({"house", "meeting", "speaker", "date_from", "date_to"})
 SHUISHO_FILTER_KEYS = frozenset(
-    {"house", "session", "speaker", "date_from", "date_to", "shuisho_kind"}
+    {"house", "session", "submitter", "speaker", "date_from", "date_to", "shuisho_kind"}
 )
 ALLOWED_FILTER_KEYS = {
     "law": LAW_FILTER_KEYS,
@@ -223,6 +223,7 @@ class SearchService:
         date_to_filter = params.filters.get("date_to") if params.filters else None
         session_filter = params.filters.get("session") if params.filters else None
         shuisho_kind_filter = params.filters.get("shuisho_kind") if params.filters else None
+        submitter_filter = params.filters.get("submitter") if params.filters else None
 
         # Split filters by the source they constrain. For source="all" these are
         # applied per-source (see _source_filter_clauses) so a diet-only filter
@@ -262,6 +263,10 @@ class SearchService:
             shuisho_scoped.append({"term": {"session": session_filter}})
         if shuisho_kind_filter:
             shuisho_scoped.append({"term": {"shuisho_kind": shuisho_kind_filter}})
+        if submitter_filter:
+            # 提出者は質問・答弁の両レコードに載るので、これで絞っても対応する
+            # 答弁書が落ちない (speaker は答弁だと答弁者になるので使えない)。
+            shuisho_scoped.append(self._keyword_or_prefix_filter("submitter", submitter_filter))
 
         # A citation (民法709条 -> law_name + article_no ...) only constrains law
         # records, so it joins the law-scoped group. Skipped for diet, where these
@@ -696,6 +701,7 @@ class SearchService:
             session=source.get("session"),
             shuisho_kind=source.get("shuisho_kind"),
             shuisho_number=source.get("shuisho_number"),
+            submitter=source.get("submitter"),
         )
         return {
             "file_id": data.file_id,
@@ -722,6 +728,7 @@ class SearchService:
             "session": data.session,
             "shuisho_kind": data.shuisho_kind,
             "shuisho_number": data.shuisho_number,
+            "submitter": data.submitter,
         }
 
     @staticmethod

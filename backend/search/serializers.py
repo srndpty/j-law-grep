@@ -74,6 +74,7 @@ class SearchHitSerializer(serializers.Serializer):
     session = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shuisho_kind = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     shuisho_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    submitter = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class SearchResponseSerializer(serializers.Serializer):

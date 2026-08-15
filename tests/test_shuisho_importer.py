@@ -7,9 +7,11 @@ from indexer.manifest import build_manifest, document_stats
 from indexer.pipeline import collect_records, to_index_actions
 from indexer.shuisho_importer import (
     HttpNotFound,
+    body_end_index,
     build_document,
     decode_html,
     kanji_to_int,
+    load_fetch_state,
     parse_body,
     parse_sangiin_list,
     parse_shugiin_list,
@@ -145,6 +147,7 @@ def _args(tmp_path, **overrides) -> Namespace:
         state_file=None,
         errors_file=None,
         overwrite=False,
+        strict=False,
     )
     for key, value in overrides.items():
         setattr(args, key, value)
@@ -342,14 +345,33 @@ def test_pipeline_expands_paragraphs_into_records(tmp_path):
     assert question.shuisho_kind == "question"
     assert question.law_name == "創薬力強化に関する質問主意書"
     assert question.speaker == "福田玄"
+    assert question.submitter == "福田玄"
     assert question.date == "2025-01-24"
     assert question.house == "衆議院"
     assert question.path == "質問主意書/衆議院/第217回/第1号/質問本文/1"
     answer = records[-1]
     assert answer.shuisho_kind == "answer"
     assert answer.speaker == "内閣総理大臣 石破 茂"
+    # 答弁レコードにも提出者が載るので、提出者で絞っても答弁書が落ちない。
+    assert answer.submitter == "福田玄"
     assert answer.date == "2025-02-04"
     assert answer.url.endswith("b217001.htm")
+
+
+def test_submitter_filter_matches_both_question_and_answer(tmp_path):
+    """提出者で絞ったとき、対応する答弁書が消えないこと (レコード側の保証)。"""
+    entry = parse_shugiin_list(SHUGIIN_LIST_HTML, 217, shugiin_list_url(217))[0]
+    document = build_document(
+        entry, parse_body(SHUGIIN_QUESTION_HTML), parse_body(SHUGIIN_ANSWER_HTML)
+    )
+    (tmp_path / f"{entry.shuisho_id}.json").write_text(
+        json.dumps(document, ensure_ascii=False), encoding="utf-8"
+    )
+
+    actions = list(to_index_actions(collect_records(tmp_path)))
+    by_submitter = [a for a in actions if a["_source"]["submitter"] == "福田玄"]
+
+    assert {a["_source"]["shuisho_kind"] for a in by_submitter} == {"question", "answer"}
 
 
 def test_index_actions_are_unique_across_question_and_answer(tmp_path):
@@ -384,3 +406,144 @@ def test_manifest_counts_shuisho_paragraphs(tmp_path):
     assert manifest["counts"] == {"laws": 1, "articles": 2, "records": 6}
     assert manifest["laws"][0]["law_id"] == "shugiin-217-001"
     assert manifest["laws"][0]["source_type"] == "shuisho"
+
+
+NESTED_TABLE_ANSWER_HTML = """
+<HTML><HEAD><meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS"></HEAD><BODY>
+<H1 class="txt05" id="TopContents">答弁本文情報</H1>
+令和七年二月四日受領<BR>
+<HR>
+一について<BR>
+<BR>
+　内訳は次の表のとおりである。<BR>
+<TABLE><TR><TD>区分</TD><TD>件数</TD></TR><TR><TD>甲</TD><TD>三件</TD></TR></TABLE>
+<BR>
+二について<BR>
+<BR>
+　残る部分についてもお答えする。<BR>
+<DIV class="gh22divr"><A HREF="217001.htm">経過へ</A></DIV>
+</BODY></HTML>
+"""
+
+ENTITY_QUESTION_HTML = """
+<HTML><HEAD><meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS"></HEAD><BODY>
+<H1 class="txt05" id="TopContents">質問本文情報</H1>
+令和七年一月二十四日提出<BR>
+<HR>
+　いわゆる&quot;A&amp;B方式&quot;について、&#28450;字参照を含めて&nbsp;示されたい。<BR>
+<DIV class="gh21divr"><A HREF="217001.htm">経過へ</A></DIV>
+</BODY></HTML>
+"""
+
+
+def test_parse_body_keeps_nested_tables_inside_the_body():
+    # 本文中の表で早切りすると、以降の「二について」が丸ごと落ちる。
+    body = parse_body(NESTED_TABLE_ANSWER_HTML)
+
+    joined = " ".join(body.paragraphs)
+    assert "一について" in joined
+    assert "二について" in joined
+    assert "残る部分についてもお答えする。" in joined
+    assert not any("経過へ" in paragraph for paragraph in body.paragraphs)
+
+
+def test_body_end_index_stops_at_unbalanced_close_tag():
+    # 開始タグと対にならない </td> は本文の終端。
+    assert body_end_index("<table><tr><td>a</td></tr></table>本文</td>後続") is not None
+    assert body_end_index("本文だけ") is None
+
+
+def test_parse_body_decodes_html_entities():
+    body = parse_body(ENTITY_QUESTION_HTML)
+
+    assert body.paragraphs == ['いわゆる"A&B方式"について、漢字参照を含めて 示されたい。']
+
+
+def test_write_document_is_atomic(tmp_path, monkeypatch):
+    """書き込み中に落ちても、壊れた JSON が最終パスに残らないこと。"""
+    import indexer.shuisho_importer as importer
+
+    pages = _shugiin_pages()
+    fetch, _ = _stub_fetcher(pages)
+    real_replace = importer.os.replace
+
+    def exploding_replace(src, dst):
+        raise KeyboardInterrupt("interrupted between write and replace")
+
+    monkeypatch.setattr(importer.os, "replace", exploding_replace)
+    with pytest.raises(KeyboardInterrupt):
+        run_fetch(_args(tmp_path), fetcher=fetch)
+    monkeypatch.setattr(importer.os, "replace", real_replace)
+
+    assert not (tmp_path / "shugiin-217-001.json").exists()
+    # 再実行すれば取得済み扱いにならず、正しく書き直せる。
+    fetch_again, _ = _stub_fetcher(pages)
+    stats = run_fetch(_args(tmp_path), fetcher=fetch_again)
+    assert stats.fetched == 2
+    assert json.loads((tmp_path / "shugiin-217-001.json").read_text(encoding="utf-8"))["title"]
+
+
+def test_run_fetch_refetches_corrupt_document(tmp_path):
+    path = tmp_path / "shugiin-217-001.json"
+    path.write_text('{"shuisho_id": "shugiin-217-001", "title": "途中で', encoding="utf-8")
+    fetch, _ = _stub_fetcher(_shugiin_pages())
+
+    stats = run_fetch(_args(tmp_path), fetcher=fetch)
+
+    assert stats.fetched == 2
+    assert json.loads(path.read_text(encoding="utf-8"))["question"]["date"] == "2025-01-24"
+
+
+def test_load_fetch_state_discards_corrupt_state(tmp_path):
+    path = tmp_path / "_fetch_state.json"
+    path.write_text("{broken", encoding="utf-8")
+
+    assert load_fetch_state(path) == {"schema_version": 1, "completed_ids": [], "runs": []}
+
+
+def test_run_fetch_backfills_answer_for_question_only_document(tmp_path):
+    # 1回目: 2番は答弁未受理なので質問のみ保存される。
+    fetch, _ = _stub_fetcher(_shugiin_pages())
+    run_fetch(_args(tmp_path), fetcher=fetch)
+    path = tmp_path / "shugiin-217-002.json"
+    assert json.loads(path.read_text(encoding="utf-8"))["answer"] is None
+
+    # 2回目: 一覧に答弁リンクが現れたら、--overwrite なしで答弁だけ追記する。
+    base = "https://www.shugiin.go.jp/internet/itdb_shitsumon.nsf/html/shitsumon/"
+    pages = _shugiin_pages()
+    pages[shugiin_list_url(217)] = SHUGIIN_LIST_HTML.replace(
+        '<TD CLASS="TD" headers="SHITSUMON.TLINK"><span>&nbsp;</span></TD>',
+        '<TD CLASS="TD" headers="SHITSUMON.TLINK"><span><A HREF="b217002.htm">答弁</A></span></TD>',
+    )
+    pages[f"{base}b217002.htm"] = SHUGIIN_ANSWER_HTML
+    fetch_again, _ = _stub_fetcher(pages)
+
+    stats = run_fetch(_args(tmp_path), fetcher=fetch_again)
+
+    assert stats.updated == 1
+    assert stats.skipped == 1
+    document = json.loads(path.read_text(encoding="utf-8"))
+    assert document["answer"]["answerer"] == "内閣総理大臣 石破 茂"
+    # 質問側は取り直さないので元のまま。
+    assert document["question"]["date"] == "2025-01-24"
+
+
+def test_run_fetch_counts_list_page_transport_failures(tmp_path):
+    """404 (会期なし) は正常、5xx/通信障害は取り逃しなので failed に数える。"""
+
+    def fetch(url: str) -> str:
+        if url == shugiin_list_url(216):
+            raise RuntimeError("HTTP error 503 Service Unavailable")
+        if url == shugiin_list_url(215):
+            raise HttpNotFound("HTTP 404")
+        return _shugiin_pages().get(url) or (_ for _ in ()).throw(HttpNotFound("HTTP 404"))
+
+    stats = run_fetch(_args(tmp_path, session_from=215, session_to=217), fetcher=fetch)
+
+    assert stats.failed == 1
+    rows = [
+        json.loads(line)
+        for line in (tmp_path / "_fetch_errors.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    by_session = {row["session"]: row["fatal"] for row in rows if "session" in row}
+    assert by_session == {215: False, 216: True}

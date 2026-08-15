@@ -48,12 +48,15 @@ function corpusMetadata(hit: SearchHit): string[] {
     ].filter(Boolean);
   }
   if (hit.source_type === "shuisho") {
+    // 答弁レコードは speaker が答弁者なので、提出者は submitter から別に出す。
+    const isAnswer = hit.shuisho_kind === "answer";
     return [
       hit.house ?? "",
       hit.session ? `第${hit.session}回` : "",
       hit.shuisho_number ? `第${hit.shuisho_number}号` : "",
       hit.date ?? "",
-      hit.speaker ? `${hit.shuisho_kind === "answer" ? "答弁者" : "提出者"}: ${hit.speaker}` : "",
+      hit.submitter ? `提出者: ${hit.submitter}` : "",
+      isAnswer && hit.speaker ? `答弁者: ${hit.speaker}` : "",
     ].filter(Boolean);
   }
   return [];

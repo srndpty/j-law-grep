@@ -926,7 +926,7 @@ def test_shuisho_filters_apply_metadata_filters():
         filters={
             "house": "衆議院",
             "session": "217",
-            "speaker": "福田玄",
+            "submitter": "福田玄",
             "shuisho_kind": "answer",
             "date_from": "2025-01-01",
             "date_to": "2025-12-31",
@@ -945,8 +945,10 @@ def test_shuisho_filters_apply_metadata_filters():
     assert {"term": {"house": "衆議院"}} in filters
     assert {"term": {"session": "217"}} in filters
     assert {"term": {"shuisho_kind": "answer"}} in filters
-    assert service._speaker_filter("福田玄") in filters
     assert {"range": {"date": {"gte": "2025-01-01", "lte": "2025-12-31"}}} in filters
+    # 提出者は submitter を引く。speaker だと答弁レコードは答弁者なので 0 件になる。
+    assert service._keyword_or_prefix_filter("submitter", "福田玄") in filters
+    assert service._speaker_filter("福田玄") not in filters
 
 
 def test_shuisho_search_disables_citation_parsing():

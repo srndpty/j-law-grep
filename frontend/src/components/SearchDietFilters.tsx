@@ -58,12 +58,24 @@ export function SearchDietFilters({ source, filters, onChange, onClear }: Props)
           <option value="answer">答弁本文のみ</option>
         </select>
       )}
-      <input
-        className={INPUT_CLASS}
-        placeholder={source === "shuisho" ? "提出者（前方一致）" : "発言者（前方一致）"}
-        value={filters.speaker ?? ""}
-        onChange={(event) => onChange("speaker", event.currentTarget.value)}
-      />
+      {showShuisho && (
+        // 提出者は質問・答弁の両レコードに載る submitter を引く。speaker は答弁だと
+        // 答弁者 (内閣総理大臣) なので、ここで使うと対応する答弁書が消える。
+        <input
+          className={INPUT_CLASS}
+          placeholder="提出者（前方一致）"
+          value={filters.submitter ?? ""}
+          onChange={(event) => onChange("submitter", event.currentTarget.value)}
+        />
+      )}
+      {showMeeting && (
+        <input
+          className={INPUT_CLASS}
+          placeholder="発言者（前方一致）"
+          value={filters.speaker ?? ""}
+          onChange={(event) => onChange("speaker", event.currentTarget.value)}
+        />
+      )}
       <input
         className={INPUT_CLASS}
         type="date"

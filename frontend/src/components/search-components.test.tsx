@@ -114,7 +114,12 @@ describe("SearchDietFilters", () => {
 
     expect(onChange).toHaveBeenCalledWith("session", "2");
     expect(onChange).toHaveBeenCalledWith("shuisho_kind", "answer");
-    expect(screen.getByPlaceholderText("提出者（前方一致）")).toBeInTheDocument();
+    // 「提出者」は submitter を引く。speaker だと答弁レコードは答弁者なので、
+    // 提出者で絞ると対応する答弁書が消えてしまう。
+    await userEvent.type(screen.getByPlaceholderText("提出者（前方一致）"), "福");
+    expect(onChange).toHaveBeenCalledWith("submitter", "福");
+    expect(onChange).not.toHaveBeenCalledWith("speaker", "福");
+    expect(screen.queryByPlaceholderText("発言者（前方一致）")).not.toBeInTheDocument();
   });
 });
 
@@ -215,6 +220,7 @@ describe("SearchResultItem", () => {
           session: "217",
           date: "2025-02-04",
           speaker: "内閣総理大臣 石破 茂",
+          submitter: "福田玄",
           url: "https://www.shugiin.go.jp/internet/itdb_shitsumon.nsf/html/shitsumon/b217001.htm",
         }}
         selected={false}
@@ -227,6 +233,7 @@ describe("SearchResultItem", () => {
     expect(screen.getByText("答弁 第2段落")).toBeInTheDocument();
     expect(screen.getByText("第217回")).toBeInTheDocument();
     expect(screen.getByText("第1号")).toBeInTheDocument();
+    expect(screen.getByText("提出者: 福田玄")).toBeInTheDocument();
     expect(screen.getByText("答弁者: 内閣総理大臣 石破 茂")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "答弁本文を開く" })).toBeInTheDocument();
   });

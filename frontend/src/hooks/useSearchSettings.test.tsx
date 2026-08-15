@@ -51,6 +51,7 @@ describe("useSearchSettings", () => {
       date_from: "",
       date_to: "",
       session: "",
+      submitter: "",
       shuisho_kind: "",
     });
     expect(window.location.search).toBe("?q=%E5%88%91%E6%B3%95");

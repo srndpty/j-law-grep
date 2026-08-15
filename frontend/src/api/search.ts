@@ -28,6 +28,7 @@ export interface SearchHit {
   session?: string | null;
   shuisho_kind?: "question" | "answer" | string | null;
   shuisho_number?: string | null;
+  submitter?: string | null;
 }
 
 export interface SearchResponse {
